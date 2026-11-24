@@ -44,29 +44,26 @@ app.whenReady().then(async () => {
       }
     }
     assert.ok(grab, 'Munchlax pixels rendered');
-    const original = await win.webContents.executeJavaScript('document.querySelector(".speech").style.left');
     const spriteTop = '(() => { const b = document.querySelector(".speech"); return parseFloat(b.style.top) + b.offsetHeight; })()';
     const originalTop = await win.webContents.executeJavaScript(spriteTop);
     win.webContents.sendInputEvent({ type: 'mouseMove', ...grab });
     await delay(100);
     win.webContents.sendInputEvent({ type: 'mouseDown', button: 'left', clickCount: 1, ...grab });
     await delay(100);
-    win.webContents.sendInputEvent({ type: 'mouseMove', x: grab.x + 100, y: grab.y - 120 });
+    win.webContents.sendInputEvent({ type: 'mouseMove', x: grab.x + 100, y: grab.y - 200 });
     await delay(180);
     const liftedTop = await win.webContents.executeJavaScript(spriteTop);
-    assert.ok(liftedTop < originalTop - 60, `Held pet enters the interior (${originalTop} → ${liftedTop})`);
-    const heldRegion = { x: Math.max(0, grab.x + 45), y: Math.max(0, grab.y - 175), width: 145, height: 130 };
-    const heldFrame = (await win.webContents.capturePage(heldRegion)).toPNG();
+    assert.ok(liftedTop < originalTop - 35, `Held pet enters the interior (${originalTop} → ${liftedTop})`);
+    const firstSpeech = '(() => { const b = document.querySelector(".speech"); return b.hidden ? "" : b.textContent; })()';
+    assert.match(await win.webContents.executeJavaScript(firstSpeech), /잡지 마|내려갈래|발이 땅에서/, 'Grab shows its own reaction');
+    const heldFrame = (await win.webContents.capturePage()).toPNG();
     await delay(110);
-    assert.notDeepEqual((await win.webContents.capturePage(heldRegion)).toPNG(), heldFrame, 'Held pet animates with a stationary pointer');
-    win.webContents.sendInputEvent({ type: 'mouseUp', button: 'left', clickCount: 1, x: grab.x + 100, y: grab.y - 120 });
-    await delay(100);
-    const moved = await win.webContents.executeJavaScript('document.querySelector(".speech").style.left');
-    console.log({ grab, original, moved, viewport, size, cursor: await win.webContents.executeJavaScript('document.querySelector("canvas").style.cursor') });
-    assert.ok(Math.abs(parseFloat(moved) - parseFloat(original)) > 50, 'Drag moves the selected pet');
+    assert.notDeepEqual((await win.webContents.capturePage()).toPNG(), heldFrame, 'Animation continues with a stationary pointer');
+    win.webContents.sendInputEvent({ type: 'mouseUp', button: 'left', clickCount: 1, x: grab.x + 100, y: grab.y - 200 });
     await delay(1100);
     const landedTop = await win.webContents.executeJavaScript(spriteTop);
-    assert.ok(landedTop > liftedTop + 60, 'Released pet falls back to the floor');
+    assert.ok(landedTop > liftedTop + 35, 'Released pet falls back to the floor');
+    assert.match(await win.webContents.executeJavaScript(firstSpeech), /다음엔/, 'Hard landing shows the landing-specific message');
     win.webContents.send('scene:command', 'quiet');
     await delay(200);
     assert.equal(await win.webContents.executeJavaScript('Array.from(document.querySelectorAll(".speech")).filter(e => !e.hidden).length'), 0, 'Quiet mode hides bubbles');

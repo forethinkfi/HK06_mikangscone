@@ -23,10 +23,13 @@ export function advanceFlight(flight: Flight, dt: number, maxX: number, maxY: nu
   const wall = x < 0 || x > maxX;
   const ceiling = y < 0;
   const landed = y >= maxY && vy >= 0;
+  const hardLanding = landed && vy > 280;
+  const hardBump = (wall && Math.abs(flight.velocity.x) > 220) || (ceiling && vy < -280);
   return {
     position: { x: Math.max(0, Math.min(maxX, x)), y: Math.max(0, Math.min(maxY, y)) },
     velocity: { x: wall ? -flight.velocity.x * 0.38 : flight.velocity.x, y: ceiling ? -vy * 0.32 : vy },
     landed,
-    impact: (wall && Math.abs(flight.velocity.x) > 220) || ((ceiling || landed) && Math.abs(vy) > 280),
+    impact: hardLanding || hardBump,
+    hardLanding,
   };
 }

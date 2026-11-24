@@ -19,7 +19,14 @@ interface Companion {
   facing: number;
   airborne?: Flight;
   impactUntil: number;
+  reactionUntil: number;
 }
+
+const REACTION_LINES = {
+  grab: ['으앗, 잡지 마아!', '잠깐만, 나 내려갈래!', '히익! 발이 땅에서 떨어졌어!'],
+  bump: ['아야야!', '아야, 코야!', '아야! 벽이 딱딱해에!'],
+  landing: ['다음엔 살포시 내려줘, 응?', '으앗, 엉덩이야… 다음엔 살살!', '다음엔 던지기 말고 살포시, 약속!'],
+};
 
 function animationFor(species: SpeciesConfig, state: PetState) {
   return species.animations[state] ??
@@ -45,13 +52,25 @@ async function main(): Promise<void> {
     nextChat = performance.now() + 1000 * ((chatter?.minIntervalSec ?? 180) + Math.random() * ((chatter?.maxIntervalSec ?? 360) - (chatter?.minIntervalSec ?? 180)));
   };
   function say(pet: Companion, text: string, now: number) {
+    if (now < pet.reactionUntil || pet.airborne || held?.pet === pet) return;
     pet.bubble.textContent = text;
     pet.until = now + (chatter?.bubbleSec ?? 7) * 1000;
     pet.speakingUntil = pet.until;
     pet.bubble.hidden = false;
   }
+  function reactWithLine(pet: Companion, reaction: keyof typeof REACTION_LINES, now: number) {
+    if (!chatter?.enabled) return;
+    if (reply?.pet === pet) reply = null;
+    pet.bubble.textContent = random(REACTION_LINES[reaction]);
+    pet.reactionUntil = now + (reaction === 'landing' ? 3200 : 1600);
+    pet.until = pet.reactionUntil;
+    pet.speakingUntil = reaction === 'landing' ? pet.until : 0;
+    pet.bubble.hidden = false;
+  }
+  const canChat = (pet: Companion, now: number) =>
+    !pet.airborne && held?.pet !== pet && now >= pet.reactionUntil;
   function converse(a: Companion, b: Companion, now: number) {
-    if (!chatter?.dialogues.length) return;
+    if (!chatter?.dialogues.length || !canChat(a, now) || !canChat(b, now)) return;
     const lines = random(chatter.dialogues);
     say(a, lines[0], now);
     reply = { pet: b, text: lines[1], at: now + 1900 };
@@ -63,7 +82,7 @@ async function main(): Promise<void> {
     if (command === 'quiet') {
       chatter.enabled = !chatter.enabled;
       reply = null;
-      for (const pet of pets) { pet.until = 0; pet.speakingUntil = 0; }
+      for (const pet of pets) { pet.until = 0; pet.speakingUntil = 0; pet.reactionUntil = 0; }
       schedule();
     } else if (chatter.enabled) {
       if (pets.length > 1) converse(pets[0], pets[1], performance.now());
@@ -89,7 +108,7 @@ async function main(): Promise<void> {
       });
       const initialAnimation = species.animations[state.getState()] ?? species.animations.idle;
       if (initialAnimation) animation.setAnimation(initialAnimation);
-      return { species, state, animation, behavior, bubble, until: 0, speakingUntil: 0, facing: 0, impactUntil: 0 };
+      return { species, state, animation, behavior, bubble, until: 0, speakingUntil: 0, facing: 0, impactUntil: 0, reactionUntil: 0 };
     });
     nextChat = performance.now() + 6000; nextMeeting = performance.now() + 20000;
   });
@@ -108,6 +127,9 @@ async function main(): Promise<void> {
     if (!held.dragging && Math.hypot(pointer.x - held.start.x, pointer.y - held.start.y) > 6) {
       held.dragging = true;
       held.pet.state.transition('idle'); held.pet.behavior.interruptForDrag();
+      held.pet.until = 0;
+      held.pet.speakingUntil = 0;
+      reactWithLine(held.pet, 'grab', performance.now());
     }
     if (held.dragging) {
       const size = petSize(held.pet);
@@ -115,8 +137,6 @@ async function main(): Promise<void> {
         x: Math.max(0, Math.min(bounds.width - size, pointer.x - held.offset.x)),
         y: Math.max(0, Math.min(bounds.height - size, pointer.y - held.offset.y)),
       }, velocity: { x: 0, y: 0 } };
-      held.pet.until = 0;
-      held.pet.speakingUntil = 0;
     }
   }
   canvas.addEventListener('pointermove', moveHeld);
@@ -129,20 +149,24 @@ async function main(): Promise<void> {
     if (pet.airborne) {
       pet.impactUntil = 0;
       pet.state.transition('dragged');
+      reactWithLine(pet, 'grab', performance.now());
     }
     canvas.setPointerCapture(event.pointerId);
   });
   function release(event: Event) {
     if (!held) return;
     if (event instanceof PointerEvent && event.type === 'pointerup') moveHeld(event);
-    if (held.dragging && held.pet.airborne) {
-      held.pet.airborne.velocity = event.type === 'pointerup' ? releaseVelocity(held.samples) : { x: 0, y: 0 };
+    const { pet, dragging, samples } = held;
+    held = null;
+    if (dragging && pet.airborne) {
+      pet.until = 0;
+      pet.reactionUntil = 0;
+      pet.airborne.velocity = event.type === 'pointerup' ? releaseVelocity(samples) : { x: 0, y: 0 };
     }
     else if (event.type === 'pointerup') {
-      held.pet.state.transition('idle'); held.pet.behavior.react();
-      if (chatter?.enabled) say(held.pet, random(chatter.solo), performance.now());
+      pet.state.transition('idle'); pet.behavior.react();
+      if (chatter?.enabled) say(pet, random(chatter.solo), performance.now());
     }
-    held = null;
   }
   window.addEventListener('pointerup', release);
   window.addEventListener('pointercancel', release);
@@ -157,6 +181,7 @@ async function main(): Promise<void> {
     if (next.impact) {
       pet.state.transition('hurt');
       pet.impactUntil = now + 750;
+      reactWithLine(pet, next.hardLanding ? 'landing' : 'bump', now);
     }
     if (next.landed) {
       pet.behavior.setPosition({ x: nearestEdge(next.position, bounds.width, bounds.height, size), y: 0 });
