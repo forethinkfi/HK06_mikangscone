@@ -1,4 +1,6 @@
 node_modules/
+personal-species/
+output/
 dist/
 dist-electron/
 release/

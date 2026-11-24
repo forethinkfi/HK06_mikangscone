@@ -1,4 +1,4 @@
-import { app, type BrowserWindow } from 'electron';
+import { app, ipcMain, type BrowserWindow } from 'electron';
 import { PetWindowManager } from './petWindow';
 import { TrayManager } from './trayManager';
 import { registerIpcHandlers, sendSpeciesLoaded } from './ipcHandlers';
@@ -12,6 +12,10 @@ import { registerAssetProtocolScheme, registerAssetProtocolHandler } from './ass
 import { ProgressionTracker } from './progressionTracker';
 import { StatsTracker } from './statsTracker';
 import { AppSettings } from './appSettings';
+import { loadCompanionScene } from './sceneLoader';
+import fs from 'node:fs';
+import { getLocalSpeciesRoot } from './speciesLoader';
+import { IPC } from '../shared/ipcContract';
 
 const FALLBACK_SPECIES_ID = 'placeholder';
 
@@ -55,13 +59,18 @@ function loadSpeciesWithFallback(id: string) {
  */
 function watchActiveSpecies(window: BrowserWindow, speciesId: string): void {
   unwatchSpecies?.();
-  unwatchSpecies = watchSpecies(speciesId, () => {
+  const reload = () => {
     try {
-      sendSpeciesLoaded(window, loadSpecies(speciesId));
+      sendSpeciesLoaded(window, loadCompanionScene(loadSpecies(speciesId)));
     } catch (error) {
       console.error(`Species "${speciesId}" reload failed, keeping the last good version:`, error);
     }
+  };
+  const unwatchers = listAvailableSpecies().map((item) => watchSpecies(item.id, reload));
+  const watcher = fs.watch(getLocalSpeciesRoot(), (_event, filename) => {
+    if (filename === 'scene.json') reload();
   });
+  unwatchSpecies = () => { watcher.close(); unwatchers.forEach((stop) => stop()); };
 }
 
 function bootstrap(): void {
@@ -75,6 +84,7 @@ function bootstrap(): void {
   registerIpcHandlers(windowManager, progressionTracker, statsTracker);
 
   trayManager.create({
+    onSceneCommand: (command) => window.webContents.send(IPC.SCENE_COMMAND, command),
     onToggleVisibility: () => windowManager.toggleVisibility(),
     isVisible: () => windowManager.isVisible(),
     onQuit: () => app.quit(),
@@ -87,9 +97,10 @@ function bootstrap(): void {
     },
   });
 
-  window.webContents.once('did-finish-load', () => {
+  ipcMain.on(IPC.RENDERER_READY, (event) => {
+    if (event.sender !== window.webContents) return;
     const speciesId = process.env.PET_SPECIES_ID ?? appSettings.getSelectedSpeciesId();
-    sendSpeciesLoaded(window, loadSpeciesWithFallback(speciesId));
+    sendSpeciesLoaded(window, loadCompanionScene(loadSpeciesWithFallback(speciesId)));
     watchActiveSpecies(window, speciesId);
   });
 }

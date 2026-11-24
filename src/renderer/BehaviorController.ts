@@ -60,6 +60,7 @@ export class BehaviorController {
   private beginWalkPhase(): void {
     this.phaseRemainingMs = randomBetween(this.behavior.walkMinMs, this.behavior.walkMaxMs);
     this.direction = Math.random() < 0.5 ? -1 : 1;
+    this.stateMachine.transition('idle');
     this.stateMachine.transition('walk');
   }
 

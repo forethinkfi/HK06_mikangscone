@@ -36,7 +36,7 @@ export class AppSettings {
   }
 
   getSelectedSpeciesId(): string {
-    return this.settings.selectedSpeciesId ?? DEFAULT_SPECIES_ID;
+    return this.settings.selectedSpeciesId ?? process.env.PET_DEFAULT_SPECIES_ID ?? DEFAULT_SPECIES_ID;
   }
 
   setSelectedSpeciesId(id: string): void {

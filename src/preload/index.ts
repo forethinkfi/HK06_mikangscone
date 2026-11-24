@@ -9,6 +9,10 @@ import {
 } from '../shared/ipcContract';
 
 const petAPI: PetAPI = {
+  ready() { ipcRenderer.send(IPC.RENDERER_READY); },
+  onSceneCommand(callback) {
+    ipcRenderer.on(IPC.SCENE_COMMAND, (_event, command: 'demo' | 'quiet') => callback(command));
+  },
   setClickThrough(ignore: boolean) {
     ipcRenderer.send(IPC.SET_CLICK_THROUGH, ignore);
   },

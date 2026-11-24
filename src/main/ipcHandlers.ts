@@ -5,7 +5,6 @@ import {
   type SetStatPayload,
   type IncrementStatPayload,
 } from '../shared/ipcContract';
-import { getHomeWorkArea } from './displayBounds';
 import type { PetWindowManager } from './petWindow';
 import type { ProgressionTracker } from './progressionTracker';
 import type { StatsTracker } from './statsTracker';
@@ -19,7 +18,10 @@ export function registerIpcHandlers(
     windowManager.setClickThrough(ignore);
   });
 
-  ipcMain.handle(IPC.GET_WORK_AREA, (): Rect => getHomeWorkArea());
+  ipcMain.handle(IPC.GET_WORK_AREA, (): Rect => {
+    const bounds = windowManager.getWindow().getBounds();
+    return { x: 0, y: 0, width: bounds.width, height: bounds.height };
+  });
   ipcMain.handle(IPC.GET_PLAYTIME, (): number => progressionTracker.getTotalPlaytimeMs());
 
   ipcMain.handle(IPC.GET_STATS, (): Record<string, number> => statsTracker.getAll());

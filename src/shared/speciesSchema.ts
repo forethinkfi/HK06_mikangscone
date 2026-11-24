@@ -11,6 +11,8 @@ export interface SpeciesAnimationDef {
   frameCount: number;
   fps: number;
   loop: boolean;
+  /** Optional motion applied to a single illustration without changing the asset. */
+  motion?: 'breathe' | 'waddle' | 'sway' | 'sleep' | 'bounce';
 }
 
 export interface SpeciesBehaviorDef {
@@ -50,6 +52,8 @@ export interface ProgressionTier {
  * swapping in real art later.
  */
 export interface SpeciesConfig {
+  companions?: SpeciesConfig[];
+  chatter?: ChatterConfig;
   id: string;
   displayName: string;
   version: string;
@@ -57,6 +61,15 @@ export interface SpeciesConfig {
   behavior: SpeciesBehaviorDef;
   attribution?: SpeciesAttribution;
   progression?: ProgressionTier[];
+}
+
+export interface ChatterConfig {
+  enabled: boolean;
+  minIntervalSec: number;
+  maxIntervalSec: number;
+  bubbleSec: number;
+  solo: string[];
+  dialogues: [string, string][];
 }
 
 export function isSpeciesConfig(value: unknown): value is SpeciesConfig {

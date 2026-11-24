@@ -1,0 +1,11 @@
+const path = require('node:path');
+const fs = require('node:fs');
+const { spawn } = require('node:child_process');
+const root = path.resolve(__dirname, '..');
+const personal = path.join(root, 'personal-species');
+const env = { ...process.env, PET_LOCAL_SPECIES_ROOT: personal };
+delete env.ELECTRON_RUN_AS_NODE;
+if (fs.existsSync(path.join(personal, 'munchlax', 'species.json'))) env.PET_DEFAULT_SPECIES_ID = 'munchlax';
+const child = spawn(require('electron'), [process.argv.includes('--smoke') ? path.join(__dirname, 'smoke.cjs') : root], { env, stdio: 'inherit' });
+child.on('error', (error) => { console.error(error.message); process.exitCode = 1; });
+child.on('exit', (code) => { process.exitCode = code ?? 0; });

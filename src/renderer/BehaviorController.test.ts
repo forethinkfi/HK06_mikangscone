@@ -24,6 +24,14 @@ afterEach(() => {
 });
 
 describe('BehaviorController', () => {
+  it('can wake up and start walking after a sleeping phase', () => {
+    vi.spyOn(Math, 'random').mockReturnValue(0.99);
+    const sm = new PetStateMachine();
+    const controller = new BehaviorController(sm, makeBehavior(), { x: 50, y: 50 }, () => ['sleep']);
+    expect(sm.getState()).toBe('sleep');
+    controller.update(1, bounds, spriteWidth);
+    expect(sm.getState()).toBe('walk');
+  });
   it('starts idle at the given position', () => {
     const sm = new PetStateMachine();
     const controller = new BehaviorController(sm, makeBehavior(), { x: 50, y: 50 });

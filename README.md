@@ -1,116 +1,40 @@
-# Window Pet
+# PCpet · 먹고자 데스크톱 펫
 
-A cross-platform desktop companion — a small pixel-art creature that lives on
-your desktop, wanders around, and you can pick up and carry. The longer it's
-been running, the more it can do. Built with Electron + TypeScript.
+[Pety / Window Pet](https://github.com/Gavin-Dementia/Pety)의 MIT 엔진을 기반으로 한 개인용 커스터마이징 프로젝트입니다. 원본 LICENSE와 자산 라이선스 안내를 유지합니다.
 
-<!-- screenshot placeholder -->
+## 시작
 
-## Status
+Node.js 22 이상에서:
 
-Framework stage, functional. Ships with placeholder programmer art (solid
-colored blobs) so the engine can be built and tested before real art exists
-— see "Species & art" below for how that's meant to change.
-
-## Features
-
-- Transparent, frameless, always-on-top overlay window; click-through
-  outside the pet, draggable when hovered
-- System tray: show/hide, quit, and a **Species** submenu to switch
-  creatures (persists the choice, relaunches)
-- Sprite-sheet animation state machine (idle / walk / dragged / sit /
-  sleep / react), all reachable through a hub-and-spoke `idle` state so
-  new variants are a content change, not an engine change
-- Autonomous behavior: random walk within the screen's work area,
-  alternating with idle-like phases
-- **Progression**: cumulative app-open runtime (not calendar days since
-  install) unlocks more idle-behavior variants and interactions over
-  time, defined per-species — see `docs/roadmap.md` Milestone 13
-- **Interactions**: a quick click (`poke`), double-click (`doubleclick`),
-  or a held press (`pet`) on the sprite, each independently unlockable —
-  a documented, extensible pattern for adding more gesture types later
-  (see `src/renderer/gestureClassifier.ts`)
-- **Stats plumbing**: generic named-stat persistence
-  (`src/main/statsTracker.ts`) — the storage/IPC layer a future hunger/
-  growth system will need, deliberately not wired to any gameplay logic
-  yet
-- Pluggable "species" content system — bundled species ship in the repo;
-  you can also import your own locally without ever touching it (see
-  below), and edits to the active species live-reload automatically
-  while the app runs — no restart, no update server
-
-## Getting started
-
-```
+```sh
 npm install
-npm run dev
+npm run setup:munchlax
+npm start
 ```
 
-This launches the app with hot reload. Before committing, `npm run
-typecheck`, `npm run lint`, and `npm run test` should all pass.
+설치 후 `먹고자 실행.cmd`를 더블클릭해도 됩니다. 펫을 잡아 이동하거나 클릭해 반응을 보세요. 작업 표시줄 알림 영역의 펫 아이콘 메뉴에서 숨기기와 종료를 선택합니다.
 
-## Species & art
+## 여러 펫과 대화
 
-Species are self-contained content folders (`species.json` + sprite
-sheets) — see `src/shared/speciesSchema.ts` for the exact shape. Two
-places they can live:
+기본 친구는 먹고자와 고라파덕입니다. 각각 돌아다니고, 가까이 만나면 짧은 대화를 나눕니다. 시작 후 첫 인사를 하고 이후 3~6분 간격으로 위로나 회사원 드립을 띄웁니다. 말풍선은 화면에 글로만 표시하며 음성이나 외부 AI 연결은 사용하지 않습니다.
 
-- **Bundled** — `assets/species/<id>/`, part of this repo, MIT/CC0-only
-  (see "Art & IP" below).
-- **Local** — `%APPDATA%/window-pet/species/<id>/` on Windows (generally
-  `app.getPath('userData')/species/<id>/`), created automatically on
-  first run. This folder has **no relationship to the git repository at
-  all** — nothing placed there is ever committed or uploaded. It's the
-  sanctioned way to use art you can't or don't want to redistribute (a
-  personal drawing, something you don't hold redistribution rights to,
-  etc.) while still using the app normally.
+알림 영역 펫 아이콘에서 `지금 대화하기`, `말풍선 끄기 / 켜기`, `이미지·대사 폴더 열기`를 선택할 수 있습니다.
 
-The tray's **Species** submenu lists both, switching relaunches the app
-into your choice. A local species with the same id as a bundled one takes
-priority, so you can override bundled content locally too.
+`personal-species/scene.json`에서 `pets`에 함께 띄울 캐릭터 폴더 이름을 적습니다. 각 캐릭터 폴더에 `species.json`과 이미지를 두면 됩니다. `chatter.solo`는 사용자에게 건네는 말, `chatter.dialogues`는 질문·답변 쌍입니다. `minIntervalSec` / `maxIntervalSec`는 자동 말 걸기 간격(초), `bubbleSec`는 표시 시간, `enabled`는 말풍선 사용 여부입니다. 대사와 기존 캐릭터 그림·설정은 저장하면 자동 반영됩니다. 새 캐릭터 폴더를 추가한 뒤에는 재실행하세요.
 
-Have an animated GIF instead of a hand-sliced sprite sheet?
-`scripts/gif-to-species-animation.ps1` converts it — the engine itself
-only ever plays sprite sheets (GIF gives no frame-level control, which
-the reaction animations' auto-return-to-idle depends on), so this is a
-one-time import step, not a runtime format. See `docs/setup.md` §9.
-`scripts/pixel-art-downscale.ps1` shrinks art without the muddy/blurred
-colors ordinary resizing produces (§10) — written from scratch after a
-licensing check ruled out the third-party options, see `docs/roadmap.md`
-Milestone 18.
+## 이미지 수정
 
-Editing the **currently active** species' `species.json` or sprites while
-the app is running takes effect automatically within about a second — no
-restart needed. This is local file watching only, not a remote/update
-mechanism (see `docs/setup.md` §8).
+개인 이미지는 `personal-species/munchlax/`에 있습니다. `munchlax.png`를 교체하면 모든 상태에 반영됩니다. 기본 475 × 475 투명 PNG이며 약 180픽셀로 표시합니다. `species.json`에서 상태별 그림·프레임·배율·걷는 속도를 조절하세요. 폴더 안 `이미지 수정 안내.txt`에 예시를 정리했습니다. 저장 시 자동 반영됩니다.
 
-## Building a package
+기본 버전은 한 장의 일러스트에 호흡·뒤뚱거림·흔들림·클릭 반응을 적용합니다. 잠들 때 눈을 감는 등의 별도 포즈는 아직 없으며 상태별 시트를 추가할 수 있습니다. 현재 펫은 실행 시 마우스가 있는 모니터에서 활동합니다.
 
+캐릭터 이미지는 Git에서 제외됩니다. 설정 예시는 `examples/munchlax/`에 있고, 설정 스크립트는 PokeAPI sprites의 이미지를 개인 폴더로 다운로드합니다. Pokémon 이미지 권리는 원권리자에게 있으며 MIT 코드 라이선스에 포함되지 않습니다.
+
+## 검증
+
+```sh
+npm run typecheck
+npm run lint
+npm test
+npm run build
 ```
-npm run package:win   # or package:mac / package:linux
-```
-
-`build-resources/icon.ico` is generated (`scripts/generate-windows-ico.ps1`).
-`package:win`'s installer step is currently blocked on this dev machine by
-a Windows privilege issue unrelated to the app itself — see
-`docs/bugs.md` #2 for the fix. `build-resources/icon.icns` (macOS) still
-needs generating on an actual Mac.
-
-## Art & IP
-
-This project's **code** is MIT-licensed (see `LICENSE`). **Art assets**
-are licensed separately (see `LICENSE-ASSETS.md`) and, in the bundled
-`assets/species/` tree, are original placeholder art only — the project
-does not use and will not accept existing copyrighted character designs
-(see `CONTRIBUTING.md` for the full contribution policy). If you have art
-you want to use but not publish, the **local species folder** above is
-built specifically for that — it never leaves your machine through this
-project.
-
-## Documentation
-
-- `docs/setup.md` — full setup/build reference, project structure, common issues
-- `docs/roadmap.md` — what's built vs. planned, milestone by milestone
-- `docs/bugs.md` — known open issues and a log of real bugs found and fixed
-- `src/shared/speciesSchema.ts` — the species/content contract
-- `CONTRIBUTING.md` — dev workflow and the art contribution policy

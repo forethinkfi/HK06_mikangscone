@@ -11,3 +11,19 @@ body {
   width: 100vw;
   height: 100vh;
 }
+
+.speech {
+  position: absolute;
+  box-sizing: border-box;
+  width: 260px;
+  padding: 13px 16px;
+  border: 1px solid #d9dfd9;
+  border-radius: 18px 18px 18px 5px;
+  background: #fffdf5;
+  color: #263e43;
+  font: 600 14px/1.65 'Malgun Gothic', sans-serif;
+  white-space: pre-line;
+  overflow-wrap: anywhere;
+  box-shadow: 0 5px 18px #00000018;
+  pointer-events: none;
+}

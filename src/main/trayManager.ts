@@ -1,4 +1,5 @@
-import { app, Menu, Tray, nativeImage } from 'electron';
+import { app, Menu, Tray, nativeImage, shell } from 'electron';
+import { getLocalSpeciesRoot } from './speciesLoader';
 import path from 'node:path';
 import type { SpeciesListing } from './speciesLoader';
 
@@ -26,11 +27,12 @@ export class TrayManager {
     listSpecies: () => SpeciesListing[];
     getSelectedSpeciesId: () => string;
     onSelectSpecies: (id: string) => void;
+    onSceneCommand: (command: 'demo' | 'quiet') => void;
   }): Tray {
     const iconPath = path.join(getBuildResourcesRoot(), 'tray-icon.png');
     const icon = nativeImage.createFromPath(iconPath);
     const tray = new Tray(icon.isEmpty() ? nativeImage.createEmpty() : icon);
-    tray.setToolTip('Window Pet');
+    tray.setToolTip('PCpet · 데스크톱 친구들');
 
     const rebuildMenu = () => {
       const selectedId = options.getSelectedSpeciesId();
@@ -43,7 +45,7 @@ export class TrayManager {
 
       const menu = Menu.buildFromTemplate([
         {
-          label: options.isVisible() ? 'Hide Pet' : 'Show Pet',
+          label: options.isVisible() ? '펫 숨기기' : '펫 보이기',
           click: () => {
             options.onToggleVisibility();
             rebuildMenu();
@@ -51,15 +53,18 @@ export class TrayManager {
         },
         { type: 'separator' },
         {
-          label: 'Species',
+          label: '주인공 바꾸기',
           submenu:
             speciesSubmenu.length > 0
               ? speciesSubmenu
               : [{ label: 'No species found', enabled: false }],
         },
         { type: 'separator' },
+        { label: '지금 대화하기', click: () => options.onSceneCommand('demo') },
+        { label: '말풍선 끄기 / 켜기', click: () => options.onSceneCommand('quiet') },
+        { label: '이미지·대사 폴더 열기', click: () => { void shell.openPath(getLocalSpeciesRoot()); } },
         { label: `About Window Pet (v${app.getVersion()})`, enabled: false },
-        { label: 'Quit', click: () => options.onQuit() },
+        { label: '종료', click: () => options.onQuit() },
       ]);
       tray.setContextMenu(menu);
     };

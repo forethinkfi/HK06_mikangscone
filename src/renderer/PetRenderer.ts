@@ -50,22 +50,40 @@ export class PetRenderer {
     };
   }
 
-  render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number): void {
+  clear(): void {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+  }
+
+  render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number): void {
     const image = this.getImage(def.sheet);
     if (!image.complete || image.naturalWidth === 0) return;
 
-    this.ctx.imageSmoothingEnabled = false;
+    this.ctx.imageSmoothingEnabled = true;
+    const time = performance.now() / 1000;
+    const width = def.frameWidth * scale;
+    const height = def.frameHeight * scale;
+    const motion = def.motion;
+    const wave = Math.sin(time * (motion === 'waddle' ? 9 : 3));
+    const tilt = motion === 'waddle' ? wave * 0.045 : motion === 'sway' ? wave * 0.07 : 0;
+    const lift = motion === 'bounce' ? Math.abs(Math.sin(time * 10)) * 12 :
+      motion === 'waddle' ? Math.abs(wave) * 4 : 0;
+    this.ctx.save();
+    this.ctx.translate(position.x + width / 2, position.y + height - 12 - lift);
+    this.ctx.rotate(tilt);
+    if (motion === 'breathe' || motion === 'sleep') {
+      this.ctx.scale(1 + wave * 0.008, 1 + wave * 0.015);
+    }
     this.ctx.drawImage(
       image,
       frame.sx,
       frame.sy,
       frame.sw,
       frame.sh,
-      position.x,
-      position.y,
-      def.frameWidth * scale,
-      def.frameHeight * scale,
+      -width / 2,
+      -height + 12,
+      width,
+      height,
     );
+    this.ctx.restore();
   }
 }

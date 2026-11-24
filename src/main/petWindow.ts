@@ -18,6 +18,7 @@ export class PetWindowManager {
       width: workArea.width,
       height: workArea.height,
       transparent: true,
+      backgroundColor: '#00000000',
       frame: false,
       alwaysOnTop: true,
       skipTaskbar: true,
@@ -25,6 +26,7 @@ export class PetWindowManager {
       hasShadow: false,
       focusable: true,
       webPreferences: {
+        backgroundThrottling: false,
         preload: PRELOAD_PATH,
         contextIsolation: true,
         nodeIntegration: false,

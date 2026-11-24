@@ -1,6 +1,7 @@
 import type { SpeciesConfig } from './speciesSchema';
 
 export const IPC = {
+  RENDERER_READY: 'scene:ready',
   SET_CLICK_THROUGH: 'pet:setClickThrough',
   DRAG_START: 'pet:dragStart',
   DRAG_MOVE: 'pet:dragMove',
@@ -13,6 +14,7 @@ export const IPC = {
   LOAD_SPECIES: 'species:load',
   TRAY_SHOW_HIDE: 'tray:toggleVisibility',
   QUIT_REQUESTED: 'app:quitRequested',
+  SCENE_COMMAND: 'scene:command',
 } as const;
 
 export interface Rect {
@@ -40,6 +42,8 @@ export interface IncrementStatPayload {
 }
 
 export interface PetAPI {
+  ready(): void;
+  onSceneCommand(callback: (command: 'demo' | 'quiet') => void): void;
   setClickThrough(ignore: boolean): void;
   dragStart(): void;
   dragMove(payload: DragMovePayload): void;

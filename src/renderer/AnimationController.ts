@@ -11,6 +11,7 @@ export class AnimationController {
   private def: SpeciesAnimationDef | null = null;
   private frameIndex = 0;
   private elapsedMs = 0;
+  private totalElapsedMs = 0;
 
   /**
    * Always resets to frame 0, even if `def` is the same object reference as
@@ -25,11 +26,13 @@ export class AnimationController {
     this.def = def;
     this.frameIndex = 0;
     this.elapsedMs = 0;
+    this.totalElapsedMs = 0;
   }
 
   /** Advance playback by `deltaMs`. Call once per render tick. */
   update(deltaMs: number): void {
     if (!this.def) return;
+    this.totalElapsedMs += deltaMs;
     const msPerFrame = 1000 / this.def.fps;
     this.elapsedMs += deltaMs;
 
@@ -47,7 +50,8 @@ export class AnimationController {
   /** True once a non-looping animation has reached and is holding its last frame. */
   isFinished(): boolean {
     if (!this.def) return false;
-    return !this.def.loop && this.frameIndex >= this.def.frameCount - 1;
+    return !this.def.loop && this.frameIndex >= this.def.frameCount - 1 &&
+      this.totalElapsedMs >= (this.def.frameCount / this.def.fps) * 1000;
   }
 
   getCurrentFrameRect(): FrameRect | null {

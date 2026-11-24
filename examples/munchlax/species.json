@@ -1,0 +1,89 @@
+{
+  "id": "munchlax",
+  "displayName": "먹고자",
+  "version": "0.1.0",
+  "animations": {
+    "idle": {
+      "sheet": "munchlax.png",
+      "frameWidth": 475,
+      "frameHeight": 475,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "breathe"
+    },
+    "walk": {
+      "sheet": "munchlax.png",
+      "frameWidth": 475,
+      "frameHeight": 475,
+      "frameCount": 1,
+      "fps": 6,
+      "loop": true,
+      "motion": "waddle"
+    },
+    "dragged": {
+      "sheet": "munchlax.png",
+      "frameWidth": 475,
+      "frameHeight": 475,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "sway"
+    },
+    "sit": {
+      "sheet": "munchlax.png",
+      "frameWidth": 475,
+      "frameHeight": 475,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "breathe"
+    },
+    "sleep": {
+      "sheet": "munchlax.png",
+      "frameWidth": 475,
+      "frameHeight": 475,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "sleep"
+    },
+    "react": {
+      "sheet": "munchlax.png",
+      "frameWidth": 475,
+      "frameHeight": 475,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": false,
+      "motion": "bounce"
+    }
+  },
+  "behavior": {
+    "walkSpeedPxPerSec": 35,
+    "idleMinMs": 1000,
+    "idleMaxMs": 3000,
+    "walkMinMs": 5000,
+    "walkMaxMs": 12000,
+    "spriteScale": 0.38
+  },
+  "progression": [
+    {
+      "id": "ready",
+      "unlockAtMs": 0,
+      "unlockedBehaviorStates": [
+        "sit",
+        "sleep"
+      ],
+      "unlockedInteractions": [
+        "poke",
+        "doubleclick",
+        "pet"
+      ]
+    }
+  ],
+  "attribution": {
+    "author": "Pokémon / Nintendo / Creatures / GAME FREAK",
+    "license": "Third-party character artwork; not covered by the engine MIT license",
+    "sourceUrl": "https://github.com/PokeAPI/sprites"
+  }
+}

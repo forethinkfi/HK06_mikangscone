@@ -30,7 +30,7 @@ export function getBundledSpeciesRoot(): string {
  * that should never be uploaded. See docs/setup.md.
  */
 export function getLocalSpeciesRoot(): string {
-  return path.join(app.getPath('userData'), 'species');
+  return process.env.PET_LOCAL_SPECIES_ROOT ?? path.join(app.getPath('userData'), 'species');
 }
 
 /** Call once at startup so the local species folder exists to drop files into. */
