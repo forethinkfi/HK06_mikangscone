@@ -15,8 +15,10 @@ export class PetRenderer {
   }
 
   private resizeToWindow(): void {
-    this.canvas.width = window.innerWidth;
-    this.canvas.height = window.innerHeight;
+    const ratio = window.devicePixelRatio || 1;
+    this.canvas.width = Math.round(window.innerWidth * ratio);
+    this.canvas.height = Math.round(window.innerHeight * ratio);
+    this.ctx.setTransform(ratio, 0, 0, ratio, 0, 0);
   }
 
   private getImage(sheetUrl: string): HTMLImageElement {
@@ -59,16 +61,16 @@ export class PetRenderer {
     if (!image.complete || image.naturalWidth === 0) return;
 
     this.ctx.imageSmoothingEnabled = true;
+    this.ctx.imageSmoothingQuality = 'high';
     const time = performance.now() / 1000;
     const width = def.frameWidth * scale;
     const height = def.frameHeight * scale;
     const motion = def.motion;
     const wave = Math.sin(time * (motion === 'waddle' ? 9 : 3));
     const tilt = motion === 'waddle' ? wave * 0.045 : motion === 'sway' ? wave * 0.07 : 0;
-    const lift = motion === 'bounce' ? Math.abs(Math.sin(time * 10)) * 12 :
-      motion === 'waddle' ? Math.abs(wave) * 4 : 0;
+    const lift = 0;
     this.ctx.save();
-    this.ctx.translate(position.x + width / 2, position.y + height - 12 - lift);
+    this.ctx.translate(position.x + width / 2, position.y + height + (def.bottomInset ?? 0) * scale - lift);
     this.ctx.rotate(tilt);
     if (def.effect === 'rest') this.ctx.scale(1.06, 0.9);
     if (def.effect === 'sleep') {
@@ -85,7 +87,7 @@ export class PetRenderer {
       frame.sw,
       frame.sh,
       -width / 2,
-      -height + 12,
+      -height,
       width,
       height,
     );
@@ -93,7 +95,7 @@ export class PetRenderer {
     const label = def.effect === 'sleep' ? 'Z z z' : def.effect === 'rest' ? '쉬는 중' : def.effect === 'happy' ? '♥' : def.effect === 'held' ? '어디 가?' : '';
     if (label) {
       this.ctx.save();
-      this.ctx.font = def.effect === 'happy' ? 'bold 30px sans-serif' : 'bold 18px Malgun Gothic, sans-serif';
+      this.ctx.font = def.effect === 'happy' ? '30px sans-serif' : '28px Dongle, sans-serif';
       this.ctx.textAlign = 'center';
       this.ctx.lineWidth = 5;
       this.ctx.strokeStyle = '#fffdf5';

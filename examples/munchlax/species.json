@@ -10,7 +10,8 @@
       "frameCount": 1,
       "fps": 2,
       "loop": true,
-      "motion": "breathe"
+      "motion": "breathe",
+      "bottomInset": 22
     },
     "walk": {
       "sheet": "munchlax.png",
@@ -19,7 +20,8 @@
       "frameCount": 1,
       "fps": 6,
       "loop": true,
-      "motion": "waddle"
+      "motion": "waddle",
+      "bottomInset": 22
     },
     "dragged": {
       "sheet": "munchlax.png",
@@ -29,7 +31,8 @@
       "fps": 2,
       "loop": true,
       "motion": "sway",
-      "effect": "held"
+      "effect": "held",
+      "bottomInset": 22
     },
     "sit": {
       "sheet": "munchlax.png",
@@ -39,7 +42,8 @@
       "fps": 2,
       "loop": true,
       "motion": "breathe",
-      "effect": "rest"
+      "effect": "rest",
+      "bottomInset": 22
     },
     "sleep": {
       "sheet": "munchlax.png",
@@ -49,7 +53,8 @@
       "fps": 2,
       "loop": true,
       "motion": "sleep",
-      "effect": "sleep"
+      "effect": "sleep",
+      "bottomInset": 22
     },
     "react": {
       "sheet": "munchlax.png",
@@ -59,7 +64,8 @@
       "fps": 0.8,
       "loop": false,
       "motion": "bounce",
-      "effect": "happy"
+      "effect": "happy",
+      "bottomInset": 22
     }
   },
   "behavior": {
@@ -68,7 +74,7 @@
     "idleMaxMs": 3000,
     "walkMinMs": 5000,
     "walkMaxMs": 12000,
-    "spriteScale": 0.6
+    "spriteScale": 0.24
   },
   "progression": [
     {

@@ -32,7 +32,7 @@ async function setup() {
   if (!fs.existsSync(friendConfig)) {
     const config = JSON.parse(fs.readFileSync(path.join(root, 'examples/munchlax/species.json'), 'utf8'));
     config.id = 'psyduck'; config.displayName = '고라파덕';
-    config.behavior.walkSpeedPxPerSec = 48; config.behavior.spriteScale = 0.6;
+    config.behavior.walkSpeedPxPerSec = 48; config.behavior.spriteScale = 0.24;
     for (const animation of Object.values(config.animations)) animation.sheet = 'psyduck.png';
     fs.writeFileSync(friendConfig, JSON.stringify(config, null, 2));
   }

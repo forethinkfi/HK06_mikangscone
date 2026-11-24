@@ -1,4 +1,4 @@
-import { BrowserWindow, app } from 'electron';
+import { BrowserWindow, app, screen } from 'electron';
 import path from 'node:path';
 import { getHomeWorkArea } from './displayBounds';
 
@@ -11,6 +11,7 @@ export class PetWindowManager {
 
   create(): BrowserWindow {
     const workArea = getHomeWorkArea();
+    const displayId = screen.getDisplayMatching(workArea).id;
 
     const window = new BrowserWindow({
       x: workArea.x,
@@ -35,6 +36,16 @@ export class PetWindowManager {
 
     window.setAlwaysOnTop(true, 'screen-saver');
     window.setIgnoreMouseEvents(true, { forward: true });
+    const onDisplayChange = () => {
+      const display = screen.getAllDisplays().find((item) => item.id === displayId) ?? screen.getPrimaryDisplay();
+      if (!window.isDestroyed()) window.setBounds(display.workArea);
+    };
+    screen.on('display-metrics-changed', onDisplayChange);
+    screen.on('display-removed', onDisplayChange);
+    window.once('closed', () => {
+      screen.removeListener('display-metrics-changed', onDisplayChange);
+      screen.removeListener('display-removed', onDisplayChange);
+    });
 
     if (process.platform === 'darwin') {
       window.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true });

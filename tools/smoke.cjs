@@ -20,8 +20,9 @@ app.whenReady().then(async () => {
     await delay(2200);
     const lines = await win.webContents.executeJavaScript('Array.from(document.querySelectorAll(".speech")).filter(e => !e.hidden).map(e => e.textContent)');
     assert.equal(lines.length, 2, 'Question and answer shown together');
-    assert.ok(lines[0].includes('먹고자'));
-    assert.ok(lines[1].includes('고라파덕'));
+    assert.ok(lines.every((line) => !line.includes('먹고자') && !line.includes('고라파덕')), 'Speech does not display character names');
+    assert.equal(await win.webContents.executeJavaScript('document.fonts.check("27px Dongle")'), true, 'Bundled cute font is loaded');
+    assert.equal(await win.webContents.executeJavaScript('document.querySelector("canvas").width === Math.round(innerWidth * devicePixelRatio)'), true, 'Canvas uses native display density');
     fs.mkdirSync(path.join(root, 'output'), { recursive: true });
     const screenshot = await win.webContents.capturePage();
     assert.equal(screenshot.toBitmap()[3], 0, 'Captured window background has zero alpha');
@@ -39,7 +40,7 @@ app.whenReady().then(async () => {
       }
     }
     assert.ok(grab, 'Munchlax pixels rendered');
-    const original = await win.webContents.executeJavaScript('document.querySelector(".speech").style.top');
+    const original = await win.webContents.executeJavaScript('document.querySelector(".speech").style.left');
     win.webContents.sendInputEvent({ type: 'mouseMove', ...grab });
     await delay(100);
     win.webContents.sendInputEvent({ type: 'mouseDown', button: 'left', clickCount: 1, ...grab });
@@ -48,7 +49,7 @@ app.whenReady().then(async () => {
     await delay(100);
     win.webContents.sendInputEvent({ type: 'mouseUp', button: 'left', clickCount: 1, x: grab.x + 100, y: grab.y - 120 });
     await delay(100);
-    const moved = await win.webContents.executeJavaScript('document.querySelector(".speech").style.top');
+    const moved = await win.webContents.executeJavaScript('document.querySelector(".speech").style.left');
     console.log({ grab, original, moved, viewport, size, cursor: await win.webContents.executeJavaScript('document.querySelector("canvas").style.cursor') });
     assert.ok(Math.abs(parseFloat(moved) - parseFloat(original)) > 50, 'Drag moves the selected pet');
     win.webContents.send('scene:command', 'quiet');
