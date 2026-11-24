@@ -143,7 +143,7 @@ async function main(): Promise<void> {
       }
       const after = petPosition(pet);
       if (Math.abs(after.y - before.y) > 0.01) pet.facing = after.y < before.y ? 4 : 0;
-      else if (Math.abs(after.x - before.x) > 0.01) pet.facing = after.x < before.x ? 2 : 6;
+      else if (Math.abs(after.x - before.x) > 0.01) pet.facing = after.x < before.x ? 6 : 2;
       pet.animation.update(delta);
       if (pet.state.getState() === 'react' && pet.animation.isFinished()) pet.behavior.endReaction();
       def = pet.species.animations[pet.state.getState()] ?? pet.species.animations.idle;
