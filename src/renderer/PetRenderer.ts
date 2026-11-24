@@ -70,6 +70,11 @@ export class PetRenderer {
     this.ctx.save();
     this.ctx.translate(position.x + width / 2, position.y + height - 12 - lift);
     this.ctx.rotate(tilt);
+    if (def.effect === 'rest') this.ctx.scale(1.06, 0.9);
+    if (def.effect === 'sleep') {
+      this.ctx.rotate(-0.18);
+      this.ctx.scale(1.02, 0.85);
+    }
     if (motion === 'breathe' || motion === 'sleep') {
       this.ctx.scale(1 + wave * 0.008, 1 + wave * 0.015);
     }
@@ -85,5 +90,19 @@ export class PetRenderer {
       height,
     );
     this.ctx.restore();
+    const label = def.effect === 'sleep' ? 'Z z z' : def.effect === 'rest' ? '쉬는 중' : def.effect === 'happy' ? '♥' : def.effect === 'held' ? '어디 가?' : '';
+    if (label) {
+      this.ctx.save();
+      this.ctx.font = def.effect === 'happy' ? 'bold 30px sans-serif' : 'bold 18px Malgun Gothic, sans-serif';
+      this.ctx.textAlign = 'center';
+      this.ctx.lineWidth = 5;
+      this.ctx.strokeStyle = '#fffdf5';
+      this.ctx.fillStyle = def.effect === 'happy' ? '#d45f7f' : '#365c69';
+      const x = position.x + width * 0.7;
+      const y = Math.max(30, position.y + 10 + wave * 4);
+      this.ctx.strokeText(label, x, y);
+      this.ctx.fillText(label, x, y);
+      this.ctx.restore();
+    }
   }
 }

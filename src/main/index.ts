@@ -19,6 +19,11 @@ import { IPC } from '../shared/ipcContract';
 
 const FALLBACK_SPECIES_ID = 'placeholder';
 
+// Reopening the launcher must never create another set of companions.
+if (!app.requestSingleInstanceLock()) {
+  app.exit(0);
+}
+
 registerAssetProtocolScheme();
 
 const windowManager = new PetWindowManager();

@@ -13,7 +13,7 @@ export function loadCompanionScene(active: SpeciesConfig): SpeciesConfig {
   try {
     const raw = JSON.parse(fs.readFileSync(path.join(getLocalSpeciesRoot(), 'scene.json'), 'utf8'));
     const ids: string[] = Array.isArray(raw.pets) ? raw.pets.filter((id: unknown) => typeof id === 'string').slice(0, 6) : [];
-    const companions = ids.filter((id) => id !== active.id).flatMap((id) => {
+    const companions = [...new Set(ids)].filter((id) => id !== active.id).flatMap((id) => {
       try { return [loadSpecies(id)]; } catch { return []; }
     });
     const settings = raw.chatter ?? {};

@@ -28,7 +28,8 @@
       "frameCount": 1,
       "fps": 2,
       "loop": true,
-      "motion": "sway"
+      "motion": "sway",
+      "effect": "held"
     },
     "sit": {
       "sheet": "munchlax.png",
@@ -37,7 +38,8 @@
       "frameCount": 1,
       "fps": 2,
       "loop": true,
-      "motion": "breathe"
+      "motion": "breathe",
+      "effect": "rest"
     },
     "sleep": {
       "sheet": "munchlax.png",
@@ -46,16 +48,18 @@
       "frameCount": 1,
       "fps": 2,
       "loop": true,
-      "motion": "sleep"
+      "motion": "sleep",
+      "effect": "sleep"
     },
     "react": {
       "sheet": "munchlax.png",
       "frameWidth": 475,
       "frameHeight": 475,
       "frameCount": 1,
-      "fps": 2,
+      "fps": 0.8,
       "loop": false,
-      "motion": "bounce"
+      "motion": "bounce",
+      "effect": "happy"
     }
   },
   "behavior": {
@@ -64,7 +68,7 @@
     "idleMaxMs": 3000,
     "walkMinMs": 5000,
     "walkMaxMs": 12000,
-    "spriteScale": 0.38
+    "spriteScale": 0.6
   },
   "progression": [
     {

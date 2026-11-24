@@ -13,6 +13,7 @@ export interface SpeciesAnimationDef {
   loop: boolean;
   /** Optional motion applied to a single illustration without changing the asset. */
   motion?: 'breathe' | 'waddle' | 'sway' | 'sleep' | 'bounce';
+  effect?: 'rest' | 'sleep' | 'happy' | 'held';
 }
 
 export interface SpeciesBehaviorDef {
