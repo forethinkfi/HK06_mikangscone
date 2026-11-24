@@ -4,6 +4,10 @@ const fs = require('node:fs');
 const assert = require('node:assert/strict');
 const root = path.resolve(__dirname, '..');
 app.setAppPath(root);
+const profile = path.join(root, 'output', 'smoke-profile');
+fs.mkdirSync(profile, { recursive: true });
+app.setPath('userData', profile);
+process.env.PET_SPECIES_ID = 'munchlax';
 require(path.join(root, 'dist/main/index.js'));
 const delay = (ms) => new Promise((resolve) => setTimeout(resolve, ms));
 app.whenReady().then(async () => {
@@ -31,7 +35,7 @@ app.whenReady().then(async () => {
     const size = screenshot.getSize();
     const viewport = win.getContentBounds();
     let grab;
-    for (let y = Math.floor(size.height * 0.78); y < size.height && !grab; y++) {
+    for (let y = Math.floor(size.height * 0.94); y < size.height && !grab; y++) {
       for (let x = 0; x < size.width / 2; x++) {
         const p = (y * size.width + x) * 4;
         if (pixels[p + 3] > 200 && pixels[p] > pixels[p + 2] + 10 && pixels[p + 1] > pixels[p + 2] + 10 && pixels[p + 2] > 60 && pixels[p + 2] < 180) {

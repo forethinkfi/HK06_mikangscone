@@ -21,7 +21,7 @@ export class AppSettings {
   load(): void {
     try {
       const raw = fs.readFileSync(this.filePath, 'utf-8');
-      this.settings = JSON.parse(raw) as PersistedSettings;
+      this.settings = JSON.parse(raw.replace(/^\uFEFF/, '')) as PersistedSettings;
     } catch {
       this.settings = {}; // first run, or an unreadable/corrupt file
     }

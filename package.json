@@ -7,6 +7,7 @@
   "license": "MIT",
   "main": "dist/main/index.js",
   "scripts": {
+    "setup:directional": "powershell -NoProfile -ExecutionPolicy Bypass -File tools/setup-directional.ps1",
     "start": "npm run build && node tools/start-pet.cjs",
     "setup:munchlax": "node tools/setup-munchlax.cjs",
     "dev": "vite",

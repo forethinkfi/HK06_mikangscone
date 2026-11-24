@@ -15,6 +15,9 @@ export interface SpeciesAnimationDef {
   motion?: 'breathe' | 'waddle' | 'sway' | 'sleep' | 'bounce';
   effect?: 'rest' | 'sleep' | 'happy' | 'held';
   bottomInset?: number;
+  pixelArt?: boolean;
+  displaySize?: number;
+  sourceFrames?: { sx: number; sy: number; sw: number; sh: number }[][];
 }
 
 export interface SpeciesBehaviorDef {

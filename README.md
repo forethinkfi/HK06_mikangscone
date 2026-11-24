@@ -4,6 +4,10 @@
 
 ## 시작
 
+현재 적용한 방향별 도트 애니메이션은 기본 설치 후 `npm run setup:directional`로 연결합니다. [PMDCollab SpriteCollab](https://github.com/PMDCollab/SpriteCollab)의 원본 게임 스프라이트(CHUNSOFT, 각 캐릭터 `pmd/credits.txt` 참조)를 개인 폴더로 받습니다. 이미지 자체는 저장소에 올리지 않으며 엔진 MIT와 별개입니다. 좌우 이동에는 해당 옆모습, 벽을 올라갈 때는 뒷모습, 내려올 때는 앞모습을 사용합니다. 원본 그림은 `species-illustration-backup.json` 설정과 함께 남겨둡니다.
+
+`sourceFrames`는 방향(아래·왼쪽 아래·왼쪽·왼쪽 위·위·오른쪽 위·오른쪽·오른쪽 아래)별 프레임의 실제 그림 영역입니다. 원본 이미지를 편집하지 않고 이 영역을 재생합니다. `pixelArt: true`는 도트가 번지지 않게 그리며 `displaySize`는 이동 영역 크기, `spriteScale`은 픽셀 확대 배율입니다.
+
 Node.js 22 이상에서:
 
 ```sh

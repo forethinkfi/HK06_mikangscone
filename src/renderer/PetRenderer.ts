@@ -47,8 +47,8 @@ export class PetRenderer {
     return {
       x: position.x,
       y: position.y,
-      width: def.frameWidth * scale,
-      height: def.frameHeight * scale,
+      width: def.displaySize ?? def.frameWidth * scale,
+      height: def.displaySize ?? def.frameHeight * scale,
     };
   }
 
@@ -56,9 +56,22 @@ export class PetRenderer {
     this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
   }
 
+  getPaintBounds(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number): Rect {
+    const size = def.displaySize ?? def.frameWidth * scale;
+    return { x: position.x + (size - frame.sw * scale) / 2,
+      y: position.y + size - frame.sh * scale, width: frame.sw * scale, height: frame.sh * scale };
+  }
+
   render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number): void {
     const image = this.getImage(def.sheet);
     if (!image.complete || image.naturalWidth === 0) return;
+
+    if (def.pixelArt) {
+      const box = this.getPaintBounds(def, frame, position, scale);
+      this.ctx.imageSmoothingEnabled = false;
+      this.ctx.drawImage(image, frame.sx, frame.sy, frame.sw, frame.sh, Math.round(box.x), Math.round(box.y), box.width, box.height);
+      return;
+    }
 
     this.ctx.imageSmoothingEnabled = true;
     this.ctx.imageSmoothingQuality = 'high';

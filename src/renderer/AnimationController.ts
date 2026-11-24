@@ -54,8 +54,12 @@ export class AnimationController {
       this.totalElapsedMs >= (this.def.frameCount / this.def.fps) * 1000;
   }
 
-  getCurrentFrameRect(): FrameRect | null {
+  getCurrentFrameRect(direction = 0): FrameRect | null {
     if (!this.def) return null;
+    if (this.def.sourceFrames?.length) {
+      const row = this.def.sourceFrames[direction % this.def.sourceFrames.length];
+      return row[this.frameIndex % row.length];
+    }
     return {
       sx: this.frameIndex * this.def.frameWidth,
       sy: 0,

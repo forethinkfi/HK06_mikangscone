@@ -44,7 +44,6 @@ function loadSpeciesWithFallback(id: string) {
     return loadSpecies(id);
   } catch (error) {
     console.error(`Failed to load species "${id}", falling back to "${FALLBACK_SPECIES_ID}":`, error);
-    if (id !== FALLBACK_SPECIES_ID) appSettings.setSelectedSpeciesId(FALLBACK_SPECIES_ID);
     return loadSpecies(FALLBACK_SPECIES_ID);
   }
 }

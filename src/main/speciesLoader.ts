@@ -51,7 +51,7 @@ function listSpeciesInRoot(root: string, source: SpeciesSource): SpeciesListing[
     if (!entry.isDirectory()) continue;
     const configPath = path.join(root, entry.name, 'species.json');
     try {
-      const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf-8'));
+      const parsed: unknown = JSON.parse(fs.readFileSync(configPath, 'utf-8').replace(/^\uFEFF/, ''));
       if (isSpeciesConfig(parsed)) {
         listings.push({ id: parsed.id, displayName: parsed.displayName, source });
       }
@@ -122,7 +122,7 @@ export function loadSpecies(id: string): SpeciesConfig {
   const configPath = path.join(dir, 'species.json');
 
   const raw = fs.readFileSync(configPath, 'utf-8');
-  const parsed: unknown = JSON.parse(raw);
+  const parsed: unknown = JSON.parse(raw.replace(/^\uFEFF/, ''));
 
   if (!isSpeciesConfig(parsed)) {
     throw new Error(`Invalid species config at ${configPath}`);

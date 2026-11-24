@@ -14,13 +14,14 @@ interface Companion {
   bubble: HTMLDivElement;
   until: number;
   speakingUntil: number;
+  facing: number;
 }
 
 async function main(): Promise<void> {
   const canvas = document.getElementById('pet-canvas') as HTMLCanvasElement;
   const renderer = new PetRenderer(canvas);
   const bounds = await window.petAPI.getWorkArea();
-  const petSize = (pet: Companion) => (pet.species.animations.idle?.frameWidth ?? 475) * pet.species.behavior.spriteScale;
+  const petSize = (pet: Companion) => pet.species.animations.idle?.displaySize ?? (pet.species.animations.idle?.frameWidth ?? 475) * pet.species.behavior.spriteScale;
   const petPosition = (pet: Companion) => edgePosition(pet.behavior.getPosition().x, bounds.width, bounds.height, petSize(pet));
   let pets: Companion[] = [];
   let chatter: ChatterConfig | undefined;
@@ -67,7 +68,7 @@ async function main(): Promise<void> {
     pets = [loaded, ...(loaded.companions ?? [])].map((species, index) => {
       const state = new PetStateMachine();
       const animation = new AnimationController();
-      const size = (species.animations.idle?.frameWidth ?? 475) * species.behavior.spriteScale;
+      const size = species.animations.idle?.displaySize ?? (species.animations.idle?.frameWidth ?? 475) * species.behavior.spriteScale;
       const behavior = new BehaviorController(state, species.behavior,
         { x: Math.max(0, bounds.height - size) + Math.max(0, Math.min(bounds.width - size, bounds.width * 0.25 + index * 160)), y: 0 },
         () => ['idle', 'sit', 'sleep']);
@@ -77,8 +78,9 @@ async function main(): Promise<void> {
         const def = species.animations[next] ?? species.animations.idle;
         if (def) animation.setAnimation(def);
       });
-      if (species.animations.idle) animation.setAnimation(species.animations.idle);
-      return { species, state, animation, behavior, bubble, until: 0, speakingUntil: 0 };
+      const initialAnimation = species.animations[state.getState()] ?? species.animations.idle;
+      if (initialAnimation) animation.setAnimation(initialAnimation);
+      return { species, state, animation, behavior, bubble, until: 0, speakingUntil: 0, facing: 0 };
     });
     nextChat = performance.now() + 6000; nextMeeting = performance.now() + 20000;
   });
@@ -97,9 +99,7 @@ async function main(): Promise<void> {
       held.pet.state.transition('idle'); held.pet.behavior.interruptForDrag();
     }
     if (held.dragging) {
-      const def = held.pet.species.animations.idle!;
-      const scale = held.pet.species.behavior.spriteScale;
-      held.pet.behavior.setPosition({ x: nearestEdge({ x: pointer.x - held.offset.x, y: pointer.y - held.offset.y }, bounds.width, bounds.height, def.frameWidth * scale), y: 0 });
+      held.pet.behavior.setPosition({ x: nearestEdge({ x: pointer.x - held.offset.x, y: pointer.y - held.offset.y }, bounds.width, bounds.height, petSize(held.pet)), y: 0 });
     }
   });
   canvas.addEventListener('pointerdown', (event) => {
@@ -131,24 +131,31 @@ async function main(): Promise<void> {
       else say(random(pets), random(chatter.solo), now);
       schedule();
     }
-    for (const [index, pet] of pets.entries()) {
-      const def = pet.species.animations[pet.state.getState()] ?? pet.species.animations.idle;
+    for (const pet of pets) {
+      let def = pet.species.animations[pet.state.getState()] ?? pet.species.animations.idle;
       if (!def) continue;
       const scale = pet.species.behavior.spriteScale;
+      const before = petPosition(pet);
       if (now >= pet.speakingUntil || held?.pet === pet) {
         const size = petSize(pet);
         const route = edgeDimensions(bounds.width, bounds.height, size);
         pet.behavior.update(delta, { x: 0, y: 0, width: route.length + size, height: bounds.height }, size);
       }
+      const after = petPosition(pet);
+      if (Math.abs(after.y - before.y) > 0.01) pet.facing = after.y < before.y ? 4 : 0;
+      else if (Math.abs(after.x - before.x) > 0.01) pet.facing = after.x < before.x ? 2 : 6;
       pet.animation.update(delta);
       if (pet.state.getState() === 'react' && pet.animation.isFinished()) pet.behavior.endReaction();
-      const frame = pet.animation.getCurrentFrameRect();
+      def = pet.species.animations[pet.state.getState()] ?? pet.species.animations.idle;
+      if (!def) continue;
+      const frame = pet.animation.getCurrentFrameRect(pet.facing);
       if (frame) renderer.render(def, frame, petPosition(pet), scale);
       const pos = petPosition(pet);
-      pet.bubble.style.left = `${Math.max(12, Math.min(bounds.width - 280, pos.x + def.frameWidth * scale / 2 - 130))}px`;
-      const overlaps = pets.some((other) => other !== pet && now < other.until && Math.abs(petPosition(other).x - pos.x) < 280);
-      pet.bubble.style.top = `${Math.max(8, pos.y - pet.bubble.offsetHeight - 12 - (overlaps && index % 2 ? 110 : 0))}px`;
       pet.bubble.hidden = now >= pet.until;
+      const head = frame && def.pixelArt ? renderer.getPaintBounds(def, frame, pos, scale).y : pos.y;
+      const bubbleWidth = pet.bubble.offsetWidth || 190;
+      pet.bubble.style.left = `${Math.max(4, Math.min(bounds.width - bubbleWidth - 4, pos.x + petSize(pet) / 2 - bubbleWidth / 2))}px`;
+      pet.bubble.style.top = `${Math.max(4, head - pet.bubble.offsetHeight - 4)}px`;
     }
     if (chatter?.enabled && now >= nextMeeting && !reply && !held) {
       for (let i = 0; i < pets.length; i++) {
