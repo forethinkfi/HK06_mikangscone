@@ -9,7 +9,8 @@ import type { PetState } from '../shared/petState';
 const ALLOWED_TRANSITIONS: Record<PetState, PetState[]> = {
   idle: ['walk', 'dragged', 'sleep', 'sit', 'react'],
   walk: ['idle', 'dragged'],
-  dragged: ['idle', 'sit'],
+  dragged: ['idle', 'sit', 'hurt'],
+  hurt: ['idle', 'dragged'],
   sit: ['idle', 'walk', 'dragged'],
   sleep: ['idle', 'dragged'],
   react: ['idle'],

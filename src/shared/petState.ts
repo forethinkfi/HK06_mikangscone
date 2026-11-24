@@ -1,4 +1,4 @@
-export type PetState = 'idle' | 'walk' | 'dragged' | 'sit' | 'sleep' | 'react';
+export type PetState = 'idle' | 'walk' | 'dragged' | 'sit' | 'sleep' | 'react' | 'hurt';
 
 export const PET_STATES: readonly PetState[] = [
   'idle',
@@ -7,4 +7,5 @@ export const PET_STATES: readonly PetState[] = [
   'sit',
   'sleep',
   'react',
+  'hurt',
 ];
