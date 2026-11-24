@@ -29,7 +29,9 @@ describe('BehaviorController', () => {
     const sm = new PetStateMachine();
     const controller = new BehaviorController(sm, makeBehavior(), { x: 50, y: 50 }, () => ['sleep']);
     expect(sm.getState()).toBe('sleep');
-    controller.update(1, bounds, spriteWidth);
+    controller.update(12000, bounds, spriteWidth);
+    expect(sm.getState()).toBe('sleep');
+    controller.update(8000, bounds, spriteWidth);
     expect(sm.getState()).toBe('walk');
   });
   it('starts idle at the given position', () => {
@@ -95,8 +97,6 @@ describe('BehaviorController', () => {
   });
 
   it('picks an unlocked idle variant and still eventually starts walking', () => {
-    // idleMin/Max and walkMin/Max collapsed to fixed values so the random
-    // draw only decides which variant beginIdlePhase() picks, not durations.
     vi.spyOn(Math, 'random').mockReturnValue(0.6); // pool ['idle','sit'] -> index 1 -> 'sit'
     const sm = new PetStateMachine();
     const controller = new BehaviorController(
@@ -110,6 +110,8 @@ describe('BehaviorController', () => {
     // The phase timer must keep counting down while sit-ing (IDLE_LIKE), not
     // just while plain 'idle' — otherwise it would sit forever.
     controller.update(1500, bounds, spriteWidth);
+    expect(sm.getState()).toBe('sit');
+    controller.update(6500, bounds, spriteWidth);
     expect(sm.getState()).toBe('walk');
   });
 

@@ -48,12 +48,18 @@ export class BehaviorController {
    * sleep doesn't make the pet constantly switch poses.
    */
   private beginIdlePhase(): void {
-    this.phaseRemainingMs = randomBetween(this.behavior.idleMinMs, this.behavior.idleMaxMs);
     this.stateMachine.transition('idle');
 
     const variants = this.getUnlockedIdleVariants();
     const pool: PetState[] = ['idle', ...variants];
     const chosen = pool[Math.floor(Math.random() * pool.length)];
+    if (chosen === 'sleep') {
+      this.phaseRemainingMs = randomBetween(12000, 20000);
+    } else if (chosen === 'sit') {
+      this.phaseRemainingMs = randomBetween(5000, 8000);
+    } else {
+      this.phaseRemainingMs = randomBetween(this.behavior.idleMinMs, this.behavior.idleMaxMs);
+    }
     if (chosen !== 'idle') this.stateMachine.transition(chosen);
   }
 
