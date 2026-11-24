@@ -11,7 +11,7 @@ foreach ($entry in @(@('munchlax', '0446', '먹고자'), @('psyduck', '0054', '�
     }
     [xml]$xml = Get-Content (Join-Path $pmdRoot 'AnimData.xml')
     $animations = [ordered]@{}
-    foreach ($pair in @(@('idle', 'Idle'), @('walk', 'Walk'), @('sleep', 'Sleep'), @('sit', 'Idle'), @('dragged', 'Idle'), @('react', 'Pose'), @('hurt', 'Hurt'))) {
+    foreach ($pair in @(@('idle', 'Idle'), @('walk', 'Walk'), @('sleep', 'Sleep'), @('sit', 'Idle'), @('dragged', 'Walk'), @('react', 'Pose'), @('hurt', 'Hurt'))) {
         $meta = $xml.AnimData.Anims.Anim | Where-Object { $_.Name -eq $pair[1] } | Select-Object -First 1
         $file = $pair[1] + '-Anim.png'
         $imagePath = Join-Path $pmdRoot $file
@@ -49,8 +49,17 @@ foreach ($entry in @(@('munchlax', '0446', '먹고자'), @('psyduck', '0054', '�
         } finally { $bitmap.Dispose() }
     }
     $configPath = Join-Path $petRoot 'species.json'
+    if ($env:PCPET_STRUGGLE_ONLY -eq '1') {
+        $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($config.animations.idle.pixelArt) {
+            $animations.dragged.displaySize = $config.animations.idle.displaySize
+            $config.animations | Add-Member -NotePropertyName dragged -NotePropertyValue $animations.dragged -Force
+            [System.IO.File]::WriteAllText($configPath, ($config | ConvertTo-Json -Depth 15), [System.Text.UTF8Encoding]::new($false))
+        }
+        continue
+    }
     if ($env:PCPET_IMPACT_ONLY -eq '1') {
-        $config = Get-Content -LiteralPath $configPath -Raw | ConvertFrom-Json
+        $config = Get-Content -LiteralPath $configPath -Raw -Encoding UTF8 | ConvertFrom-Json
         if ($config.animations.idle.pixelArt) {
             $animations.hurt.displaySize = $config.animations.idle.displaySize
             $config.animations | Add-Member -NotePropertyName hurt -NotePropertyValue $animations.hurt -Force

@@ -55,6 +55,10 @@ app.whenReady().then(async () => {
     await delay(180);
     const liftedTop = await win.webContents.executeJavaScript(spriteTop);
     assert.ok(liftedTop < originalTop - 60, `Held pet enters the interior (${originalTop} → ${liftedTop})`);
+    const heldRegion = { x: Math.max(0, grab.x + 45), y: Math.max(0, grab.y - 175), width: 145, height: 130 };
+    const heldFrame = (await win.webContents.capturePage(heldRegion)).toPNG();
+    await delay(110);
+    assert.notDeepEqual((await win.webContents.capturePage(heldRegion)).toPNG(), heldFrame, 'Held pet animates with a stationary pointer');
     win.webContents.sendInputEvent({ type: 'mouseUp', button: 'left', clickCount: 1, x: grab.x + 100, y: grab.y - 120 });
     await delay(100);
     const moved = await win.webContents.executeJavaScript('document.querySelector(".speech").style.left');

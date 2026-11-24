@@ -62,9 +62,31 @@ export class PetRenderer {
       y: position.y + size - frame.sh * scale, width: frame.sw * scale, height: frame.sh * scale };
   }
 
-  render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number): void {
+  render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number, grip?: Vec2): void {
     const image = this.getImage(def.sheet);
     if (!image.complete || image.naturalWidth === 0) return;
+
+    if (grip) {
+      const box = def.pixelArt ? this.getPaintBounds(def, frame, position, scale) : {
+        x: position.x, y: position.y, width: frame.sw * scale, height: frame.sh * scale,
+      };
+      const beat = Math.sin(performance.now() * 0.026);
+      this.ctx.save();
+      this.ctx.imageSmoothingEnabled = !def.pixelArt;
+      this.ctx.translate(position.x + grip.x, position.y + grip.y);
+      this.ctx.rotate(beat * 0.24);
+      const split = Math.floor(frame.sh * 0.62);
+      const upperHeight = box.height * split / frame.sh;
+      const x = box.x - position.x - grip.x;
+      const y = box.y - position.y - grip.y;
+      if (split > 0) {
+        this.ctx.drawImage(image, frame.sx, frame.sy, frame.sw, split, x, y, box.width, upperHeight);
+      }
+      this.ctx.drawImage(image, frame.sx, frame.sy + split, frame.sw, frame.sh - split,
+        x + beat * 3, y + upperHeight - Math.abs(beat) * 2, box.width, box.height - upperHeight);
+      this.ctx.restore();
+      return;
+    }
 
     if (def.pixelArt) {
       const box = this.getPaintBounds(def, frame, position, scale);

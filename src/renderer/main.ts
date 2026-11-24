@@ -132,13 +132,13 @@ async function main(): Promise<void> {
     }
     canvas.setPointerCapture(event.pointerId);
   });
-  function release(event: PointerEvent) {
+  function release(event: Event) {
     if (!held) return;
-    if (event.type === 'pointerup') moveHeld(event);
+    if (event instanceof PointerEvent && event.type === 'pointerup') moveHeld(event);
     if (held.dragging && held.pet.airborne) {
       held.pet.airborne.velocity = event.type === 'pointerup' ? releaseVelocity(held.samples) : { x: 0, y: 0 };
     }
-    else {
+    else if (event.type === 'pointerup') {
       held.pet.state.transition('idle'); held.pet.behavior.react();
       if (chatter?.enabled) say(held.pet, random(chatter.solo), performance.now());
     }
@@ -146,6 +146,8 @@ async function main(): Promise<void> {
   }
   window.addEventListener('pointerup', release);
   window.addEventListener('pointercancel', release);
+  canvas.addEventListener('lostpointercapture', release);
+  window.addEventListener('blur', release);
   function simulateFlight(pet: Companion, now: number, delta: number) {
     if (!pet.airborne || held?.pet === pet) return;
     const size = petSize(pet);
@@ -198,7 +200,8 @@ async function main(): Promise<void> {
       def = animationFor(pet.species, pet.state.getState());
       if (!def) continue;
       const frame = pet.animation.getCurrentFrameRect(pet.facing);
-      if (frame) renderer.render(def, frame, petPosition(pet), scale);
+      if (frame) renderer.render(def, frame, petPosition(pet), scale,
+        held?.pet === pet && held.dragging ? held.offset : undefined);
       const pos = petPosition(pet);
       pet.bubble.hidden = now >= pet.until;
       const head = frame && def.pixelArt ? renderer.getPaintBounds(def, frame, pos, scale).y : pos.y;
