@@ -32,7 +32,7 @@ const SCHEMA = {
       },
     },
     section: { type: 'string', description: '아래 "분류 후보" 중 이 메모에 가장 맞는 이름 하나를 그대로. 맞는 게 없거나 후보가 없으면 빈 문자열.' },
-    reply: { type: 'string', description: '비서 캐릭터가 말풍선으로 사용자에게 할 한두 문장. 친근한 존댓말, 이모지 없이. 맞춘 알람이 있으면 날짜와 시간을 구체적으로 말한다.' },
+    reply: { type: 'string', description: '비서 캐릭터가 말풍선으로 사용자에게 할 한두 문장. 아래 "말투"를 따르고(없으면 친근한 존댓말), 이모지 없이. 맞춘 알람이 있으면 날짜와 시간을 구체적으로 말한다.' },
   },
 };
 
@@ -63,12 +63,12 @@ function imageBlocks(images) {
 }
 
 /** 메모 정리. 실패하면 예외를 던진다(렌더러가 규칙 기반 정리로 대신한다). */
-async function organize(apiKey, { text, title = '', kind = 'memo', images = [], sections = [] }) {
+async function organize(apiKey, { text, title = '', kind = 'memo', images = [], sections = [], voice = '' }) {
   const client = new Anthropic({ apiKey, timeout: 60000, maxRetries: 1 });
   const user = `현재 시각: ${nowContext()}
 종류: ${KIND_LABEL[kind] || KIND_LABEL.memo}
 ${title ? `기존 제목: ${title}\n` : ''}분류 후보: ${(sections || []).slice(0, 20).join(', ') || '(없음)'}
-<memo>
+${voice ? `reply ${String(voice).slice(0, 200)}\n` : ''}<memo>
 ${text}
 </memo>`;
   const res = await client.beta.messages.create({

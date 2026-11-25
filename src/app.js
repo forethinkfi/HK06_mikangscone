@@ -47,7 +47,7 @@ const stageBox = () => document.getElementById('stage');
 const W = () => (stageBox() && stageBox().clientWidth) || innerWidth, H = () => (stageBox() && stageBox().clientHeight) || innerHeight;
 
 /* ─────────── 스타일 테마 ─────────── */
-const THEMES = [
+const NOTE_STYLES_DEFAULT = [
   { id: 'cherry', name: '체리 스캘럽', shape: 'scallop', stroke: '#d93a35', sw: 2.6, fill: '#fcf8ee', clip: { c: '#a9d3ee', e: '#7fb5da' }, clipX: 44, back: { t: 'g', a: '#b7cdee', b: '#eaf1fb' }, br: -2, tab: { bg: '#a9d3ee', ink: '#21425a' }, hl: 'rgba(217,58,53,.2)', hl2: 'rgba(169,211,238,.38)', rule: 'rgba(110,140,190,.3)', pad: '50px 40px 34px', orn: [{ t: 'starsilver', x: 2, y: 83, s: 58, r: -12 }] },
   { id: 'notebook', name: '레드 노트', shape: 'notebook', stroke: '#e4dccb', sw: 1.2, fill: '#fbf6ea', clip: { c: '#d6342e', e: '#a82320' }, clipX: 220, back: { t: 's', a: '#8f1f2c' }, br: 1.8, tab: { bg: '#d6342e', ink: '#ffffff' }, hl: 'rgba(214,52,46,.2)', hl2: 'rgba(214,52,46,.12)', rule: 'rgba(180,120,110,.3)', pad: '56px 34px 34px 58px', orn: [{ t: 'bowred', x: 73, y: 5, s: 96, r: 14 }] },
   { id: 'olive', name: '올리브 타원', shape: 'oval', stroke: '#8d9b86', ring: '#a9b5a2', sw: 2, fill: '#fbf6ea', clip: { c: '#f2ebd9', e: '#d3c9ae' }, clipX: 80, back: { t: 'g', a: '#aebcab', b: '#e6ece2' }, br: -2.5, tab: { bg: '#f2ebd9', ink: '#4b5645' }, hl: 'rgba(141,155,134,.34)', hl2: 'rgba(141,155,134,.22)', rule: 'rgba(120,135,112,.28)', pad: '86px 62px 76px', orn: [{ t: 'heartcream', x: 4, y: 84, s: 60, r: -8 }, { t: 'starsage', x: 85, y: 50, s: 50, r: 10 }] },
@@ -55,7 +55,22 @@ const THEMES = [
   { id: 'butter', name: '버터 스티치', shape: 'stitch', stroke: '#e2cf9a', sw: 1.6, dash: '#c9a54a', fill: '#fcf8ee', clip: { c: '#f2dc8f', e: '#d6b955' }, clipX: 140, back: { t: 'g', a: '#f0d374', b: '#fbefc4' }, br: -2, tab: { bg: '#f2dc8f', ink: '#5a4712' }, hl: 'rgba(240,211,116,.55)', hl2: 'rgba(240,211,116,.32)', rule: 'rgba(200,165,80,.3)', pad: '54px 44px 40px', orn: [{ t: 'buttonstar', x: 0, y: 1, s: 60, r: -10 }] },
   { id: 'pink', name: '핑크 타원', shape: 'oval', stroke: '#eaa6b6', ring: '#f3c3cf', sw: 2, fill: '#fcf8f1', clip: { c: '#f2a9b9', e: '#d98698' }, clipX: 230, back: { t: 's', a: '#f3b9c5' }, br: 2.5, tab: { bg: '#f2a9b9', ink: '#5a2331' }, hl: 'rgba(242,169,185,.5)', hl2: 'rgba(242,169,185,.3)', rule: 'rgba(225,150,168,.3)', pad: '86px 62px 76px', orn: [{ t: 'starsilver', x: 2, y: 80, s: 60, r: -10 }, { t: 'bowpink', x: 78, y: 86, s: 70, r: 8 }] },
 ];
-const TH = (id) => THEMES.find((t) => t.id === id) || THEMES[0];
+// 블랙앤화이트: 펜으로 그린 종이 (테이프·바인더 클립·클립·겹친 종이·말린 모서리)
+const BW = (id, name, bw, clip, clipX, tab, swatch) => ({ id, name, shape: 'bw', bw, stroke: '#1a1a1a', sw: 2.2, fill: '#fdfdfd', clip: { c: '#111111', e: '#111111', ...clip }, clipX, back: { t: 'n' }, br: 0, tab, swatch,
+  hl: 'rgba(0,0,0,.13)', hl2: 'rgba(0,0,0,.05)', rule: 'rgba(0,0,0,.13)', pad: '58px 44px 40px', orn: [] });
+const NOTE_STYLES_BW = [
+  BW('bw-tape', '테이프 · 말린 모서리', { stack: 0, curl: true, rot: -0.6 }, { kind: 'tape' }, 145, { bg: '#ffffff', ink: '#111111' }, '#ffffff'),
+  BW('bw-binder', '바인더 · 두 장', { stack: 1, rot: 1 }, { kind: 'binder' }, 210, { bg: '#111111', ink: '#ffffff' }, '#111111'),
+  BW('bw-diag', '사선 테이프', { stack: 0, rot: -2.5 }, { kind: 'diag' }, 6, { bg: '#e9e9e9', ink: '#111111' }, '#e9e9e9'),
+  BW('bw-bigclip', '큰 집게 · 세 장', { stack: 2, rot: 0.4 }, { kind: 'bigbinder' }, 145, { bg: '#2b2b2b', ink: '#ffffff' }, '#2b2b2b'),
+  BW('bw-paperclip', '클립 · 겹친 종이', { stack: 1, rot: -1.6, backRot: 4 }, { kind: 'paperclip' }, 70, { bg: '#f5f5f5', ink: '#111111' }, '#f5f5f5'),
+  BW('bw-round', '둥근 카드 · 줄무늬 테이프', { stack: 0, round: true, rot: 0.8 }, { kind: 'stripe' }, 145, { bg: '#c9c9c9', ink: '#111111' }, '#c9c9c9'),
+];
+const NOTE_SETS = { default: NOTE_STYLES_DEFAULT, bw: NOTE_STYLES_BW };
+let THEMES = NOTE_STYLES_DEFAULT;
+const strHash = (x) => [...String(x)].reduce((a, ch) => (a * 31 + ch.charCodeAt(0)) >>> 0, 7);
+// 지금 테마에 없는 스타일 id(다른 테마에서 고른 것)는 같은 메모가 늘 같은 모양이 되도록 해시로 고른다
+const TH = (id) => THEMES.find((t) => t.id === id) || THEMES[strHash(id) % THEMES.length];
 
 /* ─────────── 스티커 ─────────── */
 const starP = 'M24 4l5.6 13.2 14.4 1.2-11 9.4 3.4 14L24 34.6 11.6 41.8l3.4-14-11-9.4 14.4-1.2z';
@@ -94,8 +109,46 @@ function notebookPath(Wd, Ht) {
   for (const y of ys.reverse()) p += `V${y + 8}A8 8 0 0 0 ${x0} ${y - 8}`;
   return p + `V${y0 + r}Q${x0} ${y0} ${x0 + r} ${y0}Z`;
 }
+// 손으로 그린 듯 살짝 흔들리는 사각형
+function wobbleRect(x, y, w, h, seed, amp = 1.3) {
+  let r = seed || 1; const rn = () => { r = (r * 16807) % 2147483647; return (r / 2147483647 - 0.5) * 2 * amp; };
+  const pts = [];
+  const step = 46;
+  for (let i = 0; i <= Math.ceil(w / step); i++) pts.push([x + Math.min(w, i * step), y + rn()]);
+  for (let i = 1; i <= Math.ceil(h / step); i++) pts.push([x + w + rn(), y + Math.min(h, i * step)]);
+  for (let i = 1; i <= Math.ceil(w / step); i++) pts.push([x + w - Math.min(w, i * step), y + h + rn()]);
+  for (let i = 1; i < Math.ceil(h / step); i++) pts.push([x + rn(), y + h - Math.min(h, i * step)]);
+  return 'M' + pts.map(([a, b]) => `${a.toFixed(1)} ${b.toFixed(1)}`).join(' L') + 'Z';
+}
+function bwPaper(t) {
+  const o = t.bw || {}, seed = strHash(t.id) % 9973 + 3;
+  let out = '';
+  for (let i = (o.stack || 0); i >= 1; i--) {
+    const rot = (o.backRot || 2.4) * (i % 2 ? 1 : -1) + i * 0.6;
+    out += `<path d="${wobbleRect(20 + i * 5, 26 + i * 7, 380, 516, seed + i * 7)}" fill="#f2f2f2" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round" transform="rotate(${rot} 210 290)"/>`;
+  }
+  if (o.round) out += `<rect x="18" y="22" width="384" height="518" rx="34" fill="${t.fill}" stroke="#1a1a1a" stroke-width="2.4"/>`;
+  else if (o.curl) {
+    // 왼쪽 아래 모서리가 살짝 말린 종이
+    out += `<path d="M18 24 L402 22 L404 538 L70 540 C46 528 30 512 18 488 Z" fill="${t.fill}" stroke="#1a1a1a" stroke-width="2.4" stroke-linejoin="round"/>`
+      + `<path d="M18 488 C34 498 52 500 66 496 C62 512 64 528 70 540 C46 528 30 512 18 488 Z" fill="#e6e6e6" stroke="#1a1a1a" stroke-width="2.2" stroke-linejoin="round"/>`;
+  } else out += `<path d="${wobbleRect(18, 22, 384, 518, seed)}" fill="${t.fill}" stroke="#1a1a1a" stroke-width="2.4" stroke-linejoin="round"/>`;
+  return `<g transform="rotate(${o.rot || 0} 210 280)">${out}</g>`;
+}
+function bwClipSVG(c, left) {
+  const K = {
+    tape: '<path d="M22 22l86-3 2 30-88 3z" fill="#f1f1f1" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/><path d="M30 25l2 22M100 23l1 24" stroke="#1a1a1a" stroke-width="1" opacity=".25"/>',
+    stripe: '<defs><pattern id="hz" width="7" height="7" patternUnits="userSpaceOnUse" patternTransform="rotate(45)"><rect width="7" height="7" fill="#fff"/><rect width="3" height="7" fill="#1a1a1a" opacity=".55"/></pattern></defs><path d="M48 16h34l-1 40H49z" fill="url(#hz)" stroke="#1a1a1a" stroke-width="2"/>',
+    diag: '<g transform="rotate(-38 65 35)"><path d="M14 20l100 1 1 26-100-1z" fill="#ededed" stroke="#1a1a1a" stroke-width="2" stroke-linejoin="round"/><path d="M14 20l6 6-6 6 6 7-6 7M115 21l-6 6 6 6-6 7 6 7" fill="none" stroke="#1a1a1a" stroke-width="1.6"/></g>',
+    binder: '<path d="M52 30h26l6 20H46z" fill="#111"/><path d="M56 30c-3-12 2-22 9-22s12 10 9 22" fill="none" stroke="#1a1a1a" stroke-width="2.6"/><path d="M58 30c0-8 3-13 7-13s7 5 7 13" fill="none" stroke="#1a1a1a" stroke-width="2"/>',
+    bigbinder: '<path d="M38 28h54l10 28H28z" fill="#111"/><path d="M48 28c-4-15 5-25 17-25s21 10 17 25" fill="none" stroke="#1a1a1a" stroke-width="3"/><path d="M52 28c0-10 6-17 13-17s13 7 13 17" fill="none" stroke="#1a1a1a" stroke-width="2.2"/>',
+    paperclip: '<path d="M58 54V16c0-7 5-11 10-11s10 4 10 11v36c0 5-3 8-7 8s-7-3-7-8V20" fill="none" stroke="#1a1a1a" stroke-width="3" stroke-linecap="round"/>',
+  };
+  return `<svg class="clip bwclip" style="left:${left}px" viewBox="0 0 130 70" aria-hidden="true">${K[c.kind] || K.tape}</svg>`;
+}
 function paperSVG(t, Wd = 420, Ht = 560) {
   let b = '';
+  if (t.shape === 'bw') return `<svg class="paper" viewBox="0 0 ${Wd} ${Ht}" preserveAspectRatio="none" aria-hidden="true" style="overflow:visible">${bwPaper(t)}</svg>`;
   if (t.shape === 'scallop') b = `<path d="${scallop(Wd, Ht)}" fill="${t.fill}" stroke="${t.stroke}" stroke-width="${t.sw}" stroke-linejoin="round"/>`;
   else if (t.shape === 'notebook') b = `<path d="${notebookPath(Wd, Ht)}" fill="${t.fill}" stroke="${t.stroke}" stroke-width="${t.sw}"/>`;
   else if (t.shape === 'oval') b = `<ellipse cx="210" cy="280" rx="194" ry="262" fill="${t.fill}" stroke="${t.stroke}" stroke-width="${t.sw}"/><ellipse cx="210" cy="280" rx="181" ry="249" fill="none" stroke="${t.ring}" stroke-width="1.5"/>`;
@@ -103,6 +156,7 @@ function paperSVG(t, Wd = 420, Ht = 560) {
   return `<svg class="paper" viewBox="0 0 ${Wd} ${Ht}" preserveAspectRatio="none" aria-hidden="true">${b}</svg>`;
 }
 function clipSVG(c, left = 0) {
+  if (c.kind) return bwClipSVG(c, left);
   let wave = ''; for (let i = 0; i < 12; i++) wave += 'a5 5 0 0 1 -10 0';
   const bar = `M17 28H113Q125 28 125 40V56${wave}V40Q5 28 17 28Z`;
   const grooves = c.metal ? `<path d="M34 36v16M46 36v16M58 36v16M70 36v16M82 36v16M94 36v16" stroke="${c.e}" stroke-width="1.6" opacity=".85"/>` : '';
@@ -114,7 +168,7 @@ const DEFAULTS = {
   character: 'mikang', petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', petTarget: 'all', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true,
-  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '', petWalk: true, locMode: 'os', hiddenUntil: 0, customHistory: [],
+  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '', petWalk: true, theme: 'default', voice: 'auto', soonTalk: true, locMode: 'os', hiddenUntil: 0, customHistory: [],
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -157,6 +211,28 @@ function addSection(name) {
 }
 let openSec = null, addingSec = false, dockFolded = false, modalKind = '';
 function toggleSection(id) { openSec = openSec === id ? null : id; renderTabs(); }
+
+/* ─────────── 테마 · 말투 ─────────── */
+const APP_THEMES = [
+  { id: 'default', name: '일반', desc: '처음 디자인 · 귀여운 친구 말투', preview: ['#a9d3ee', '#d6342e', '#f2ebd9', '#f2dc8f', '#f2a9b9'], character: 'mikang', notes: 'default' },
+  { id: 'bw', name: '블랙앤화이트', desc: '펜으로 그린 메모지 · 정중한 말투 · 프리텐다드', preview: ['#111111', '#ffffff', '#d9d9d9', '#6b6b6b', '#2b2b2b'], character: 'blackcat', notes: 'bw' },
+];
+const curTheme = () => APP_THEMES.find((x) => x.id === S.settings.theme) || APP_THEMES[0];
+function applyTheme(id, fromUser) {
+  const th = APP_THEMES.find((x) => x.id === id) || APP_THEMES[0];
+  S.settings.theme = th.id;
+  document.documentElement.dataset.theme = th.id;
+  THEMES = NOTE_SETS[th.notes] || NOTE_STYLES_DEFAULT;
+  if (fromUser) { S.settings.character = th.character; S.settings.voice = 'auto'; petChar = ''; save(); }
+  api.applySettings({ theme: th.id });
+  if (typeof renderPet === 'function' && $('#pet')) renderPet();
+  if (openId && byId(openId)) renderCard(byId(openId));
+  renderTabs(); refreshAgenda();
+  if (modalKind === 'board') renderBoard();
+}
+/** 지금 말투: 설정에서 고른 것, 아니면 캐릭터의 기본 성격 */
+const voiceId = () => (S.settings.voice && S.settings.voice !== 'auto' && window.Voice[S.settings.voice] ? S.settings.voice : (S.settings.character === 'custom' ? 'friend' : C.charVoice(S.settings.character)));
+const V = () => window.Voice[voiceId()] || window.Voice.friend;
 
 let ctx = 'desktop', fgBrowser = false, forcedMode = null;
 let summoned = false, openId = null, agendaOpen = false, selStk = null, modalOpen = false;
@@ -274,6 +350,7 @@ function closeAll() {
   commitCurrent();
   openId = null; agendaOpen = false; selStk = null; summoned = false;
   $('#sheet').classList.remove('open'); $('#agenda').classList.remove('open');
+  $('#stage').classList.remove('edge-reveal');
   closeBubble();
   renderTabs(); applyMode(); save();
   api.release();
@@ -318,7 +395,7 @@ function renderCard(n) {
   const t = TH(n.theme), sheet = $('#sheet');
   const card = h('div', { class: 'card', 'data-id': n.id, style: `--pad:${t.pad};--hl:${t.hl};--hl2:${t.hl2};--rule:${t.rule};--br:${t.br}deg` });
   const bk = t.back;
-  card.append(h('div', { class: 'backing', style: bk.t === 'g'
+  if (bk.t !== 'n') card.append(h('div', { class: 'backing', style: bk.t === 'g'
     ? `background-color:${bk.b};background-image:linear-gradient(90deg,${bk.a}99 50%,transparent 50%),linear-gradient(${bk.a}99 50%,transparent 50%);background-size:24px 24px`
     : `background:${bk.a}` }));
   card.insertAdjacentHTML('beforeend', paperSVG(t));
@@ -385,7 +462,7 @@ function renderCard(n) {
       h('span', { style: 'margin-left:auto' }), aiBtn),
     h('div', { class: 'row' },
       h('span', { class: 'lbl' }, '스타일'),
-      THEMES.map((x) => h('button', { class: 'sw', type: 'button', 'aria-label': x.name, title: x.name, 'aria-pressed': String(x.id === n.theme), style: `background:${x.clip.c}`, onclick: () => { n.theme = x.id; save(); renderCard(n); renderTabs(); } })),
+      THEMES.map((x) => h('button', { class: 'sw', type: 'button', 'aria-label': x.name, title: x.name, 'aria-pressed': String(x.id === TH(n.theme).id), style: `background:${x.swatch || x.clip.c}`, onclick: () => { n.theme = x.id; save(); renderCard(n); renderTabs(); } })),
       h('span', { style: 'margin-left:auto' }), delBtn));
   sheet.replaceChildren(card, bar);
   renderStickers(n); renderChips(n);
@@ -537,8 +614,8 @@ async function addPhotos(n, files) {
   }
   if (added) {
     n.viewedAt = Date.now(); save(); renderTabs();
-    if (openId === n.id) { renderCard(n); perchSay(keys.anthropic ? `사진 ${added}장 넣었어요. 사진 속 일정도 읽어드릴게요!` : `사진 ${added}장 넣었어요.`, 3500); }
-    else say(`'${n.keyword || '새 메모'}' 메모에 사진 ${added}장을 넣었어요.`, { ttl: 5000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] });
+    if (openId === n.id) { renderCard(n); perchSay(V().photos(added, keys.anthropic), 3500); }
+    else say(V().photosTo(n.keyword || '새 메모', added), { ttl: 5000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] });
   }
   return added;
 }
@@ -673,7 +750,7 @@ function remind(n, e, pre) {
   const body = `${fmtDate(when)} ${fmtTime(when)} · '${n.keyword || '메모'}' 메모`;
   api.notify({ title, body, noteId: n.id });
   n.ring = true; chime(); setMood('alert', 6000);
-  say(pre ? `${e.title}, ${pre}분 남았어요! 준비됐나요?` : `${e.title} 시간이에요!`, { ttl: 9000 });
+  say(pre ? V().remindPre(e.title, pre) : V().remindNow(e.title), { ttl: 9000 });
   const info = { title: e.title, repeat: e.repeat };
   toast({ title, body, theme: n.theme, actions: [
     { label: '메모 열기', primary: true, run: () => openNote(n.id) },
@@ -699,8 +776,26 @@ function tick() {
     fire(n, e); dirty = true;
   }
   if (S.settings.hiddenUntil && Date.now() >= S.settings.hiddenUntil) showAgain();
+  mentionSoon(now);
   morningBrief();
   if (dirty) { save(); renderTabs(); refreshAgenda(); }
+}
+/** 알람이 다가오면 캐릭터가 말풍선으로 먼저 알려준다. 숨어 있으면 알림 카드로. */
+function mentionSoon(now) {
+  if (!S.settings.soonTalk) return;
+  for (const n of S.notes) for (const e of n.events) {
+    if (!e.alarm || e.done || e.fired) continue;
+    const mins = (e.at - now) / 60000;
+    for (const T of [60, 10]) {
+      const k = 'soon' + T;
+      if (e[k] === e.at || mins > T || mins <= (T === 60 ? 15 : 1) || e.pre === T) continue;
+      e[k] = e.at; save();
+      const msg = V().soon(e.title, fmtIn(e.at - now));
+      if (isHidden()) toast({ title: C.charName(S), body: msg, theme: n.theme, ttl: 9000, actions: [{ label: '메모 열기', run: () => openNote(n.id) }] });
+      else { setMood('talk', 2500); say(msg, { ttl: 9000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] }); }
+      return; // 한 번에 하나씩
+    }
+  }
 }
 function morningBrief() {
   if (!S.settings.morningBrief) return;
@@ -709,7 +804,7 @@ function morningBrief() {
   S.lastBrief = key; save();
   setTimeout(async () => {
     let w = ''; if (api.weather) { const t = await weatherReply('오늘 날씨').catch(() => ''); if (/°C/.test(t)) w = ' ' + t; }
-    say(`좋은 아침이에요! ${briefing()}${w}`, { ttl: 14000 }); setMood('talk', 3000);
+    say(`${V().morning} ${briefing()}${w}`, { ttl: 14000 }); setMood('talk', 3000);
   }, 1200);
   if (todayEvents().length) api.notify({ title: `${C.charName(S)}의 오늘 브리핑`, body: briefing() });
 }
@@ -723,8 +818,8 @@ function briefing() {
   S.notes.forEach((n) => n.events.forEach((e) => all.push({ n, e })));
   const today = todayEvents();
   const nx = all.filter((x) => !x.e.done && x.e.alarm && x.e.at > now).sort((a, b) => a.e.at - b.e.at)[0];
-  const a = today.length ? `오늘 일정은 ${today.length}개예요. ${today.slice(0, 3).map((x) => `${fmtTime(new Date(x.e.at))} ${x.e.title}${x.e.deadline ? '(마감)' : ''}`).join(', ')}${today.length > 3 ? ' 외' : ''}.` : '오늘 남은 일정이 없어요.';
-  const b = nx ? ` 다음 알람은 ${fmtIn(nx.e.at - now)}, '${nx.e.title}'이에요.` : '';
+  const a = today.length ? V().briefToday(today.length, `${today.slice(0, 3).map((x) => `${fmtTime(new Date(x.e.at))} ${x.e.title}${x.e.deadline ? '(마감)' : ''}`).join(', ')}${today.length > 3 ? ' 외' : ''}`) : V().briefNone;
+  const b = nx ? V().briefNext(fmtIn(nx.e.at - now), nx.e.title) : '';
   return a + b;
 }
 
@@ -749,7 +844,7 @@ function localResult(text, title, kind) {
 }
 async function aiOrganize(text, title, kind, images = []) {
   if (keys.anthropic) {
-    const r = await api.organize({ text, title, kind, sections: S.sections.map((x) => x.name), images: images.filter((d) => /^data:image\/(jpeg|png|gif|webp);base64,/.test(d)).slice(0, 4) });
+    const r = await api.organize({ text, title, kind, voice: V().prompt, sections: S.sections.map((x) => x.name), images: images.filter((d) => /^data:image\/(jpeg|png|gif|webp);base64,/.test(d)).slice(0, 4) });
     if (r.ok) { try { return normalizeAI(r.result, text); } catch {} }
     else if (r.reason === 'error') toast({ title: 'AI 정리 대신 기본 규칙으로 정리했어요', body: r.error, ttl: 4500 });
   }
@@ -757,10 +852,10 @@ async function aiOrganize(text, title, kind, images = []) {
 }
 function replyFor(r, added) {
   if (r.reply) return r.reply;
-  if (!added.length) return `'${r.keyword}'(으)로 정리해 뒀어요.`;
+  if (!added.length) return V().organized(r.keyword);
   const e = added[0], d = new Date(e.at);
-  let s = `${fmtDate(d)} ${e.allDay ? '' : fmtTime(d) + ' '}'${e.title}' 알람을 맞췄어요!`;
-  if (e.pre) s += ` ${e.pre >= 60 ? e.pre / 60 + '시간' : e.pre + '분'} 전에도 한 번 더 알려드릴게요.`;
+  let s = V().alarmSet(`${fmtDate(d)}${e.allDay ? '' : ' ' + fmtTime(d)}`, e.title);
+  if (e.pre) s += V().preAlso(e.pre);
   if (added.length > 1) s += ` (일정 ${added.length}개)`;
   return s;
 }
@@ -777,7 +872,7 @@ let organizing = new Set();
 async function organizeNote(n, { auto }) {
   const text = n.text.trim();
   const usePhotos = keys.anthropic && n.photos.length > 0;
-  if (!text && !usePhotos) { if (!auto) perchSay(n.photos.length ? '사진 속 글은 AI 연결(Claude 키)이 있어야 읽을 수 있어요.' : '메모를 먼저 적어주세요!', 4500); return; }
+  if (!text && !usePhotos) { if (!auto) perchSay(n.photos.length ? V().needKeyForPhoto : V().needText, 4500); return; }
   if (organizing.has(n.id)) return;
   organizing.add(n.id); setMood('think');
   const btn = !auto && $('#aiBtn'); if (btn) { btn.disabled = true; btn.replaceChildren(iel('sparkle', 16), '정리하는 중…'); }
@@ -837,44 +932,35 @@ function placeFromText(text) {
   return words.join(' ').trim();
 }
 async function weatherReply(text = '') {
-  if (!api.weather) return '날씨는 데스크톱 앱에서 알려드릴 수 있어요.';
+  if (!api.weather) return V().weatherDesktopOnly;
   const city = placeFromText(text) || (S.settings.weatherCity || '').trim();
   const arg = city || (await getCoords()) || '';
   const r = await api.weather(arg).catch(() => ({ ok: false }));
-  if (!r || !r.ok) return (r && r.error) || '날씨를 가져오지 못했어요. 잠시 뒤에 다시 물어봐 주세요.';
+  if (!r || !r.ok) return (r && r.error) || V().weatherFail;
   const tm = /내일/.test(text), d = tm ? r.tomorrow : r.today, rd = (v) => Math.round(v);
-  const where = r.src === 'os' ? `지금 계신 ${r.place}` : r.auto ? `지금 계신 ${r.place}(대략)` : r.place;
+  const v = V();
+  const where = r.src === 'os' ? v.hereAt(r.place) : r.auto ? v.hereAt(`${r.place}(대략)`) : r.place;
   let msg;
   if (/미세먼지|초미세|공기/.test(text) && r.air && r.air.grade) {
-    msg = `${josa(where, '은', '는')} 지금 미세먼지 ${r.air.grade}이에요 (PM10 ${rd(r.air.pm10)}, 초미세 ${rd(r.air.pm25)}㎍/㎥).`;
-    if (/나쁨/.test(r.air.grade)) msg += ' 마스크 챙기세요!';
+    msg = v.dust(where, r.air.grade, rd(r.air.pm10), rd(r.air.pm25));
+    if (/나쁨/.test(r.air.grade)) msg += v.mask;
     return msg;
   }
-  if (tm) {
-    msg = `${where} 내일은 ${WMO(d.code)}, ${rd(d.min)}~${rd(d.max)}°C예요.`;
-    if (d.pop != null) msg += ` 비 올 확률은 ${d.pop}%.`;
-  } else {
-    msg = `${josa(where, '은', '는')} 지금 ${rd(r.now.temp)}°C`;
-    if (r.now.feels != null && Math.abs(r.now.feels - r.now.temp) >= 2) msg += `(체감 ${rd(r.now.feels)}°C)`;
-    msg += `, ${WMO(r.now.code)}이에요. 오늘은 ${rd(d.min)}~${rd(d.max)}°C`;
-    msg += d.pop != null ? `, 비 올 확률 ${d.pop}%예요.` : '예요.';
-    if (r.air && r.air.grade) msg += ` 미세먼지는 ${r.air.grade}.`;
-  }
-  if (d.pop >= 50) msg += ' 우산 꼭 챙기세요!'; else if (d.max <= 3) msg += ' 많이 추워요. 따뜻하게 입으세요.'; else if (d.max >= 30) msg += ' 더우니 물 자주 마셔요.';
+  if (tm) msg = v.tomorrow(where, WMO(d.code), rd(d.min), rd(d.max), d.pop);
+  else msg = v.now(where, rd(r.now.temp), r.now.feels != null && Math.abs(r.now.feels - r.now.temp) >= 2 ? rd(r.now.feels) : null, WMO(r.now.code), rd(d.min), rd(d.max), d.pop, r.air && r.air.grade);
+  if (d.pop >= 50) msg += v.umbrella; else if (d.max <= 3) msg += v.cold; else if (d.max >= 30) msg += v.hot;
   return msg;
 }
 async function askWhere() {
-  setMood('think'); say('어디쯤인지 볼게요…', { menu: false, ttl: 0 });
+  setMood('think'); say(V().whereLoading, { menu: false, ttl: 0 });
   let msg;
   if (!api.whereAmI) msg = '위치는 데스크톱 앱에서 알려드릴 수 있어요.';
   else {
     const c = await getCoords(true);
     const r = await api.whereAmI(c).catch(() => ({ ok: false }));
-    if (!r || !r.ok) msg = (r && r.error) || '지금 위치를 알아내지 못했어요.';
+    if (!r || !r.ok) msg = (r && r.error) || V().whereFail;
     else {
-      msg = r.src === 'os'
-        ? `지금 ${r.place} 근처에 계세요${r.acc ? ` (${fmtAcc(r.acc)})` : ''}. 컴퓨터 위치 서비스로 알아낸 위치예요.`
-        : `지금 ${r.place} 근처에 계신 것 같아요. 인터넷 주소로 알아낸 대략적인 위치라 실제와 조금 다를 수 있어요.${locHelp() ? ' ' + locHelp() : ''}`;
+      msg = r.src === 'os' ? V().whereOs(r.place, r.acc ? fmtAcc(r.acc) : '') : V().whereIp(r.place) + (locHelp() ? ' ' + locHelp() : '');
       const w = await weatherReply('지금 날씨').catch(() => '');
       if (/°C/.test(w)) msg += ' ' + w;
     }
@@ -882,7 +968,7 @@ async function askWhere() {
   setMood('talk', 2500); say(msg, { ttl: 14000 });
 }
 async function askWeather(text) {
-  setMood('think'); say('날씨를 알아볼게요…', { menu: false, ttl: 0 });
+  setMood('think'); say(V().weatherLoading, { menu: false, ttl: 0 });
   const msg = await weatherReply(text);
   setMood('talk', 2500); say(msg, { ttl: 12000 });
 }
@@ -890,7 +976,7 @@ async function askAssistant(text) {
   text = text.trim(); if (!text) return;
   if (isWeatherAsk(text)) return askWeather(text);
   if (isWhereAsk(text)) return askWhere();
-  setMood('think'); say('정리하고 있어요…', { menu: false, ttl: 0 });
+  setMood('think'); say(V().thinking, { menu: false, ttl: 0 });
   const r = await aiOrganize(text, '', 'command');
   const n = blankNote();
   n.text = r.body || text; n.title = r.title || '';
@@ -940,7 +1026,7 @@ async function startRecording(n, kind) {
     mr.start(1000);
     setMood('listen'); renderPet();
     if (n && openId === n.id) renderCard(n);
-    if (kind === 'command') say('듣고 있어요. 다 말하면 저를 한 번 더 눌러주세요.', { ttl: 0, menu: false });
+    if (kind === 'command') say(V().listen, { ttl: 0, menu: false });
   } catch (e) {
     rec = null; setMood('idle');
     toast({ title: '마이크를 쓸 수 없어요', body: '시스템 설정에서 Mikang Memo의 마이크 권한을 켜주세요.', ttl: 5000 });
@@ -970,7 +1056,7 @@ function startDictation(d, n, kind) {
   }, 100);
   setMood('listen'); renderPet();
   if (n && openId === n.id) renderCard(n);
-  if (kind === 'command') say('듣고 있어요. 다 말하면 저를 한 번 더 눌러주세요.', { ttl: 0, menu: false });
+  if (kind === 'command') say(V().listen, { ttl: 0, menu: false });
 }
 async function finishDictation(r, reason) {
   if (r.done) return; r.done = true;
@@ -1041,7 +1127,7 @@ async function applyTranscript(n, text, at) {
     n.orgHash = noteHash(n);
     save(); renderTabs(); refreshAgenda();
     if (openId === n.id) { renderCard(n); perchSay(replyFor(r, added), 6000); }
-    else say(`'${n.keyword}' 메모에 녹음을 정리해 뒀어요. ${added.length ? replyFor(r, added) : ''}`, { ttl: 8000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] });
+    else say(`${V().recDone(n.keyword)} ${added.length ? replyFor(r, added) : ''}`, { ttl: 8000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] });
     setMood('talk', 2500);
   } finally { if (mood === 'think') setMood('idle'); }
 }
@@ -1175,7 +1261,7 @@ function petTick(t) {
         setTimeout(() => {
           if (motion.state !== 'land') return;
           petState('idle'); beginRest(); savePetPos();
-          if (dizzy) { petState('react'); setMood('talk', 1500); say(['어지러워요…', '우와, 날았다!', '살살 던져주세요!'][Math.floor(Math.random() * 3)], { ttl: 2500 }); setTimeout(() => { if (motion.state === 'react') { petState('idle'); beginRest(); } }, 1400); }
+          if (dizzy) { petState('react'); setMood('talk', 1500); say(V().dizzy(), { ttl: 2500 }); setTimeout(() => { if (motion.state === 'react') { petState('idle'); beginRest(); } }, 1400); }
         }, 380);
       }
     }
@@ -1248,7 +1334,7 @@ function pat() {
   motion.lastTouch = performance.now();
   if (!petState('react')) { petState('idle'); petState('react'); }
   setMood('talk', 1400);
-  say(['헤헤, 좋아요!', '기분 좋아요~', '오늘도 힘내요!', '더 쓰다듬어 주세요!'][Math.floor(Math.random() * 4)], { ttl: 2200 });
+  say(V().pat(), { ttl: 2200 });
   setTimeout(() => { if (motion.state === 'react') { petState('idle'); beginRest(); } }, 1500);
 }
 /** 캐릭터를 누르면 책갈피가 펼쳐지고, 한 번 더 누르면 접힌다. */
@@ -1275,7 +1361,7 @@ function hideFor(what) {
 function showAgain(silent) {
   if (!S.settings.hiddenUntil) return;
   S.settings.hiddenUntil = 0; save(); applyHidden();
-  if (!silent) { setMood('talk', 2000); say('다시 왔어요! 무엇을 도와드릴까요?', { ttl: 5000 }); }
+  if (!silent) { setMood('talk', 2000); say(V().back, { ttl: 5000 }); }
 }
 function isHidden() { return S.settings.hiddenUntil > Date.now(); }
 function applyHidden() {
@@ -1284,7 +1370,7 @@ function applyHidden() {
   updateHit();
 }
 function askHide() {
-  say('얼마 동안 숨어 있을까요? 알람은 계속 알려드려요.', { ttl: 15000, menu: false, actions: [
+  say(V().hideAsk, { ttl: 15000, menu: false, actions: [
     { label: '30분', run: () => hideFor(30) }, { label: '1시간', run: () => hideFor(60) }, { label: '2시간', run: () => hideFor(120) },
     { label: '내일 아침까지', run: () => hideFor('tomorrow') } ] });
 }
@@ -1311,7 +1397,7 @@ function say(msg, { ttl = 6000, menu, actions = [] } = {}) {
 }
 function greeting() {
   const hr = new Date().getHours();
-  const hi = hr < 11 ? '좋은 아침이에요!' : hr < 17 ? '무엇을 도와드릴까요?' : '오늘 하루 수고 많았어요!';
+  const hi = V().greet(hr);
   return `${hi} ${briefing()}`;
 }
 function openMenu() { say(greeting(), { menu: true, ttl: 0 }); setTimeout(() => { const i = $('#askIn'); i && i.focus(); }, 60); }
@@ -1337,8 +1423,28 @@ function closeBubble() { clearTimeout(bubble.t); bubble = { open: false, menu: f
 /* ─────────── 가장자리 미리보기 ─────────── */
 let edgeT = 0, edgeSide = null;
 function recentNotes() { return S.notes.filter((n) => !isEmpty(n)).sort((a, b) => (b.viewedAt || b.createdAt) - (a.viewedAt || a.createdAt)).slice(0, 5); }
+/** 캐릭터를 숨겨 둔 동안: 화면 양 끝에 마우스를 대면 메모 책갈피를 펼친다 (캐릭터를 누르는 대신) */
+let revealT = 0, revealLeaveT = 0;
+function edgeReveal() {
+  const st = $('#stage');
+  if (st.classList.contains('edge-reveal')) return;
+  st.classList.add('edge-reveal'); summoned = true; applyMode(); renderTabs(); api.focus();
+}
+function handleHiddenEdge(c) {
+  const st = $('#stage'), shown = st.classList.contains('edge-reveal');
+  if (!shown) {
+    if (c.edge) { if (!revealT) revealT = setTimeout(() => { revealT = 0; if (cursor.edge && isHidden()) edgeReveal(); }, +S.settings.peekDelay || 350); }
+    else { clearTimeout(revealT); revealT = 0; }
+    return;
+  }
+  // 책갈피에서 멀어지면 (메모를 열지 않았다면) 다시 접는다
+  const far = S.settings.side === 'left' ? c.x > 460 : c.x < W() - 460;
+  if (far && !openId && !agendaOpen && !modalOpen && !bubble.open && !dragging) { if (!revealLeaveT) revealLeaveT = setTimeout(() => { revealLeaveT = 0; if (!openId && !agendaOpen && isHidden()) closeAll(); }, 600); }
+  else { clearTimeout(revealLeaveT); revealLeaveT = 0; }
+}
 function handleEdge(c) {
-  if (!S.settings.peek || isHidden() || openId || agendaOpen || modalOpen || (bubble.open && bubble.menu) || dragging) { clearTimeout(edgeT); edgeSide = null; return; }
+  if (isHidden()) { handleHiddenEdge(c); return; }
+  if (!S.settings.peek || openId || agendaOpen || modalOpen || (bubble.open && bubble.menu) || dragging) { clearTimeout(edgeT); edgeSide = null; return; }
   if (c.edge && !peek.open) {
     const el = document.elementFromPoint(c.edge === 'left' ? 1 : W() - 2, c.y);
     if (el && el.closest('.tab,.pet,.sheet')) return;
@@ -1530,6 +1636,12 @@ async function openSettings() {
   function render() {
     const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': '설정' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, '설정'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
+      h('h4', {}, '테마'),
+      h('div', { class: 'theme-list', role: 'group', 'aria-label': '테마' }, APP_THEMES.map((th) =>
+        h('button', { type: 'button', class: 'theme-card', 'aria-pressed': String(st.theme === th.id), onclick: () => { applyTheme(th.id, true); render(); } },
+          h('span', { class: 'tsw' }, th.preview.map((c) => h('i', { style: `background:${c}` }))),
+          h('b', {}, th.name), h('small', {}, th.desc)))),
+      h('p', { class: 'note' }, '테마를 바꾸면 메모지 모양·색·글꼴과 AI 비서 캐릭터·말투가 함께 바뀌어요. 캐릭터와 말투는 아래에서 따로 바꿀 수도 있어요.'),
       h('h4', {}, 'AI 비서 캐릭터'),
       h('div', { class: 'chars' },
         C.ORDER.map((id) => h('button', { type: 'button', 'aria-pressed': String(st.character === id), onclick: () => { st.character = id; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); } },
@@ -1547,13 +1659,18 @@ async function openSettings() {
           }, html: ico('x', 12) }))))) : null,
       makerUI(),
       h('p', { class: 'note' }, '내 사진을 고르면 배경을 자동으로 지우고 스티커처럼 테두리를 둘러 캐릭터로 만들어요. 사진은 이 컴퓨터 밖으로 나가지 않아요.'),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '말투 (성격)'),
+        h('div', { class: 'seg', role: 'group' },
+          h('button', { type: 'button', 'aria-pressed': String(st.voice === 'auto'), onclick: () => { st.voice = 'auto'; save(); render(); } }, `캐릭터에 맞게 (${window.Voice[st.character === 'custom' ? 'friend' : C.charVoice(st.character)].label})`),
+          window.Voice.ORDER.map((vid) => h('button', { type: 'button', 'aria-pressed': String(st.voice === vid), onclick: () => { st.voice = vid; save(); render(); } }, window.Voice[vid].label))),
+        h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); say(`${V().greet(new Date().getHours())} ${briefing()}`, { ttl: 7000 }); setMood('talk', 2000); } }, '말투 들어보기')),
       h('div', { class: 'row' }, h('label', {}, '이름'), h('input', { type: 'text', maxlength: '8', value: st.petName, placeholder: (C.CHARS[st.character] || C.CHARS.mikang).name, oninput: (e) => { st.petName = e.target.value; save(); } })),
       h('h4', {}, '화면'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '책갈피 위치'), seg('side', [['left', '왼쪽'], ['right', '오른쪽']], applySide)),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '표시 방식'), seg('modeOverride', [['auto', '자동'], ['desktop', '항상 책갈피'], ['pet', '항상 캐릭터만']], () => { api.applySettings({ modeOverride: st.modeOverride }); applyMode(); })),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '캐릭터만 남길 때'), seg('petTarget', [['all', '바탕화면이 아니면 항상'], ['browser', '웹 브라우저를 쓸 때만']], applyMode)),
       h('p', { class: 'note' }, '자동: 바탕화면이 보이면 책갈피가 펼쳐지고, 다른 앱이나 웹을 쓰는 동안에는 캐릭터만 남아요. 캐릭터를 누르면 그 화면에서 책갈피가 나와요.'),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '가장자리 미리보기'), seg('peek', [[true, '켜기'], [false, '끄기']]), seg('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '화면 끝 메모 보기'), seg('peek', [[true, '켜기'], [false, '끄기']], () => api.applySettings({ peek: st.peek })), seg('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '캐릭터 움직임'), seg('petWalk', [[true, '화면 아래를 걸어다니기'], [false, '가만히 있기']])),
       h('p', { class: 'note' }, '캐릭터를 잡아서 던지면 날아가서 통통 튀고, 길게 누르면 쓰다듬을 수 있어요. 마우스를 올리면 멈춰서 기다려요.'),
       h('h4', {}, '섹션 (큰 책갈피)'),
@@ -1579,7 +1696,9 @@ async function openSettings() {
         } }, '위치 확인 · 권한 허용'),
         locStatus ? h('span', { class: 'keystate ' + (/정확한/.test(locStatus) ? 'good' : 'bad') }, locStatus) : null) : null,
       h('p', { class: 'note' }, '컴퓨터 위치 서비스: Mac은 위치 서비스, Windows는 Windows 위치 서비스로 동네 단위까지 찾아요 (처음에 권한을 물어봐요). 안 되면 인터넷 주소(IP)로 도시 단위로 찾아요. 좌표는 동네 이름을 찾을 때 OpenStreetMap에만 보내요. 날씨·미세먼지는 Open-Meteo — 모두 API 키가 필요 없어요.'),
+      h('p', { class: 'note' }, '화면 왼쪽·오른쪽 끝에 마우스를 대면 최근 메모가 나와요. 캐릭터를 숨겨 둔 동안에는 이 설정과 상관없이 메모 책갈피가 나와요.'),
       h('h4', {}, '자동 정리 · 알람'),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 말하기'), seg('soonTalk', [[true, '1시간 전 · 10분 전에 캐릭터가 알려주기'], [false, '끄기']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '자동 정리'), seg('autoOrganize', [[true, '메모를 접으면 자동으로'], [false, '버튼 누를 때만']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '마감 미리 알림'), seg('preDeadline', [[0, '없음'], [30, '30분 전'], [60, '1시간 전'], [180, '3시간 전'], [1440, '하루 전']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 알림'), seg('preNormal', [[0, '없음'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전']])),
@@ -1760,6 +1879,8 @@ function bindGlobal() {
     if (cmd === 'summon') { if (isHidden()) showAgain(); else onPetClick(); }
     else if (cmd === 'show') showAgain();
     else if (cmd.startsWith('hide:')) hideFor(cmd.slice(5));
+    else if (cmd.startsWith('theme:')) applyTheme(cmd.slice(6), true);
+    else if (cmd === 'peek:toggle') { S.settings.peek = !S.settings.peek; save(); api.applySettings({ peek: S.settings.peek }); toast({ title: S.settings.peek ? '화면 끝 메모 보기를 켰어요' : '화면 끝 메모 보기를 껐어요', ttl: 2500 }); }
     else if (cmd === 'board') openBoard();
     else if (cmd === 'new') newNote();
     else if (cmd === 'record') quickRecord();
@@ -1789,12 +1910,14 @@ async function boot() {
   keys = await api.keyStatus().catch(() => keys);
   api.applySettings({ launchAtLogin: S.settings.launchAtLogin, modeOverride: S.settings.modeOverride });
   bindGlobal();
+  applyTheme(S.settings.theme, false);
+  api.applySettings({ peek: S.settings.peek });
   applySide(); renderTabs(); renderPet(); fit(); applyMode(); applyHidden();
   save();
   tick(); setInterval(tick, 5000);
-  if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 저를 누르면 책갈피가 펼쳐지고 접혀요. 책갈피 맨 위의 '메모 모아보기'로 모든 메모를 한눈에 볼 수 있고, 말풍선 버튼을 누르면 날씨나 부탁을 말할 수 있어요.`, { ttl: 14000 }), 800);
+  if (!loaded) setTimeout(() => say(V().hello(C.charName(S)), { ttl: 14000 }), 800);
   // 디버그/스크린샷용 훅
-  window.__mk = { hideFor, showAgain, isHidden, getCoords, motion, petState, pat, placeFromText, weatherReply, askWhere, S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
+  window.__mk = { applyTheme, V, mentionSoon, edgeReveal, hideFor, showAgain, isHidden, getCoords, motion, petState, pat, placeFromText, weatherReply, askWhere, S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
 }
 boot();
 })();

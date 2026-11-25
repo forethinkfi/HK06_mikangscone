@@ -21,7 +21,7 @@ if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.setAppUserModelId('com.mikangscone.bookmarkmemo');
 if (process.platform === 'linux') app.commandLine.appendSwitch('enable-transparent-visuals');
 
-let win = null, tray = null, interactive = false, lastCursor = '', modeOverride = 'auto', hiddenUntil = 0;
+let win = null, tray = null, interactive = false, lastCursor = '', modeOverride = 'auto', hiddenUntil = 0, themeId = 'default', peekOn = true;
 let display = null;
 
 const send = (ch, ...a) => { if (win && !win.isDestroyed()) win.webContents.send(ch, ...a); };
@@ -114,6 +114,11 @@ function buildTrayMenu() {
       { label: '내일 아침(9시)까지', click: () => send('cmd', 'hide:tomorrow') },
       { label: '다시 켤 때까지', click: () => send('cmd', 'hide:forever') },
     ] },
+    { label: '테마', submenu: [
+      { label: '일반', type: 'radio', checked: themeId === 'default', click: () => send('cmd', 'theme:default') },
+      { label: '블랙앤화이트', type: 'radio', checked: themeId === 'bw', click: () => send('cmd', 'theme:bw') },
+    ] },
+    { label: '화면 끝에 마우스 대면 메모 보기', type: 'checkbox', checked: peekOn, click: () => send('cmd', 'peek:toggle') },
     { label: '화면 모드', submenu: [mode('auto', '자동 (바탕화면이면 책갈피, 앱을 쓰면 캐릭터만)'), mode('desktop', '항상 책갈피'), mode('pet', '항상 캐릭터만')] },
     { label: '설정…', click: () => send('cmd', 'settings') },
     { label: '데이터 폴더 열기', click: () => shell.openPath(store.dir()) },
@@ -148,6 +153,8 @@ ipcMain.on('settings:apply', (_e, s) => {
   if (typeof s.launchAtLogin === 'boolean' && app.isPackaged) app.setLoginItemSettings({ openAtLogin: s.launchAtLogin, openAsHidden: true });
   if (s.modeOverride && s.modeOverride !== modeOverride) { modeOverride = s.modeOverride; if (tray) buildTrayMenu(); }
   if ('hiddenUntil' in s) { hiddenUntil = s.hiddenUntil || 0; if (tray) buildTrayMenu(); }
+  if (typeof s.theme === 'string' && s.theme !== themeId) { themeId = s.theme; if (tray) buildTrayMenu(); }
+  if (typeof s.peek === 'boolean' && s.peek !== peekOn) { peekOn = s.peek; if (tray) buildTrayMenu(); }
 });
 
 ipcMain.on('notify', (_e, { title, body, noteId }) => {

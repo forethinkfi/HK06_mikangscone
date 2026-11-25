@@ -76,8 +76,34 @@
           <g class="c-drop"><path d="M86 30c0 4-3 6-5 6s-5-2-5-6c0-3 5-9 5-9s5 6 5 9z" fill="#a9d3ee"/></g>
         </g>`,
     },
+    blackcat: {
+      name: '까망비서', desc: '정중한 검은 고양이', color: '#1d1d1f', ink: '#ffffff', voice: 'polite',
+      svg: () => `
+        <ellipse cx="52" cy="94" rx="27" ry="3.5" fill="#000" opacity=".12"/>
+        <g class="c-body">
+          <path class="c-tail" d="M70 86c16 2 22-10 16-19-3-5-9-4-9 1" fill="none" stroke="#111" stroke-width="7" stroke-linecap="round" style="transform-origin:70px 86px"/>
+          <ellipse cx="52" cy="78" rx="21" ry="15" fill="#111"/>
+          <ellipse cx="42" cy="91" rx="6" ry="4" fill="#111"/><ellipse cx="60" cy="91" rx="6" ry="4" fill="#111"/>
+          <g class="c-ears" style="transform-origin:48px 34px">
+            <path d="M22 36L19 9l23 14z" fill="#111" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M74 36l3-27-23 14z" fill="#111" stroke="#111" stroke-width="3" stroke-linejoin="round"/>
+            <path d="M24 29l-1-12 10 7z M72 29l1-12-10 7z" fill="#3a3a3c"/>
+          </g>
+          <ellipse cx="48" cy="47" rx="29" ry="26" fill="#111"/>
+          <g class="c-eyes" style="transform-origin:48px 47px">
+            <ellipse cx="36" cy="46" rx="10" ry="11" fill="#fff"/><ellipse cx="60" cy="46" rx="10" ry="11" fill="#fff"/>
+            <ellipse cx="38" cy="47.5" rx="5.8" ry="7.2" fill="#111"/><ellipse cx="62" cy="47.5" rx="5.8" ry="7.2" fill="#111"/>
+            <circle cx="40" cy="44.5" r="2" fill="#fff"/><circle cx="64" cy="44.5" r="2" fill="#fff"/>
+          </g>
+          <g class="c-blush"></g>
+          <g class="c-mouth" style="transform-origin:48px 62px">
+            <path class="c-smile" d="M44 61q2 2.6 4 0.4q2 2.2 4-0.4" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round"/>
+            <ellipse class="c-open" cx="48" cy="62" rx="3" ry="2.6" fill="#fff"/>
+          </g>
+        </g>`,
+    },
   };
-  const ORDER = ['mikang', 'cat', 'bunny', 'cloud'];
+  const ORDER = ['mikang', 'cat', 'bunny', 'cloud', 'blackcat'];
 
   /** 캐릭터 SVG(또는 사용자가 올린 이미지) HTML. */
   function charHTML(id, customSrc) {
@@ -87,6 +113,8 @@
     const c = CHARS[id] || CHARS.mikang;
     return `<svg class="c-svg" viewBox="0 0 100 100" aria-hidden="true">${c.svg()}</svg>`;
   }
+  /** 캐릭터의 기본 말투 (voice.js: friend | polite) */
+  const charVoice = (id) => (CHARS[id] && CHARS[id].voice) || 'friend';
   const charName = (S) => (S.settings.petName || '').trim() || (CHARS[S.settings.character] || CHARS.mikang).name;
-  root.Chars = { CHARS, ORDER, charHTML, charName };
+  root.Chars = { CHARS, ORDER, charHTML, charName, charVoice };
 })(typeof self !== 'undefined' ? self : this);

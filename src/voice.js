@@ -1,0 +1,96 @@
+/* AI 비서 말투(성격). 캐릭터마다 기본 말투가 있고, 설정에서 바꿀 수 있다.
+ *  - friend: 귀여운 친구 (반말, 다정하고 발랄)
+ *  - polite: 정중한 비서 (합니다체)
+ * 화면의 모든 비서 대사는 여기서 나온다. 새 성격을 넣으려면 같은 함수 이름으로 객체를 하나 더 만들면 된다. */
+(function (root) {
+  'use strict';
+  const josa = (w, a, b) => { const s = String(w); const ch = s.charCodeAt(s.length - 1); return s + ((ch >= 0xac00 && ch <= 0xd7a3 && (ch - 0xac00) % 28) ? a : b); };
+  const pick = (arr) => arr[Math.floor(Math.random() * arr.length)];
+  const hrs = (m) => (m >= 60 ? `${m / 60}시간` : `${m}분`);
+
+  const friend = {
+    label: '귀여운 친구',
+    desc: '반말로 다정하게 이야기해요',
+    prompt: '말투: 친한 친구처럼 다정하고 귀여운 반말. 예) "내일 12시에 알람 맞춰놨어! 11시에도 한 번 더 알려줄게."',
+    hello: (name) => `안녕! 나는 ${name}이야. 나를 누르면 책갈피가 펼쳐지고, 말풍선 버튼으로 날씨나 부탁을 말할 수 있어. 화면 양 끝에 마우스를 대면 최근 메모도 보여줄게!`,
+    greet: (h) => (h < 11 ? '좋은 아침이야!' : h < 17 ? '뭐 도와줄까?' : '오늘 하루 수고 많았어!'),
+    morning: '좋은 아침이야!',
+    briefToday: (n, list) => `오늘 일정은 ${n}개야. ${list}.`,
+    briefNone: '오늘 남은 일정은 없어!',
+    briefNext: (inTxt, title) => ` 다음 알람은 ${inTxt}, '${title}'이야.`,
+    thinking: '정리하는 중이야…',
+    weatherLoading: '날씨 알아볼게!',
+    whereLoading: '어디쯤인지 볼게!',
+    listen: '듣고 있어. 다 말하면 나를 한 번 더 눌러줘.',
+    remindNow: (t) => `'${t}' 할 시간이야!`,
+    remindPre: (t, m) => `'${t}', ${hrs(m)} 남았어! 준비됐어?`,
+    soon: (t, inTxt) => pick([`곧 '${t}' 있어! ${inTxt} 시작이야.`, `잊지 마! '${t}' ${inTxt}야.`, `'${t}' 얼마 안 남았어. ${inTxt}!`]),
+    pat: () => pick(['헤헤, 좋아!', '기분 좋아~', '오늘도 힘내자!', '더 쓰다듬어줘!']),
+    dizzy: () => pick(['어지러워…', '우와, 날았다!', '살살 던져줘!']),
+    hideAsk: '얼마 동안 숨어 있을까? 알람은 계속 알려줄게.',
+    back: '다시 왔어! 뭐 도와줄까?',
+    organized: (kw) => `'${kw}'(으)로 정리해 뒀어!`,
+    alarmSet: (when, t) => `${when} '${t}' 알람 맞춰놨어!`,
+    preAlso: (m) => ` ${hrs(m)} 전에도 한 번 더 알려줄게.`,
+    photos: (n, ai) => (ai ? `사진 ${n}장 넣었어. 사진 속 일정도 읽어볼게!` : `사진 ${n}장 넣었어!`),
+    photosTo: (kw, n) => `'${kw}' 메모에 사진 ${n}장 넣었어!`,
+    needText: '메모를 먼저 적어줘!',
+    needKeyForPhoto: '사진 속 글은 AI 연결(Claude 키)이 있어야 읽을 수 있어.',
+    recDone: (kw) => `'${kw}' 메모에 녹음 정리해 뒀어!`,
+    weatherDesktopOnly: '날씨는 데스크톱 앱에서 알려줄 수 있어.',
+    weatherFail: '날씨를 못 가져왔어. 조금 있다가 다시 물어봐 줘!',
+    dust: (where, g, pm10, pm25) => `${josa(where, '은', '는')} 지금 미세먼지 ${g}야 (PM10 ${pm10}, 초미세 ${pm25}㎍/㎥).`,
+    mask: ' 마스크 챙겨!',
+    tomorrow: (where, desc, lo, hi, pop) => `${where} 내일은 ${desc}, ${lo}~${hi}°C야.${pop != null ? ` 비 올 확률은 ${pop}%.` : ''}`,
+    now: (where, t, feels, desc, lo, hi, pop, air) => `${josa(where, '은', '는')} 지금 ${t}°C${feels != null ? `(체감 ${feels}°C)` : ''}, ${desc}야. 오늘은 ${lo}~${hi}°C${pop != null ? `, 비 올 확률 ${pop}%` : ''}.${air ? ` 미세먼지는 ${air}.` : ''}`,
+    umbrella: ' 우산 꼭 챙겨!', cold: ' 많이 추워. 따뜻하게 입어!', hot: ' 더우니까 물 자주 마셔!',
+    whereOs: (p, acc) => `지금 ${p} 근처에 있구나${acc ? ` (${acc})` : ''}!`,
+    whereIp: (p) => `지금 ${p} 근처에 있는 것 같아. 인터넷 주소로 찾은 대략적인 위치라 조금 다를 수 있어.`,
+    whereFail: '지금 위치를 못 찾았어.',
+    hereAt: (p) => `지금 계신 ${p}`,
+  };
+
+  const polite = {
+    label: '정중한 비서',
+    desc: '합니다체로 정중하게 말씀드려요',
+    prompt: '말투: 정중하고 차분한 비서의 합니다체. 예) "내일 12시 알람을 설정했습니다. 11시에도 한 번 더 알려드리겠습니다."',
+    hello: (name) => `안녕하십니까, ${name}입니다. 저를 누르시면 책갈피가 펼쳐지고, 말풍선 버튼으로 날씨나 요청을 말씀하실 수 있습니다. 화면 양 끝에 마우스를 대시면 최근 메모를 보여드리겠습니다.`,
+    greet: (h) => (h < 11 ? '좋은 아침입니다.' : h < 17 ? '무엇을 도와드릴까요?' : '오늘 하루도 수고 많으셨습니다.'),
+    morning: '좋은 아침입니다.',
+    briefToday: (n, list) => `오늘 일정은 ${n}건입니다. ${list}.`,
+    briefNone: '오늘 남은 일정은 없습니다.',
+    briefNext: (inTxt, title) => ` 다음 알람은 ${inTxt}, '${title}'입니다.`,
+    thinking: '정리하고 있습니다…',
+    weatherLoading: '날씨를 확인하겠습니다.',
+    whereLoading: '현재 위치를 확인하겠습니다.',
+    listen: '듣고 있습니다. 말씀이 끝나시면 저를 한 번 더 눌러 주십시오.',
+    remindNow: (t) => `'${t}' 시간입니다.`,
+    remindPre: (t, m) => `'${t}'까지 ${hrs(m)} 남았습니다. 준비해 주십시오.`,
+    soon: (t, inTxt) => pick([`곧 '${t}' 일정이 있습니다. ${inTxt} 시작합니다.`, `'${t}' 일정이 ${inTxt}입니다. 잊지 않으시도록 말씀드립니다.`]),
+    pat: () => pick(['감사합니다.', '기분이 좋습니다.', '오늘도 힘내십시오.', '언제든 불러 주십시오.']),
+    dizzy: () => pick(['조금 어지럽습니다…', '살살 부탁드립니다.', '무사히 착지했습니다.']),
+    hideAsk: '얼마 동안 물러나 있을까요? 알람은 계속 알려드리겠습니다.',
+    back: '다시 돌아왔습니다. 무엇을 도와드릴까요?',
+    organized: (kw) => `'${kw}'(으)로 정리해 두었습니다.`,
+    alarmSet: (when, t) => `${when} '${t}' 알람을 설정했습니다.`,
+    preAlso: (m) => ` ${hrs(m)} 전에도 한 번 더 알려드리겠습니다.`,
+    photos: (n, ai) => (ai ? `사진 ${n}장을 넣었습니다. 사진 속 일정도 확인하겠습니다.` : `사진 ${n}장을 넣었습니다.`),
+    photosTo: (kw, n) => `'${kw}' 메모에 사진 ${n}장을 넣었습니다.`,
+    needText: '먼저 메모를 작성해 주십시오.',
+    needKeyForPhoto: '사진 속 글을 읽으려면 AI 연결(Claude 키)이 필요합니다.',
+    recDone: (kw) => `'${kw}' 메모에 녹음을 정리해 두었습니다.`,
+    weatherDesktopOnly: '날씨는 데스크톱 앱에서 알려드릴 수 있습니다.',
+    weatherFail: '날씨 정보를 가져오지 못했습니다. 잠시 후 다시 물어봐 주십시오.',
+    dust: (where, g, pm10, pm25) => `${josa(where, '은', '는')} 현재 미세먼지 ${g}입니다 (PM10 ${pm10}, 초미세 ${pm25}㎍/㎥).`,
+    mask: ' 마스크를 착용하시기 바랍니다.',
+    tomorrow: (where, desc, lo, hi, pop) => `${where} 내일은 ${desc}, ${lo}~${hi}°C입니다.${pop != null ? ` 강수 확률은 ${pop}%입니다.` : ''}`,
+    now: (where, t, feels, desc, lo, hi, pop, air) => `${josa(where, '은', '는')} 현재 ${t}°C${feels != null ? `(체감 ${feels}°C)` : ''}, ${desc}입니다. 오늘은 ${lo}~${hi}°C${pop != null ? `, 강수 확률 ${pop}%` : ''}입니다.${air ? ` 미세먼지는 ${air}입니다.` : ''}`,
+    umbrella: ' 우산을 챙기시기 바랍니다.', cold: ' 기온이 낮으니 따뜻하게 입으십시오.', hot: ' 더우니 수분을 충분히 섭취하십시오.',
+    whereOs: (p, acc) => `현재 ${p} 근처에 계십니다${acc ? ` (${acc})` : ''}.`,
+    whereIp: (p) => `현재 ${p} 근처에 계신 것으로 보입니다. 인터넷 주소 기준의 대략적인 위치이므로 실제와 다를 수 있습니다.`,
+    whereFail: '현재 위치를 확인하지 못했습니다.',
+    hereAt: (p) => `현재 계신 ${p}`,
+  };
+
+  root.Voice = { friend, polite, ORDER: ['friend', 'polite'] };
+})(typeof self !== 'undefined' ? self : this);

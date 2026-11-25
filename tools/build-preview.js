@@ -13,7 +13,11 @@ const out = process.argv[2] || path.join(ROOT, 'preview', 'mikang-preview.html')
 const html = R('index.html');
 let stage = html.slice(html.indexOf('<div class="stage side-right" id="stage">'), html.indexOf('<script src="parse.js">'));
 stage = stage.slice(0, stage.indexOf('<div class="demo-bg"')) + stage.slice(stage.indexOf('<nav class="dock"'));
-const scripts = ['parse.js', 'characters.js', 'cutout.js', 'app.js'];
+const scripts = ['parse.js', 'characters.js', 'voice.js', 'cutout.js', 'app.js'];
+// 블랙앤화이트 테마: 프리텐다드(SIL OFL — 재배포 가능)를 미리보기 안에 넣는다
+const PRETENDARD = path.join(ROOT, 'node_modules', 'pretendard', 'dist', 'web', 'variable', 'woff2', 'PretendardVariable.woff2');
+const bwCss = R('theme-bw.css').replace("url('../node_modules/pretendard/dist/web/variable/woff2/PretendardVariable.woff2')",
+  fs.existsSync(PRETENDARD) ? `url('data:font/woff2;base64,${fs.readFileSync(PRETENDARD).toString('base64')}')` : "url('')");
 for (const f of scripts) if (/<\/script/i.test(R(f))) throw new Error('</script> inside ' + f);
 
 const ICON = {
@@ -107,10 +111,10 @@ const SHIM = `
   var KIND = { memo:'사용자가 직접 쓴 메모', transcript:'말로 한 메모를 받아쓴 글', command:'사용자가 비서에게 한 부탁 (메모로 만들어 줘)' };
   function prompt(p, withImages){
     return '너는 사용자의 바탕화면에 사는 메모 비서 캐릭터야. 아래 메모를 메모지 한 장으로 정리해서 JSON 하나만 출력해. 설명이나 코드블록은 쓰지 마.\\n'
-      + '형식: {"keyword":"책갈피 키워드 1개, 한국어 명사 2~6자","title":"제목 20자 이내 또는 빈 문자열","body":"메모지에 적을 정리된 본문. 줄마다 \\'- \\'로 시작","summary":["요점 최대 3개, 각 30자 이내"],"events":[{"title":"할 일 20자 이내","when":"YYYY-MM-DDTHH:mm (현지 시각)","deadline":true/false,"repeat":"none|daily|weekly","all_day":true/false}],"reply":"캐릭터가 말풍선으로 할 1~2문장. 친근한 존댓말, 이모지 없이. 맞춘 알람의 날짜와 시간을 구체적으로","section":"분류 후보 중 가장 맞는 이름 하나 그대로, 없으면 빈 문자열"}\\n'
+      + '형식: {"keyword":"책갈피 키워드 1개, 한국어 명사 2~6자","title":"제목 20자 이내 또는 빈 문자열","body":"메모지에 적을 정리된 본문. 줄마다 \\'- \\'로 시작","summary":["요점 최대 3개, 각 30자 이내"],"events":[{"title":"할 일 20자 이내","when":"YYYY-MM-DDTHH:mm (현지 시각)","deadline":true/false,"repeat":"none|daily|weekly","all_day":true/false}],"reply":"캐릭터가 말풍선으로 할 1~2문장. 아래 말투를 따르고(없으면 친근한 존댓말), 이모지 없이. 맞춘 알람의 날짜와 시간을 구체적으로","section":"분류 후보 중 가장 맞는 이름 하나 그대로, 없으면 빈 문자열"}\\n'
       + '규칙: 오늘·내일·모레·금요일·다음 주 월요일·3일 뒤 같은 표현은 현재 시각 기준 미래 날짜로 계산해. "12시"처럼 오전/오후가 없으면 1~6시는 오후, 12시는 정오. 시간 없이 날짜만 있으면 all_day=true, when은 그날 09:00. "~까지", 마감, 제출은 deadline=true. 날짜가 없으면 events는 빈 배열. 원문에 없는 내용은 지어내지 마.'
       + (withImages ? ' 첨부한 사진 속 글(포스터, 공지, 화이트보드 등)의 날짜와 할 일도 읽어서 정리해.' : '')
-      + '\\n현재 시각: ' + nowText() + '\\n종류: ' + (KIND[p.kind] || KIND.memo) + (p.title ? '\\n기존 제목: ' + p.title : '') + '\\n분류 후보: ' + ((p.sections || []).join(', ') || '(없음)') + '\\n메모:\\n"""\\n' + p.text + '\\n"""';
+      + '\\n현재 시각: ' + nowText() + '\\n종류: ' + (KIND[p.kind] || KIND.memo) + (p.title ? '\\n기존 제목: ' + p.title : '') + '\\n분류 후보: ' + ((p.sections || []).join(', ') || '(없음)') + (p.voice ? '\\nreply ' + p.voice : '') + '\\n메모:\\n"""\\n' + p.text + '\\n"""';
   }
   function toBlob(d){ var m = /^data:([^;]+);base64,(.*)$/.exec(d); var bin = atob(m[2]), a = new Uint8Array(bin.length); for (var i=0;i<bin.length;i++) a[i] = bin.charCodeAt(i); return new Blob([a], {type:m[1]}); }
   var ERR = { not_granted:'Claude 사용을 허용하지 않아서 기본 규칙으로 정리했어요.', rate_limited:'요청이 많아요. 잠시 뒤에 다시 시도해 주세요.', images_unavailable:'사진은 빼고 글만 정리했어요.' };
@@ -259,6 +263,7 @@ const page = `<title>귤메모 미리보기</title>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
 <style>
 ${R('styles.css')}
+${bwCss}
 ${CSS}
 </style>
 ${DESKTOP}
