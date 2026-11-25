@@ -288,7 +288,7 @@ function renderCard(n) {
         h('div', { class: 'pa' },
           h('button', { type: 'button', 'aria-label': '스티커로 붙이기', title: '스티커로 붙이기', onclick: () => photoToSticker(n, i), html: ico('star', 13) }),
           h('button', { type: 'button', 'aria-label': '사진 삭제', title: '삭제', onclick: () => { n.photos.splice(i, 1); save(); renderCard(n); }, html: ico('x', 13) })))),
-    n.photos.length < MAX_PHOTOS ? h('button', { type: 'button', class: 'ph-add', 'aria-label': '사진 더 넣기', title: '사진 더 넣기', onclick: () => $('#photoPick')?.click(), html: ico('plus', 20) }) : null));
+    n.photos.length < MAX_PHOTOS ? filePicker({ cls: 'ph-add', label: '사진 더 넣기', onFiles: (fs) => addPhotos(n, fs) }, iel('plus', 20)) : null));
   content.append(h('div', { class: 'chips', id: 'chips' }));
   card.append(content);
   card.append(h('div', { class: 'stk-layer', id: 'stkLayer' }));
@@ -299,7 +299,6 @@ function renderCard(n) {
   card.addEventListener('drop', (e) => { card.classList.remove('drop'); const fs = imageFiles(e.dataTransfer?.files); if (fs.length) { e.preventDefault(); addPhotos(n, fs); } });
   card.addEventListener('pointerdown', (e) => { if (!e.target.closest('.stk,.sbar') && selStk) { selStk = null; renderStickers(n); } });
 
-  const file = h('input', { type: 'file', id: 'photoPick', accept: 'image/*', multiple: true, hidden: true, onchange: (e) => { addPhotos(n, [...e.target.files]); e.target.value = ''; } });
   const pal = h('div', { class: 'pal', hidden: true, role: 'menu', 'aria-label': '스티커' }, PAL.map((k) => h('button', { type: 'button', role: 'menuitem', 'aria-label': STK[k].n, title: STK[k].n, onclick: () => { pal.hidden = true; addSticker(n, k); }, html: stkSVG(k) })));
   const aiBtn = h('button', { class: 'btn primary', type: 'button', id: 'aiBtn', onclick: () => organizeNote(n, {}) }, iel('sparkle', 16), 'AI 정리');
   const recOn = rec && rec.noteId === n.id;
@@ -310,11 +309,11 @@ function renderCard(n) {
     for (const a of n.audios) api.deleteAudio(a.id);
     S.notes = S.notes.filter((x) => x !== n); openId = null; save(); closeAll();
   } }, iel('trash', 16));
-  const bar = h('div', { class: 'bar' }, pal, file,
+  const bar = h('div', { class: 'bar' }, pal,
     h('div', { class: 'row' },
       h('button', { class: 'btn icon fold', type: 'button', 'aria-label': '책갈피로 접기', title: '책갈피로 접기', onclick: closeAll, html: ico('fold', 16) }),
       recBtn,
-      h('button', { class: 'btn', type: 'button', onclick: () => file.click() }, iel('image', 16), '사진'),
+      filePicker({ cls: 'btn', title: '내 컴퓨터에서 사진 고르기', onFiles: (fs) => addPhotos(n, fs) }, iel('image', 16), '사진'),
       h('button', { class: 'btn', type: 'button', 'aria-haspopup': 'menu', onclick: () => { pal.hidden = !pal.hidden; } }, iel('star', 16), '스티커'),
       h('span', { style: 'margin-left:auto' }), aiBtn),
     h('div', { class: 'row' },
@@ -368,6 +367,15 @@ async function togglePlay(n, a) {
 
 /* ─────────── 사진 · 스티커 ─────────── */
 const MAX_PHOTOS = 4;
+/** 파일 고르기 버튼: <label> 안에 진짜 파일 입력을 넣어, 스크립트 없이 브라우저가 직접 '파일 열기' 창을 띄운다.
+ *  (숨긴 input을 스크립트로 click() 하면 Safari·일부 앱 화면에서 막힌다) */
+function filePicker({ cls = 'btn', label = '', title, multiple = true, onFiles }, ...kids) {
+  const input = h('input', { type: 'file', class: 'fp-input', accept: 'image/*', multiple: multiple || null, tabindex: '-1', 'aria-hidden': 'true',
+    onchange: (e) => { const fs = imageFiles(e.target.files); e.target.value = ''; if (fs.length) onFiles(fs); else if (e.target.files && e.target.files.length) toast({ title: '사진 파일(JPG, PNG 등)만 넣을 수 있어요', ttl: 3000 }); } });
+  const el = h('label', { class: cls + ' fp', title: title || label || null, role: 'button', tabindex: '0', 'aria-label': label || title || null,
+    onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } } }, ...kids, input);
+  return el;
+}
 const imageFiles = (list) => [...(list || [])].filter((f) => f && f.type && f.type.startsWith('image/'));
 function readPhoto(file, max = 1280) {
   return new Promise((res, rej) => {
@@ -999,10 +1007,7 @@ async function openSettings() {
       keys[name] ? h('button', { class: 'btn', type: 'button', onclick: async () => { keys = await api.setKey(name, ''); render(); } }, '지우기') : null,
       keys[name] ? h('span', { class: 'ok' }, '연결됨') : null);
   };
-  const upload = h('input', { type: 'file', accept: 'image/*', hidden: true, onchange: async (e) => {
-    const f = e.target.files[0]; if (!f) return;
-    try { st.customChar = await readPhoto(f); st.character = 'custom'; save(); renderPet(); render(); } catch {}
-  } });
+  const pickChar = async (fs) => { try { st.customChar = await readPhoto(fs[0], 480); st.character = 'custom'; save(); renderPet(); render(); } catch { toast({ title: '이미지를 읽지 못했어요', ttl: 3000 }); } };
   function render() {
     const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': '설정' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, '설정'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
@@ -1010,9 +1015,8 @@ async function openSettings() {
       h('div', { class: 'chars' },
         C.ORDER.map((id) => h('button', { type: 'button', 'aria-pressed': String(st.character === id), onclick: () => { st.character = id; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); } },
           h('span', { class: 'cv', html: C.charHTML(id) }), C.CHARS[id].name)),
-        h('button', { type: 'button', 'aria-pressed': String(st.character === 'custom'), onclick: () => upload.click() },
+        filePicker({ cls: 'charpick' + (st.character === 'custom' ? ' on' : ''), label: '내 이미지로 캐릭터 만들기', multiple: false, onFiles: pickChar },
           h('span', { class: 'cv', html: st.customChar ? C.charHTML('custom', st.customChar) : ico('image', 26) }), '내 이미지')),
-      upload,
       h('div', { class: 'row' }, h('label', {}, '이름'), h('input', { type: 'text', maxlength: '8', value: st.petName, placeholder: (C.CHARS[st.character] || C.CHARS.mikang).name, oninput: (e) => { st.petName = e.target.value; save(); } })),
       h('h4', {}, '화면'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '책갈피 위치'), seg('side', [['left', '왼쪽'], ['right', '오른쪽']], applySide)),

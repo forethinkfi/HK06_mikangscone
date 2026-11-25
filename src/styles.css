@@ -265,3 +265,10 @@ svg{display:block}
 .ok{color:#3e7a3a;font-size:12px}
 
 @media (prefers-reduced-motion:reduce){*{transition-duration:.01ms!important;animation:none!important}}
+
+/* 파일 고르기: 진짜 input을 투명하게 덮어 둔다 (display:none 이면 일부 브라우저가 열지 않는다) */
+.fp{position:relative;overflow:hidden;cursor:pointer}
+.fp .fp-input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;font-size:0}
+.fp:focus-within,.fp:focus-visible{outline:3px solid var(--cherry);outline-offset:2px}
+.chars .charpick{display:grid;justify-items:center;gap:4px;padding:8px 4px;border-radius:14px;border:2px solid transparent;background:#fff;font-size:12px}
+.chars .charpick.on{border-color:var(--ink)}
