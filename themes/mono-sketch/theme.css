@@ -1,0 +1,86 @@
+/* 모노 스케치 (mono-sketch) — 귤메모 테마 토큰과 UI 조각
+   theme.json의 tokens / tokensDark와 같은 값이다. 경로는 이 파일 기준. */
+@font-face { font-family: 'Pretendard'; font-weight: 400; font-display: swap; src: url('fonts/Pretendard-Regular.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 600; font-display: swap; src: url('fonts/Pretendard-SemiBold.woff2') format('woff2'); }
+@font-face { font-family: 'Pretendard'; font-weight: 700; font-display: swap; src: url('fonts/Pretendard-Bold.woff2') format('woff2'); }
+
+.theme-mono-sketch {
+  --ink: #1c1c1c; --muted: #6b6b6b; --paper: #f7f6f2; --surface: #ffffff; --line: #d6d4cc;
+  --action: #1c1c1c; --action-text: #ffffff; --accent: #f3e58a;
+  --radius: 6px; --shadow: 0 1px 3px rgba(28, 28, 28, 0.12);
+  --font-ui: 'Pretendard', 'Pretendard Variable', -apple-system, 'Malgun Gothic', sans-serif;
+  --font-title: var(--font-ui);
+  --rule: #e4e2da;
+  color: var(--ink); background: var(--paper); font-family: var(--font-ui);
+}
+.theme-mono-sketch.is-dark, .is-dark .theme-mono-sketch {
+  --ink: #f2f1ec; --muted: #a3a29c; --paper: #1a1a1a; --surface: #232323; --line: #3a3936;
+  --action: #f2f1ec; --action-text: #1a1a1a; --accent: #7a6c1f;
+  --shadow: 0 1px 3px rgba(0, 0, 0, 0.5); --rule: #33322f;
+}
+
+/* 제목·탭 이름: Pretendard Bold */
+.ms-title { font-family: var(--font-title); font-weight: 700; letter-spacing: -0.01em; }
+
+/* 메모지 본문: body SVG를 9-slice로 늘린다 (slice 값은 theme.json papers[].slice) */
+.ms-paper { border: 24px solid transparent; border-image: url('papers/binder-clip-body.svg') 24 fill / 24px stretch; }
+.ms-paper-lines {
+  background-image: repeating-linear-gradient(to bottom, transparent 0 27px, var(--rule) 27px 28px);
+  line-height: 28px;
+}
+mark, .ms-highlight { background: linear-gradient(transparent 45%, var(--accent) 45% 92%, transparent 92%); color: inherit; padding: 0 2px; }
+
+/* 버튼 */
+.ms-btn {
+  font: 600 14px/1 var(--font-ui); padding: 10px 16px; cursor: pointer;
+  color: var(--ink); background: var(--surface);
+  border: 2px solid var(--ink); border-radius: 7px 5px 8px 4px / 5px 8px 4px 7px; /* 살짝 삐뚤게 */
+  box-shadow: var(--shadow);
+}
+.ms-btn:hover { transform: translateY(-1px) rotate(-0.4deg); }
+.ms-btn:active { transform: translateY(1px); box-shadow: none; }
+.ms-btn.primary { background: var(--action); color: var(--action-text); border-color: var(--action); }
+
+/* 책갈피 탭 (화면 오른쪽 가장자리에 붙는 형태) */
+.ms-tab {
+  writing-mode: vertical-rl; font: 700 14px/1 var(--font-title); color: var(--tab-ink, var(--ink));
+  background: var(--tab-bg, var(--surface)); border: 2px solid var(--ink); border-right: none;
+  border-radius: 6px 0 0 6px / 4px 0 0 7px; padding: 14px 9px; position: relative; box-shadow: var(--shadow);
+}
+.ms-tab::before { /* 붙인 테이프 조각 */
+  content: ''; position: absolute; top: -6px; left: 6px; width: 26px; height: 12px;
+  background: rgba(217, 214, 204, 0.75); border: 1.5px solid var(--ink); transform: rotate(-6deg);
+}
+.ms-tab.small { font: 600 12px/1 var(--font-ui); padding: 10px 6px; }
+.ms-tab.small::before { display: none; }
+
+/* 토스트 */
+.ms-toast {
+  display: flex; gap: 10px; align-items: center; max-width: 320px; padding: 12px 14px;
+  background: var(--surface); color: var(--ink); border: 2px solid var(--ink);
+  border-radius: 6px 8px 5px 7px; box-shadow: var(--shadow); font: 400 14px/1.45 var(--font-ui);
+}
+.ms-toast .dot { flex: none; width: 10px; height: 10px; border-radius: 50%; background: var(--accent); border: 1.5px solid var(--ink); }
+
+/* 위젯 카드 */
+.ms-card {
+  background: var(--surface); border: 2px solid var(--ink); border-radius: var(--radius);
+  box-shadow: var(--shadow); padding: 16px;
+}
+.ms-card hr { border: none; border-top: 1.5px dashed var(--line); margin: 12px 0; }
+.ms-muted { color: var(--muted); }
+
+/* 말풍선 (꼬리 방향은 .tail-right로 바꾼다) */
+.ms-bubble {
+  position: relative; background: var(--surface); color: var(--ink); border: 2px solid var(--ink);
+  border-radius: 14px 12px 15px 11px; padding: 12px 14px; font: 400 14px/1.5 var(--font-ui);
+}
+.ms-bubble::after {
+  content: ''; position: absolute; bottom: -12px; left: 26px; width: 18px; height: 18px;
+  background: var(--surface); border-right: 2px solid var(--ink); border-bottom: 2px solid var(--ink);
+  transform: skewX(-25deg) rotate(45deg) scale(0.8, 1);
+}
+.ms-bubble.tail-right::after { left: auto; right: 26px; transform: skewX(25deg) rotate(45deg) scale(0.8, 1); }
+
+/* 펫 스프라이트: 192px 프레임을 120px로 표시 */
+.ms-pet { width: 120px; height: 120px; background-size: auto 120px; background-repeat: no-repeat; image-rendering: auto; }

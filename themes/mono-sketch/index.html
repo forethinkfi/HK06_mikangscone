@@ -1,0 +1,158 @@
+<!doctype html>
+<html lang="ko">
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>모노 스케치 — 귤메모 테마</title>
+<link rel="stylesheet" href="theme.css">
+<style>
+  * { box-sizing: border-box; }
+  body { margin: 0; }
+  main { max-width: 1120px; margin: 0 auto; padding: 40px 28px 80px; }
+  header { display: flex; justify-content: space-between; align-items: flex-end; gap: 20px; margin-bottom: 36px; }
+  h1 { font: 700 34px/1.1 var(--font-title); margin: 0 0 6px; }
+  h2 { font: 700 20px/1.2 var(--font-title); margin: 48px 0 6px; }
+  .sub { color: var(--muted); margin: 0 0 18px; font-size: 14px; }
+  .grid { display: grid; gap: 20px; }
+  .papers { grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); }
+  .paper-card { position: relative; }
+  .paper-card .stage { position: relative; aspect-ratio: 370 / 470; }
+  .paper-card .stage img { position: absolute; inset: 0; width: 100%; }
+  .paper-card .note { position: absolute; left: 13%; right: 13%; top: 22%; font-size: 13px; }
+  .paper-card .note b { font: 700 15px/1.3 var(--font-title); display: block; margin-bottom: 6px; }
+  .paper-card .note .ms-paper-lines { height: 112px; --rule: var(--rule-l); --accent: var(--hl-l); }
+  .is-dark .paper-card .note .ms-paper-lines { --rule: var(--rule-d); --accent: var(--hl-d); }
+  .meta { font: 12px/1.6 ui-monospace, Consolas, monospace; color: var(--muted); margin-top: 4px; }
+  .meta b { color: var(--ink); font-family: var(--font-ui); font-size: 14px; }
+  .sw { display: inline-block; width: 10px; height: 10px; border: 1px solid var(--ink); vertical-align: -1px; margin: 0 2px 0 6px; }
+  .pets { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); }
+  .pet { text-align: center; padding: 12px 8px; }
+  .pet .ms-pet { margin: 0 auto; }
+  .pet .meta { margin-top: 2px; }
+  .tokens { grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 10px; }
+  .token { display: flex; gap: 10px; align-items: center; font-size: 13px; }
+  .token i { width: 34px; height: 34px; border-radius: var(--radius); border: 1.5px solid var(--ink); flex: none; }
+  .token code { display: block; color: var(--muted); font-size: 11px; }
+  .row { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+  .tabs { display: flex; flex-direction: column; gap: 8px; align-items: flex-end; padding-right: 0; }
+  .widget { width: min(320px, 100%); }
+  header { flex-wrap: wrap; }
+  header .ms-btn { white-space: nowrap; }
+  main { overflow-x: hidden; }
+  @media (max-width: 560px) { main { padding: 24px 16px 60px; } h1 { font-size: 28px; } }
+  .week { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 12px; gap: 2px; }
+  .week span { padding: 6px 0; border-radius: 5px; position: relative; }
+  .week .on { background: var(--action); color: var(--action-text); font-weight: 700; }
+  .week .dot::after { content: ''; position: absolute; left: 50%; bottom: 1px; width: 4px; height: 4px; margin-left: -2px; border-radius: 50%; background: var(--ink); }
+  .widget ul { list-style: none; margin: 0; padding: 0; font-size: 14px; }
+  .widget li { display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px dashed var(--line); }
+  .stickers img { width: 72px; height: 72px; }
+  .icons { align-items: flex-end; }
+  .icons figure { margin: 0; text-align: center; font-size: 11px; color: var(--muted); }
+  .bubble-demo { display: flex; flex-direction: column; align-items: flex-start; gap: 16px; }
+  .is-dark .paper-card .stage img.light, .paper-card .stage img.dark { display: none; }
+  .is-dark .paper-card .stage img.dark { display: block; }
+  .thumb img { border: 1.5px solid var(--ink); border-radius: var(--radius); display: block; }
+</style>
+<body class="theme-mono-sketch">
+<main>
+  <header>
+    <div>
+      <h1>모노 스케치</h1>
+      <p class="sub" style="margin:0">귤메모 테마 · <code>mono-sketch</code> v1.0.0 · 흑백 손그림 다이어리 + 검은 고양이 비서</p>
+    </div>
+    <button class="ms-btn" id="mode">다크 모드 보기</button>
+  </header>
+
+  <h2>색·글꼴 토큰</h2>
+  <p class="sub">강조색은 연노랑 형광펜 한 가지만 써요. 글꼴은 본문과 제목 모두 Pretendard(제목은 Bold)예요.</p>
+  <div class="grid tokens" id="tokens"></div>
+
+  <h2>메모지 스킨 6종</h2>
+  <p class="sub">본문 종이, 뒤에 겹친 종이, 고정 도구를 따로 분리한 SVG예요. 본문은 9-slice로 늘릴 수 있어요.</p>
+  <div class="grid papers" id="papers"></div>
+
+  <h2>비서 캐릭터 — 까망이</h2>
+  <p class="sub">프레임 크기는 192px이고 120px로 줄여서 보여 줘요. 배경은 투명하고, 프레임을 가로로 이어 붙인 시트예요.</p>
+  <div class="grid pets" id="pets"></div>
+
+  <h2>UI 조각</h2>
+  <div class="row">
+    <div class="tabs">
+      <div class="ms-tab">업무</div>
+      <div class="ms-tab" style="--tab-bg:#1c1c1c;--tab-ink:#fff">생활</div>
+      <div class="ms-tab">아이디어</div>
+      <div class="ms-tab small">회의록</div>
+      <div class="ms-tab small">장보기</div>
+    </div>
+    <div class="bubble-demo">
+      <div class="row" style="gap:10px"><button class="ms-btn">취소</button><button class="ms-btn primary">메모 저장</button></div>
+      <div class="ms-toast"><span class="dot"></span><span><b>3시 회의</b> 1시간 전이에요. 자료 챙겼어요?</span></div>
+      <div class="ms-bubble">냐옹, 오늘 일정은 두 개야.<br>먼저 <mark>회의자료</mark>부터 볼까?</div>
+      <div class="ms-bubble tail-right">메모를 접으면 내가 정리해 둘게!</div>
+    </div>
+    <div class="ms-card widget">
+      <div style="display:flex;justify-content:space-between;align-items:baseline">
+        <b class="ms-title" style="font-size:16px">11월 넷째 주</b><span class="ms-muted" style="font-size:12px">전체보기</span>
+      </div>
+      <hr>
+      <div class="week"><span>월</span><span>화</span><span class="dot">수</span><span class="on">목</span><span class="dot">금</span><span>토</span><span>일</span></div>
+      <hr>
+      <ul>
+        <li><span>회의자료 제출</span><span class="ms-muted">12:00</span></li>
+        <li><span><mark>치과 예약</mark></span><span class="ms-muted">금 15:00</span></li>
+        <li><span>장보기 — 우유, 귤</span><span class="ms-muted">생활</span></li>
+      </ul>
+    </div>
+  </div>
+
+  <h2>스티커</h2>
+  <div class="row stickers">
+    <img src="stickers/fish.svg" alt="생선"><img src="stickers/paw.svg" alt="발자국"><img src="stickers/yarn.svg" alt="털실"><img src="stickers/star.svg" alt="별"><img src="stickers/heart.svg" alt="하트">
+  </div>
+
+  <h2>아이콘 · 미리보기 썸네일</h2>
+  <div class="row icons">
+    <figure><img src="icons/pet-48.png" width="48" height="48" alt=""><figcaption>48</figcaption></figure>
+    <figure><img src="icons/pet-32.png" width="32" height="32" alt=""><figcaption>32</figcaption></figure>
+    <figure><img src="icons/pet-16.png" width="16" height="16" alt=""><figcaption>16</figcaption></figure>
+    <figure class="thumb"><img src="preview.png" width="240" height="160" alt="테마 미리보기"><figcaption>preview.png 240×160</figcaption></figure>
+  </div>
+</main>
+<script>
+(async () => {
+  const theme = await (await fetch('theme.json')).json();
+  const box = document.getElementById('tokens');
+  const draw = (t) => { box.innerHTML = ['ink','muted','paper','surface','line','action','actionText','accent'].map(k =>
+    `<div class="token"><i style="background:${t[k]}"></i><div>${k}<code>${t[k]}</code></div></div>`).join('') +
+    `<div class="token"><div>radius <code>${t.radius}</code>shadow <code>${t.shadow}</code></div></div>`; };
+  draw(theme.tokens);
+
+  document.getElementById('papers').innerHTML = theme.papers.map(p => `
+    <div class="paper-card">
+      <div class="stage">
+        <img class="light" src="${p.asset}" alt=""><img class="dark" src="papers/dark/${p.id}.svg" alt="">
+        <div class="note" style="${p.tilt ? `transform:rotate(${p.tilt}deg)` : ''}">
+          <b>${p.name}</b><div class="ms-paper-lines" style="--rule-l:${p.rule};--rule-d:${p.dark.rule};--hl-l:${p.highlight};--hl-d:${p.dark.highlight}">금요일 오후 3시 <mark>치과</mark><br>우유, 귤 사기<br>기획서 피드백</div>
+        </div>
+      </div>
+      <div class="meta"><b>${p.id}</b><br>선 <span class="sw" style="background:${p.stroke}"></span>${p.stroke} · ${p.strokeWidth}px<br>
+        종이<span class="sw" style="background:${p.fill}"></span>${p.fill} · 도구 ${p.fastener.type}<span class="sw" style="background:${p.fastener.color}"></span>${p.fastener.color}<br>
+        탭<span class="sw" style="background:${p.tab.bg}"></span>${p.tab.bg}/${p.tab.ink} · 줄<span class="sw" style="background:${p.rule}"></span>${p.rule}<br>
+        형광펜<span class="sw" style="background:${p.highlight}"></span>${p.highlight} · slice ${p.slice.join(' ')}</div>
+    </div>`).join('');
+
+  const pets = document.getElementById('pets');
+  for (const [name, a] of Object.entries(theme.pet.animations)) {
+    const el = document.createElement('div'); el.className = 'pet ms-card';
+    el.innerHTML = `<div class="ms-pet" style="background-image:url(${a.sheet})"></div><div class="meta"><b>${name}</b><br>${a.frameCount}프레임 · ${a.fps}fps${a.loop ? ' · 반복' : ''}</div>`;
+    pets.append(el);
+    const sp = el.querySelector('.ms-pet'); let i = 0;
+    setInterval(() => { i = a.loop ? (i + 1) % a.frameCount : (i + 1) % (a.frameCount + 6); sp.style.backgroundPosition = `${-120 * Math.min(i, a.frameCount - 1)}px 0`; }, 1000 / Math.max(a.fps, 1));
+  }
+
+  const btn = document.getElementById('mode');
+  btn.onclick = () => { const d = document.body.classList.toggle('is-dark'); btn.textContent = d ? '라이트 모드 보기' : '다크 모드 보기'; draw(d ? theme.tokensDark : theme.tokens); };
+})();
+</script>
+</body>
+</html>

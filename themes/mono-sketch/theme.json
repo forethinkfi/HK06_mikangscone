@@ -1,0 +1,375 @@
+{
+  "id": "mono-sketch",
+  "name": "모노 스케치",
+  "author": "mikangscone",
+  "version": "1.0.0",
+  "tokens": {
+    "ink": "#1c1c1c",
+    "muted": "#6b6b6b",
+    "paper": "#f7f6f2",
+    "surface": "#ffffff",
+    "line": "#d6d4cc",
+    "action": "#1c1c1c",
+    "actionText": "#ffffff",
+    "accent": "#f3e58a",
+    "radius": "6px",
+    "shadow": "0 1px 3px rgba(28, 28, 28, 0.12)",
+    "fontUi": "'Pretendard', 'Pretendard Variable', -apple-system, 'Malgun Gothic', sans-serif",
+    "fontTitle": "'Pretendard', 'Pretendard Variable', -apple-system, 'Malgun Gothic', sans-serif"
+  },
+  "tokensDark": {
+    "ink": "#f2f1ec",
+    "muted": "#a3a29c",
+    "paper": "#1a1a1a",
+    "surface": "#232323",
+    "line": "#3a3936",
+    "action": "#f2f1ec",
+    "actionText": "#1a1a1a",
+    "accent": "#7a6c1f",
+    "radius": "6px",
+    "shadow": "0 1px 3px rgba(0, 0, 0, 0.5)",
+    "fontUi": "'Pretendard', 'Pretendard Variable', -apple-system, 'Malgun Gothic', sans-serif",
+    "fontTitle": "'Pretendard', 'Pretendard Variable', -apple-system, 'Malgun Gothic', sans-serif"
+  },
+  "fonts": {
+    "ui": {
+      "family": "Pretendard",
+      "weights": [
+        400,
+        600
+      ]
+    },
+    "title": {
+      "family": "Pretendard",
+      "weights": [
+        700
+      ]
+    },
+    "files": [
+      "fonts/Pretendard-Regular.woff2",
+      "fonts/Pretendard-SemiBold.woff2",
+      "fonts/Pretendard-Bold.woff2"
+    ],
+    "license": "fonts/LICENSE.txt"
+  },
+  "paperStage": {
+    "width": 370,
+    "height": 470,
+    "sheet": {
+      "x": 20,
+      "y": 40,
+      "width": 330,
+      "height": 410
+    },
+    "bodyViewBox": [
+      16,
+      36,
+      338,
+      418
+    ],
+    "darkDir": "papers/dark/"
+  },
+  "papers": [
+    {
+      "id": "tape-curl",
+      "name": "마스킹테이프",
+      "stroke": "#1c1c1c",
+      "strokeWidth": 2.2,
+      "fill": "#ffffff",
+      "fastener": {
+        "type": "tape",
+        "color": "#d9d6cc"
+      },
+      "tab": {
+        "bg": "#ffffff",
+        "ink": "#1c1c1c"
+      },
+      "highlight": "#f3e58a",
+      "rule": "#e4e2da",
+      "asset": "papers/tape-curl.svg",
+      "layers": {
+        "body": "papers/tape-curl-body.svg",
+        "fastener": "papers/tape-curl-fastener.svg"
+      },
+      "slice": [
+        24,
+        44,
+        44,
+        24
+      ],
+      "tilt": 0,
+      "dark": {
+        "asset": "papers/dark/tape-curl.svg",
+        "highlight": "#7a6c1f",
+        "rule": "#33322f"
+      }
+    },
+    {
+      "id": "binder-clip",
+      "name": "바인더 클립",
+      "stroke": "#1c1c1c",
+      "strokeWidth": 2.2,
+      "fill": "#ffffff",
+      "fastener": {
+        "type": "binder",
+        "color": "#ffffff"
+      },
+      "tab": {
+        "bg": "#ffffff",
+        "ink": "#1c1c1c"
+      },
+      "highlight": "#f3e58a",
+      "rule": "#e4e2da",
+      "asset": "papers/binder-clip.svg",
+      "layers": {
+        "back": "papers/binder-clip-back.svg",
+        "body": "papers/binder-clip-body.svg",
+        "fastener": "papers/binder-clip-fastener.svg"
+      },
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ],
+      "tilt": 0,
+      "dark": {
+        "asset": "papers/dark/binder-clip.svg",
+        "highlight": "#7a6c1f",
+        "rule": "#33322f"
+      }
+    },
+    {
+      "id": "washi-tilt",
+      "name": "찢은 테이프",
+      "stroke": "#1c1c1c",
+      "strokeWidth": 2.2,
+      "fill": "#ffffff",
+      "fastener": {
+        "type": "tape",
+        "color": "#d9d6cc"
+      },
+      "tab": {
+        "bg": "#f7f6f2",
+        "ink": "#1c1c1c"
+      },
+      "highlight": "#f3e58a",
+      "rule": "#e4e2da",
+      "asset": "papers/washi-tilt.svg",
+      "layers": {
+        "body": "papers/washi-tilt-body.svg",
+        "fastener": "papers/washi-tilt-fastener.svg"
+      },
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ],
+      "tilt": -2.5,
+      "dark": {
+        "asset": "papers/dark/washi-tilt.svg",
+        "highlight": "#7a6c1f",
+        "rule": "#33322f"
+      }
+    },
+    {
+      "id": "black-clip-stack",
+      "name": "검은 클립 묶음",
+      "stroke": "#1c1c1c",
+      "strokeWidth": 2.2,
+      "fill": "#ffffff",
+      "fastener": {
+        "type": "binder",
+        "color": "#1c1c1c"
+      },
+      "tab": {
+        "bg": "#1c1c1c",
+        "ink": "#ffffff"
+      },
+      "highlight": "#f3e58a",
+      "rule": "#e4e2da",
+      "asset": "papers/black-clip-stack.svg",
+      "layers": {
+        "back": "papers/black-clip-stack-back.svg",
+        "body": "papers/black-clip-stack-body.svg",
+        "fastener": "papers/black-clip-stack-fastener.svg"
+      },
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ],
+      "tilt": 0,
+      "dark": {
+        "asset": "papers/dark/black-clip-stack.svg",
+        "highlight": "#7a6c1f",
+        "rule": "#33322f"
+      }
+    },
+    {
+      "id": "paperclip-stack",
+      "name": "종이집게",
+      "stroke": "#1c1c1c",
+      "strokeWidth": 2.2,
+      "fill": "#ffffff",
+      "fastener": {
+        "type": "paperclip",
+        "color": "#1c1c1c"
+      },
+      "tab": {
+        "bg": "#ffffff",
+        "ink": "#1c1c1c"
+      },
+      "highlight": "#f3e58a",
+      "rule": "#e4e2da",
+      "asset": "papers/paperclip-stack.svg",
+      "layers": {
+        "back": "papers/paperclip-stack-back.svg",
+        "body": "papers/paperclip-stack-body.svg",
+        "fastener": "papers/paperclip-stack-fastener.svg"
+      },
+      "slice": [
+        24,
+        24,
+        24,
+        24
+      ],
+      "tilt": 0,
+      "dark": {
+        "asset": "papers/dark/paperclip-stack.svg",
+        "highlight": "#7a6c1f",
+        "rule": "#33322f"
+      }
+    },
+    {
+      "id": "stripe-tag",
+      "name": "줄무늬 태그",
+      "stroke": "#1c1c1c",
+      "strokeWidth": 2.2,
+      "fill": "#f1f0ec",
+      "fastener": {
+        "type": "tape",
+        "color": "#1c1c1c"
+      },
+      "tab": {
+        "bg": "#f1f0ec",
+        "ink": "#1c1c1c"
+      },
+      "highlight": "#f3e58a",
+      "rule": "#dddbd2",
+      "asset": "papers/stripe-tag.svg",
+      "layers": {
+        "body": "papers/stripe-tag-body.svg",
+        "fastener": "papers/stripe-tag-fastener.svg"
+      },
+      "slice": [
+        32,
+        32,
+        32,
+        32
+      ],
+      "tilt": 0,
+      "dark": {
+        "asset": "papers/dark/stripe-tag.svg",
+        "highlight": "#7a6c1f",
+        "rule": "#3a3936"
+      }
+    }
+  ],
+  "pet": {
+    "speciesId": "mono-cat",
+    "displayName": "까망이",
+    "frame": 192,
+    "displaySize": 120,
+    "facing": "left",
+    "animations": {
+      "idle": {
+        "sheet": "pet/idle.png",
+        "frameCount": 5,
+        "fps": 3,
+        "loop": true
+      },
+      "walk-left": {
+        "sheet": "pet/walk-left.png",
+        "frameCount": 9,
+        "fps": 10,
+        "loop": true
+      },
+      "walk-right": {
+        "sheet": "pet/walk-right.png",
+        "frameCount": 9,
+        "fps": 10,
+        "loop": true
+      },
+      "sleep": {
+        "sheet": "pet/sleep.png",
+        "frameCount": 5,
+        "fps": 2,
+        "loop": true
+      },
+      "dragged": {
+        "sheet": "pet/dragged.png",
+        "frameCount": 5,
+        "fps": 8,
+        "loop": true
+      },
+      "react": {
+        "sheet": "pet/react.png",
+        "frameCount": 4,
+        "fps": 8,
+        "loop": false
+      },
+      "jump": {
+        "sheet": "pet/jump.png",
+        "frameCount": 3,
+        "fps": 8,
+        "loop": false
+      },
+      "land": {
+        "sheet": "pet/land.png",
+        "frameCount": 3,
+        "fps": 10,
+        "loop": false
+      },
+      "look": {
+        "sheet": "pet/look.png",
+        "frameCount": 1,
+        "fps": 1,
+        "loop": true
+      },
+      "fly": {
+        "sheet": "pet/fly.png",
+        "frameCount": 4,
+        "fps": 6,
+        "loop": true
+      }
+    },
+    "icons": {
+      "48": "icons/pet-48.png",
+      "32": "icons/pet-32.png",
+      "16": "icons/pet-16.png",
+      "256": "icons/pet-256.png"
+    }
+  },
+  "ui": {
+    "tabSection": "ui/tab-section.svg",
+    "tabMemo": "ui/tab-memo.svg",
+    "bubble": {
+      "tailLeft": "ui/bubble-tail-left.svg",
+      "tailRight": "ui/bubble-tail-right.svg"
+    },
+    "button": "ui/button.svg",
+    "buttonPrimary": "ui/button-primary.svg",
+    "css": "theme.css"
+  },
+  "stickers": [
+    "stickers/fish.svg",
+    "stickers/paw.svg",
+    "stickers/yarn.svg",
+    "stickers/star.svg",
+    "stickers/heart.svg"
+  ],
+  "preview": "preview.png"
+}
