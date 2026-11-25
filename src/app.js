@@ -114,7 +114,7 @@ const DEFAULTS = {
   character: 'mikang', petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', petTarget: 'all', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true,
-  launchAtLogin: true, petPos: null, consentShown: false, showWidget: true, weatherCity: '서울',
+  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '서울',
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -187,7 +187,7 @@ function applyMode() {
 }
 
 /* ─────────── 클릭 통과 판정 ─────────── */
-const HIT = '.tab,.subs,.sheet.open,.pet:not(.hide),.bubble,.peek.open,.toast,.modal,.widget';
+const HIT = '.tab,.subs,.sheet.open,.pet:not(.hide),.bubble,.peek.open,.toast,.modal';
 function setInter(on) { if (on !== interactive) { interactive = on; api.setInteractive(on); } }
 function updateHit() {
   if (modalOpen || dragging) { setInter(true); return; }
@@ -208,6 +208,11 @@ function upcomingCount() {
 }
 function renderTabs() {
   const dock = $('#dock'); dock.replaceChildren();
+  // 맨 위: 메모 모아보기 (책갈피를 아래로 넘겨도 위에 붙어 있다)
+  const total = S.notes.filter((n) => !isEmpty(n)).length, td = todayEvents().length;
+  dock.append(h('button', { class: 'tab boardtab' + (modalKind === 'board' ? ' open' : ''), type: 'button', title: '모든 메모를 한눈에 보기', onclick: () => (modalKind === 'board' ? closeBoard() : openBoard()) },
+    h('span', { class: 'k', style: 'display:flex;align-items:center;gap:6px' }, iel('pin', 15), '메모 모아보기', h('span', { class: 'cnt' }, String(total))),
+    td ? h('span', { class: 'when' }, `오늘 일정 ${td}개`) : null));
   dock.append(h('button', { class: 'tab add', type: 'button', onclick: () => newNote(true, openSec ?? undefined), 'aria-label': '새 메모 만들기' }, h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('plus', 15), '새 메모')));
   const secs = [...S.sections]; if (notesIn('').length) secs.push(INBOX);
   for (const x of secs) {
@@ -245,7 +250,7 @@ function renderTabs() {
   dock.append(h('button', { class: 'tab agenda' + (agendaOpen ? ' open' : ''), type: 'button', 'aria-expanded': String(agendaOpen), onclick: toggleAgenda },
     h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('cal', 15), '일정'),
     cnt ? h('span', { class: 'when' }, `오늘 ${cnt}개`) : null));
-  renderPetBadges(); renderWidget();
+  renderPetBadges();
 }
 function setTabText(n) { const b = $(`.tab[data-id="${n.id}"] .k`); if (b) b.textContent = n.keyword || '새 메모'; }
 
@@ -1310,7 +1315,6 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '캐릭터만 남길 때'), seg('petTarget', [['all', '바탕화면이 아니면 항상'], ['browser', '웹 브라우저를 쓸 때만']], applyMode)),
       h('p', { class: 'note' }, '자동: 바탕화면이 보이면 책갈피가 펼쳐지고, 다른 앱이나 웹을 쓰는 동안에는 캐릭터만 남아요. 캐릭터를 누르면 그 화면에서 책갈피가 나와요.'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '가장자리 미리보기'), seg('peek', [[true, '켜기'], [false, '끄기']]), seg('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '모아보기 위젯'), seg('showWidget', [[true, '화면 위에 보이기'], [false, '숨기기']], renderWidget)),
       h('h4', {}, '섹션 (큰 책갈피)'),
       secManager(),
       h('h4', {}, '날씨'),
@@ -1340,16 +1344,8 @@ async function openSettings() {
 }
 function closeSettings() { modalOpen = false; modalKind = ''; $('#modal').hidden = true; $('#modal').replaceChildren(); renderTabs(); applyMode(); updateHit(); }
 
-/* ─────────── 메모 모아보기 (항상 위 위젯 + 전체 보드) ─────────── */
+/* ─────────── 메모 모아보기 (책갈피 맨 위 탭 → 전체 보드) ─────────── */
 let boardFilter = 'all';
-function renderWidget() {
-  const w = $('#widget'); if (!w || !S) return;
-  w.hidden = !S.settings.showWidget;
-  const total = S.notes.filter((n) => !isEmpty(n)).length, today = todayEvents().length;
-  w.replaceChildren(h('button', { type: 'button', class: 'wbtn', title: '모든 메모를 한눈에 보기', onclick: () => (modalKind === 'board' ? closeBoard() : openBoard()) },
-    h('span', { class: 'wpin', html: ico('pin', 15) }), h('b', {}, '메모 모아보기'), h('span', { class: 'wcount' }, String(total)),
-    today ? h('span', { class: 'wtoday' }, `오늘 ${today}`) : null));
-}
 function openBoard(filter) {
   if (openId || agendaOpen) closeAll();
   closePeek(true); closeBubble();
@@ -1533,7 +1529,7 @@ async function boot() {
   applySide(); renderTabs(); renderPet(); fit(); applyMode();
   save();
   tick(); setInterval(tick, 5000);
-  if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 저를 누르면 책갈피가 펼쳐지고 접혀요. 말풍선 버튼을 누르면 날씨나 부탁을 말할 수 있어요. 화면 위의 '메모 모아보기'로 모든 메모를 한눈에 볼 수 있어요.`, { ttl: 14000 }), 800);
+  if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 저를 누르면 책갈피가 펼쳐지고 접혀요. 책갈피 맨 위의 '메모 모아보기'로 모든 메모를 한눈에 볼 수 있고, 말풍선 버튼을 누르면 날씨나 부탁을 말할 수 있어요.`, { ttl: 14000 }), 800);
   // 디버그/스크린샷용 훅
   window.__mk = { S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
 }

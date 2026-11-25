@@ -70,7 +70,7 @@ const DESKTOP = `
       <ol>
         <li><b>캐릭터 누르기</b>: 책갈피가 펼쳐지고, 한 번 더 누르면 접혀요. 캐릭터 왼쪽 위 말풍선 버튼은 비서 메뉴(부탁·날씨·녹음)예요.</li>
         <li><b>섹션</b>: 책갈피는 업무·생활·아이디어 같은 큰 섹션이에요. 섹션을 누르면 그 안의 메모들이 펼쳐지고, 메모를 누르면 메모지가 열려요.</li>
-        <li><b>모아보기</b>: 화면 위 <b>메모 모아보기</b>를 누르면 모든 메모가 보드에 붙어 있어요. 메모를 누르면 그 메모로 가요.</li>
+        <li><b>모아보기</b>: 책갈피 맨 위의 <b>메모 모아보기</b>를 누르면 모든 메모가 보드에 붙어 있어요. 메모를 누르면 그 메모로 가요.</li>
         <li><b>바탕화면·화면 끝</b>: 브라우저 창의 <b>─</b>로 바탕화면을 보면 책갈피가 펼쳐져요. 화면 왼쪽 끝(점선 띠)에 마우스를 대면 최근 메모가 나와요.</li>
         <li><b>사진</b>: 메모의 <b>사진</b> 버튼으로 고르거나, 사진 파일을 화면 아무 데나 끌어다 놓아요. 아이폰 HEIC 사진도 돼요.</li>
       </ol>
@@ -247,7 +247,7 @@ body{overflow:hidden}
 @media (max-width:760px){.tsearch,.tray .ti,.tray .ime{display:none}.bwin{left:8px;width:calc(100% - 110px);min-width:0}.icons{display:none}}
 /* 앱 화면(오버레이)은 예시 화면 위에 겹쳐 있고, 빈 곳은 아래로 클릭이 지나간다 (데스크톱 앱과 같은 동작) */
 #stage{position:absolute;inset:0;height:auto;pointer-events:none;z-index:10}
-#stage .dock,#stage .pet,#stage .bubble,#stage .modal,#stage .toast,#stage .widget{pointer-events:auto}
+#stage .dock,#stage .pet,#stage .bubble,#stage .modal,#stage .toast{pointer-events:auto}
 #stage .toasts{pointer-events:none}
 #stage.dock-hidden .dock{pointer-events:none}
 #stage .pet.hide{pointer-events:none}`;
