@@ -10,6 +10,7 @@ const store = require('./store');
 const ai = require('./ai');
 const { watchForeground } = require('./foreground');
 const { getWeather, whereAmI } = require('./weather');
+const { osLocation } = require('./oslocation');
 
 const ARGS = process.argv.slice(1);
 const DEMO = ARGS.includes('--demo');            // 가짜 바탕화면 배경을 깔아 미리보기 (개발·스크린샷용)
@@ -20,7 +21,7 @@ if (!app.requestSingleInstanceLock()) { app.quit(); }
 app.setAppUserModelId('com.mikangscone.bookmarkmemo');
 if (process.platform === 'linux') app.commandLine.appendSwitch('enable-transparent-visuals');
 
-let win = null, tray = null, interactive = false, lastCursor = '', modeOverride = 'auto';
+let win = null, tray = null, interactive = false, lastCursor = '', modeOverride = 'auto', hiddenUntil = 0;
 let display = null;
 
 const send = (ch, ...a) => { if (win && !win.isDestroyed()) win.webContents.send(ch, ...a); };
@@ -92,6 +93,11 @@ function trayIcon() {
   if (IS_MAC) img.setTemplateImage(true);
   return img.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png')).resize({ width: 18, height: 18 }) : img;
 }
+function hiddenLabel() {
+  if (hiddenUntil === Infinity || hiddenUntil > Date.now() + 365 * 86400000) return '캐릭터 다시 보이기 (숨김 중)';
+  const m = Math.max(1, Math.round((hiddenUntil - Date.now()) / 60000));
+  return `캐릭터 다시 보이기 (${m >= 60 ? Math.floor(m / 60) + '시간 ' + (m % 60 ? (m % 60) + '분 ' : '') : m + '분 '}남음)`;
+}
 function buildTrayMenu() {
   const mode = (v, label) => ({ label, type: 'radio', checked: modeOverride === v, click: () => { modeOverride = v; send('cmd', 'mode:' + v); buildTrayMenu(); } });
   const menu = Menu.buildFromTemplate([
@@ -101,6 +107,13 @@ function buildTrayMenu() {
     { label: '일정 보기', click: () => send('cmd', 'agenda') },
     { label: '메모 모아보기', click: () => send('cmd', 'board') },
     { type: 'separator' },
+    hiddenUntil ? { label: hiddenLabel(), click: () => send('cmd', 'show') } : { label: '캐릭터 잠깐 숨기기', submenu: [
+      { label: '30분', click: () => send('cmd', 'hide:30') },
+      { label: '1시간', click: () => send('cmd', 'hide:60') },
+      { label: '2시간', click: () => send('cmd', 'hide:120') },
+      { label: '내일 아침(9시)까지', click: () => send('cmd', 'hide:tomorrow') },
+      { label: '다시 켤 때까지', click: () => send('cmd', 'hide:forever') },
+    ] },
     { label: '화면 모드', submenu: [mode('auto', '자동 (바탕화면이면 책갈피, 앱을 쓰면 캐릭터만)'), mode('desktop', '항상 책갈피'), mode('pet', '항상 캐릭터만')] },
     { label: '설정…', click: () => send('cmd', 'settings') },
     { label: '데이터 폴더 열기', click: () => shell.openPath(store.dir()) },
@@ -134,6 +147,7 @@ ipcMain.on('settings:apply', (_e, s) => {
   if (!s) return;
   if (typeof s.launchAtLogin === 'boolean' && app.isPackaged) app.setLoginItemSettings({ openAtLogin: s.launchAtLogin, openAsHidden: true });
   if (s.modeOverride && s.modeOverride !== modeOverride) { modeOverride = s.modeOverride; if (tray) buildTrayMenu(); }
+  if ('hiddenUntil' in s) { hiddenUntil = s.hiddenUntil || 0; if (tray) buildTrayMenu(); }
 });
 
 ipcMain.on('notify', (_e, { title, body, noteId }) => {
@@ -158,8 +172,9 @@ ipcMain.handle('ai:summarize', async (_e, payload) => {
   try { return { ok: true, text: await ai.summarizeAll(key, payload || {}) }; }
   catch (e) { return { ok: false, reason: 'error', error: ai.describeError(e) }; }
 });
-ipcMain.handle('place:here', async () => {
-  try { return await whereAmI(); }
+ipcMain.handle('place:os', () => osLocation());
+ipcMain.handle('place:here', async (_e, coords) => {
+  try { return await whereAmI(coords); }
   catch { return { ok: false, error: '지금 위치를 알아내지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
 });
 ipcMain.handle('weather:get', async (_e, city) => {
@@ -198,8 +213,8 @@ ipcMain.handle('mic:ask', async () => {
 app.on('second-instance', () => send('cmd', 'summon'));
 app.whenReady().then(() => {
   if (IS_MAC && app.dock) app.dock.hide(); // 독 아이콘 없이 상주 (메뉴 막대 아이콘으로 조작)
-  session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(['media', 'notifications', 'clipboard-sanitized-write'].includes(perm)));
-  session.defaultSession.setPermissionCheckHandler((_wc, perm) => ['media', 'notifications'].includes(perm));
+  session.defaultSession.setPermissionRequestHandler((_wc, perm, cb) => cb(['media', 'notifications', 'geolocation', 'clipboard-sanitized-write'].includes(perm)));
+  session.defaultSession.setPermissionCheckHandler((_wc, perm) => ['media', 'notifications', 'geolocation'].includes(perm));
   createOverlay();
   createTray();
   registerShortcuts();

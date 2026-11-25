@@ -3,11 +3,13 @@
 //  - 미세먼지: Open-Meteo Air Quality API     (air-quality-api.open-meteo.com)
 //  - 지명→좌표: 앱에 넣어 둔 한국 지명표 → 없으면 Open-Meteo Geocoding
 //  - 현재 위치: 인터넷 주소(IP) 기준 대략적인 위치 — ipapi.co, 안 되면 ipwho.is
-const { findKo, koName } = require('./places-kr');
+const { findKo, koName, nearest } = require('./places-kr');
+//  - 좌표→주소:  OpenStreetMap Nominatim, 안 되면 BigDataCloud (둘 다 키 필요 없음)
 
 const places = new Map();      // 지명 → 좌표 (앱이 켜져 있는 동안 기억)
 const cache = new Map();       // 좌표 → { at, data } (10분)
 let here = null;               // 현재 위치 { at, place } (30분)
+const addr = new Map();        // 좌표 → 동네 이름
 
 async function getJSON(url) {
   const r = await fetch(url, { signal: AbortSignal.timeout(8000), headers: { 'User-Agent': 'MikangMemo/1.0' } });
@@ -34,6 +36,34 @@ async function locate(name) {
     }
   }
   return null;
+}
+
+/** 좌표 → "서울 강남구 역삼동" 같은 이름 */
+async function placeName(lat, lon) {
+  const k = `${lat.toFixed(3)},${lon.toFixed(3)}`;
+  if (addr.has(k)) return addr.get(k);
+  let name = '';
+  try {
+    const j = await getJSON(`https://nominatim.openstreetmap.org/reverse?format=jsonv2&lat=${lat}&lon=${lon}&zoom=16&accept-language=ko`);
+    const a = (j && j.address) || {};
+    const city = a.city || a.province || a.state || '';
+    const gu = a.borough || a.city_district || a.county || a.district || (a.city && a.town) || '';
+    const dong = a.quarter || a.suburb || a.neighbourhood || a.village || a.town || '';
+    name = [city.replace(/(특별시|광역시|특별자치시|특별자치도)$/, ''), gu, dong].filter((x, i, arr) => x && arr.indexOf(x) === i).join(' ');
+  } catch {}
+  if (!name) {
+    try {
+      const j = await getJSON(`https://api.bigdatacloud.net/data/reverse-geocode-client?latitude=${lat}&longitude=${lon}&localityLanguage=ko`);
+      name = [j.principalSubdivision && j.principalSubdivision.replace(/(특별시|광역시|특별자치시|특별자치도)$/, ''), j.city, j.locality].filter((x, i, arr) => x && arr.indexOf(x) === i).join(' ');
+    } catch {}
+  }
+  if (!name) name = nearest(lat, lon) || '현재 위치';
+  addr.set(k, name);
+  return name;
+}
+/** 컴퓨터 위치 서비스에서 받은 좌표 → 장소 */
+async function preciseToPlace(c) {
+  return { name: await placeName(c.lat, c.lon), lat: c.lat, lon: c.lon, acc: c.acc || null, src: 'os' };
 }
 
 /** 인터넷 주소(IP)로 대략적인 현재 위치 */
@@ -84,8 +114,12 @@ async function forecast(place) {
   return data;
 }
 
-/** city가 비어 있으면 현재 위치(IP 기준)의 날씨 */
+/** city가 지역 이름이면 그 지역, 좌표({lat, lon})면 그 위치, 비어 있으면 현재 위치(IP 기준)의 날씨 */
 async function getWeather(city) {
+  if (city && typeof city === 'object' && isFinite(city.lat) && isFinite(city.lon)) {
+    const place = await preciseToPlace(city);
+    return { ok: true, place: place.name, auto: true, src: 'os', acc: place.acc, ...(await forecast(place)) };
+  }
   const name = String(city || '').trim().slice(0, 30);
   let place, auto = false;
   if (name) {
@@ -96,13 +130,17 @@ async function getWeather(city) {
     if (!place) { place = findKo('서울'); auto = false; }
   }
   const data = await forecast(place);
-  return { ok: true, place: place.name, auto, ...data };
+  return { ok: true, place: place.name, auto, src: auto ? 'ip' : 'name', ...data };
 }
 
 /** 지금 어디쯤인지 (IP 기준) */
-async function whereAmI() {
+async function whereAmI(coords) {
+  if (coords && isFinite(coords.lat) && isFinite(coords.lon)) {
+    const p = await preciseToPlace(coords);
+    return { ok: true, place: p.name, src: 'os', acc: p.acc, lat: p.lat, lon: p.lon };
+  }
   const p = await currentPlace();
-  return p ? { ok: true, place: p.name, country: p.country || '' } : { ok: false, error: '지금 위치를 알아내지 못했어요. 인터넷 연결을 확인해 주세요.' };
+  return p ? { ok: true, place: p.name, country: p.country || '', src: 'ip' } : { ok: false, error: '지금 위치를 알아내지 못했어요. 인터넷 연결을 확인해 주세요.' };
 }
 
 module.exports = { getWeather, whereAmI };

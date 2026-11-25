@@ -49,3 +49,19 @@ test('모르는 지명은 검색해서 한국 결과를 고른다', async () => 
   const r = await require('../electron/weather').getWeather('김제');
   assert.equal(r.place, '김제');
 });
+
+test('컴퓨터 위치 서비스 좌표 → 동네 이름 + 날씨', async () => {
+  delete require.cache[require.resolve('../electron/weather')];
+  mockFetch([['nominatim', { address: { city: '서울특별시', borough: '강남구', quarter: '역삼동' } }], ['air-quality', AIR], ['forecast', FORE]]);
+  const w = require('../electron/weather');
+  const r = await w.getWeather({ lat: 37.5007, lon: 127.0365, acc: 35 });
+  assert.equal(r.ok, true); assert.equal(r.src, 'os'); assert.equal(r.place, '서울 강남구 역삼동');
+  const h = await w.whereAmI({ lat: 37.5007, lon: 127.0365, acc: 35 });
+  assert.equal(h.place, '서울 강남구 역삼동'); assert.equal(h.acc, 35);
+});
+test('주소 서비스가 모두 안 되면 가까운 지명으로', async () => {
+  delete require.cache[require.resolve('../electron/weather')];
+  mockFetch([['nominatim', 'fail'], ['bigdatacloud', 'fail'], ['air-quality', AIR], ['forecast', FORE]]);
+  const r = await require('../electron/weather').getWeather({ lat: 35.16, lon: 129.16 });
+  assert.equal(r.place, '해운대');
+});

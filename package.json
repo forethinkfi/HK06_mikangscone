@@ -56,7 +56,9 @@
       "icon": "build/icon.png",
       "extendInfo": {
         "LSUIElement": true,
-        "NSMicrophoneUsageDescription": "녹음 메모를 받아쓰기 위해 마이크를 사용해요."
+        "NSMicrophoneUsageDescription": "녹음 메모를 받아쓰기 위해 마이크를 사용해요.",
+        "NSLocationUsageDescription": "현재 위치의 날씨를 알려주기 위해 위치를 사용해요.",
+        "NSLocationWhenInUseUsageDescription": "현재 위치의 날씨를 알려주기 위해 위치를 사용해요."
       },
       "identity": null,
       "artifactName": "${productName}-jhj-${version}-mac-${arch}.${ext}"

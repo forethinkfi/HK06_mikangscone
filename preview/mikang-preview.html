@@ -407,6 +407,18 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 @keyframes zz{0%{opacity:0;transform:translate(0,6px) scale(.7)}30%{opacity:1}100%{opacity:0;transform:translate(10px,-18px) scale(1.2)}}
 @keyframes heartUp{0%{opacity:0;transform:translateY(8px) scale(.6)}25%{opacity:1;transform:translateY(0) scale(1.1)}100%{opacity:0;transform:translateY(-26px) scale(1)}}
 
+/* ───── 잠깐 숨기기 · 최근 만든 캐릭터 ───── */
+.stage.all-hidden .pet,.stage.all-hidden .dock,.stage.all-hidden .bubble,.stage.all-hidden .peek,.stage.all-hidden .sheet{display:none!important}
+.bubble .ask{flex-wrap:wrap}
+.bubble .acts{grid-template-columns:repeat(4,1fr)}
+.chist{display:grid;gap:6px;margin:6px 0}
+.chist .chars{grid-template-columns:repeat(auto-fill,minmax(88px,1fr))}
+.cwrap{position:relative;display:grid}
+.cwrap .cdel{position:absolute;top:2px;right:2px;width:22px;height:22px;padding:0;border:0;border-radius:50%;background:rgba(58,52,48,.75);color:#fff;display:grid;place-items:center;font-size:0}
+.cwrap .cdel:hover{background:var(--cherry)}
+.chars .cwrap>button:first-child{display:grid;justify-items:center;gap:4px;padding:8px 4px;border-radius:14px;border:2px solid transparent;background:#fff;font-size:12px}
+.chars .cwrap>button:first-child[aria-pressed="true"]{border-color:var(--ink)}
+
 
 html,body{height:100%;background:#1f2a36}
 body{overflow:hidden}
@@ -1135,7 +1147,7 @@ const DEFAULTS = {
   character: 'mikang', petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', petTarget: 'all', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true,
-  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '', petWalk: true,
+  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '', petWalk: true, locMode: 'os', hiddenUntil: 0, customHistory: [],
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -1719,6 +1731,7 @@ function tick() {
     if (now - e.at > 6 * 3600000) { e.fired = true; e.missed = true; dirty = true; continue; }
     fire(n, e); dirty = true;
   }
+  if (S.settings.hiddenUntil && Date.now() >= S.settings.hiddenUntil) showAgain();
   morningBrief();
   if (dirty) { save(); renderTabs(); refreshAgenda(); }
 }
@@ -1821,7 +1834,34 @@ const WMO = (c) => (c === 0 ? '맑음' : c <= 2 ? '구름 조금' : c === 3 ? '�
 const josa = (w, a, b) => { const ch = String(w).charCodeAt(String(w).length - 1); return w + ((ch >= 0xac00 && ch <= 0xd7a3 && (ch - 0xac00) % 28) ? a : b); };
 const isWeatherAsk = (t) => /(날씨|기온|몇\s*도|우산|비\s*(와|오|올|내)|눈\s*(와|오|올|내)|더워|추워|덥나|춥나|덥지|춥지|미세먼지|초미세|공기\s*질|공기\s*어때)/.test(t) && !/(까지|알람|메모해|적어)/.test(t);
 const isWhereAsk = (t) => /(여기|지금|내|현재|나)\s*(는|가)?\s*(위치|어디)|어디야|어디에\s*있|어디쯤|내\s*위치|현재\s*위치|위치\s*(알려|어디)/.test(t) && !isWeatherAsk(t);
-/** "부산 내일 날씨", "서울 강남구 날씨 어때" → "부산", "서울 강남구" (없으면 '' = 현재 위치/설정 지역) */
+/* 현재 위치: ① 컴퓨터 위치 서비스(macOS 위치 서비스 / 브라우저) → ② Windows 위치 서비스 → ③ 인터넷 주소(IP) */
+let locCache = null, locInfo = { src: '', err: '' };
+function geoOnce(timeout) {
+  return new Promise((res, rej) => {
+    if (!navigator.geolocation) return rej({ code: 'none' });
+    navigator.geolocation.getCurrentPosition((p) => res(p), (e) => rej(e), { enableHighAccuracy: true, timeout, maximumAge: 10 * 60000 });
+  });
+}
+async function getCoords(force) {
+  if (S.settings.locMode === 'ip') { locInfo = { src: 'ip', err: '' }; return null; }
+  if (!force && locCache && Date.now() - locCache.at < 10 * 60000) return locCache.c;
+  let c = null, err = '';
+  try { const p = await geoOnce(10000); c = { lat: p.coords.latitude, lon: p.coords.longitude, acc: Math.round(p.coords.accuracy) || null }; }
+  catch (e) { err = e && e.code === 1 ? 'denied' : 'unavailable'; }
+  if (!c && api.osLocation) { const r = await api.osLocation().catch(() => null); if (r && r.ok) { c = { lat: r.lat, lon: r.lon, acc: r.acc }; err = ''; } else if (r && r.reason === 'denied') err = 'denied'; }
+  locInfo = { src: c ? 'os' : 'ip', err };
+  locCache = { at: Date.now(), c }; // 실패도 10분 동안 기억 (매번 기다리지 않게)
+  return c;
+}
+const isMac = () => /darwin|mac/i.test(info.platform || navigator.platform || '');
+function locHelp() {
+  if (locInfo.src === 'os' || S.settings.locMode === 'ip') return '';
+  return isMac()
+    ? '정확한 위치를 쓰려면 시스템 설정 → 개인정보 보호 및 보안 → 위치 서비스에서 Mikang Memo를 켜주세요.'
+    : '정확한 위치를 쓰려면 Windows 설정 → 개인 정보 및 보안 → 위치에서 위치 서비스와 "데스크톱 앱이 위치에 액세스하도록 허용"을 켜주세요.';
+}
+const fmtAcc = (a) => (!a ? '' : a < 1000 ? `±${Math.round(a / 10) * 10}m` : `±${(a / 1000).toFixed(1)}km`);
+/** "부산 내일 날씨", "서울 강남구 날씨 어때\" → "부산", "서울 강남구" (없으면 '' = 현재 위치/설정 지역) */
 function placeFromText(text) {
   const m = text.match(/^(.*?)(?:의\s*)?(?:날씨|기온|미세먼지|초미세|공기|비\s*와|비\s*올|눈\s*와|우산|더워|추워)/);
   if (!m) return '';
@@ -1832,10 +1872,11 @@ function placeFromText(text) {
 async function weatherReply(text = '') {
   if (!api.weather) return '날씨는 데스크톱 앱에서 알려드릴 수 있어요.';
   const city = placeFromText(text) || (S.settings.weatherCity || '').trim();
-  const r = await api.weather(city).catch(() => ({ ok: false }));
+  const arg = city || (await getCoords()) || '';
+  const r = await api.weather(arg).catch(() => ({ ok: false }));
   if (!r || !r.ok) return (r && r.error) || '날씨를 가져오지 못했어요. 잠시 뒤에 다시 물어봐 주세요.';
   const tm = /내일/.test(text), d = tm ? r.tomorrow : r.today, rd = (v) => Math.round(v);
-  const where = r.auto ? `지금 계신 ${r.place}(대략)` : r.place;
+  const where = r.src === 'os' ? `지금 계신 ${r.place}` : r.auto ? `지금 계신 ${r.place}(대략)` : r.place;
   let msg;
   if (/미세먼지|초미세|공기/.test(text) && r.air && r.air.grade) {
     msg = `${josa(where, '은', '는')} 지금 미세먼지 ${r.air.grade}이에요 (PM10 ${rd(r.air.pm10)}, 초미세 ${rd(r.air.pm25)}㎍/㎥).`;
@@ -1860,10 +1901,13 @@ async function askWhere() {
   let msg;
   if (!api.whereAmI) msg = '위치는 데스크톱 앱에서 알려드릴 수 있어요.';
   else {
-    const r = await api.whereAmI().catch(() => ({ ok: false }));
+    const c = await getCoords(true);
+    const r = await api.whereAmI(c).catch(() => ({ ok: false }));
     if (!r || !r.ok) msg = (r && r.error) || '지금 위치를 알아내지 못했어요.';
     else {
-      msg = `지금 ${r.place} 근처에 계신 것 같아요. 인터넷 주소로 알아낸 대략적인 위치라 실제와 조금 다를 수 있어요.`;
+      msg = r.src === 'os'
+        ? `지금 ${r.place} 근처에 계세요${r.acc ? ` (${fmtAcc(r.acc)})` : ''}. 컴퓨터 위치 서비스로 알아낸 위치예요.`
+        : `지금 ${r.place} 근처에 계신 것 같아요. 인터넷 주소로 알아낸 대략적인 위치라 실제와 조금 다를 수 있어요.${locHelp() ? ' ' + locHelp() : ''}`;
       const w = await weatherReply('지금 날씨').catch(() => '');
       if (/°C/.test(w)) msg += ' ' + w;
     }
@@ -2250,6 +2294,33 @@ function onPetClick() {
   } else { dockFolded = false; summoned = petMode(); }
   applyMode(); renderTabs(); setMood('talk', 700);
 }
+/** 캐릭터(와 책갈피)를 잠깐 화면에서 치운다. 알람은 계속 울린다. */
+function hideFor(what) {
+  let until;
+  if (what === 'tomorrow') { const d = new Date(); d.setDate(d.getDate() + 1); d.setHours(9, 0, 0, 0); until = d.getTime(); }
+  else if (what === 'forever') until = 8.64e15;
+  else until = Date.now() + (+what || 30) * 60000;
+  closeAll(); closePeek(true);
+  S.settings.hiddenUntil = until; save(); applyHidden();
+  const label = what === 'tomorrow' ? '내일 아침 9시에' : what === 'forever' ? '메뉴 막대(트레이) 아이콘에서 다시 켜면' : `${+what >= 60 ? (+what / 60) + '시간' : what + '분'} 뒤에`;
+  toast({ title: `캐릭터를 잠깐 숨겼어요`, body: `${label} 다시 나타나요. 알람은 그대로 울려요.`, ttl: 4500, actions: [{ label: '지금 다시 보이기', run: showAgain }] });
+}
+function showAgain(silent) {
+  if (!S.settings.hiddenUntil) return;
+  S.settings.hiddenUntil = 0; save(); applyHidden();
+  if (!silent) { setMood('talk', 2000); say('다시 왔어요! 무엇을 도와드릴까요?', { ttl: 5000 }); }
+}
+function isHidden() { return S.settings.hiddenUntil > Date.now(); }
+function applyHidden() {
+  $('#stage').classList.toggle('all-hidden', isHidden());
+  api.applySettings({ hiddenUntil: isHidden() ? S.settings.hiddenUntil : 0 });
+  updateHit();
+}
+function askHide() {
+  say('얼마 동안 숨어 있을까요? 알람은 계속 알려드려요.', { ttl: 15000, menu: false, actions: [
+    { label: '30분', run: () => hideFor(30) }, { label: '1시간', run: () => hideFor(60) }, { label: '2시간', run: () => hideFor(120) },
+    { label: '내일 아침까지', run: () => hideFor('tomorrow') } ] });
+}
 function toggleMenu() { if (bubble.open && bubble.menu) closeBubble(); else { openMenu(); api.focus(); } }
 
 /* 말풍선 */
@@ -2287,7 +2358,8 @@ function appendMenu(b) {
       h('button', { type: 'button', onclick: () => { closeBubble(); toggleAgenda(); } }, iel('cal', 18), '일정'),
       h('button', { type: 'button', onclick: () => askWeather('오늘 날씨') }, iel('sun', 18), '날씨·위치'),
       h('button', { type: 'button', onclick: () => { closeBubble(); openBoard(); } }, iel('board', 18), '모아보기'),
-      h('button', { type: 'button', onclick: () => { closeBubble(); openSettings(); } }, iel('gear', 18), '설정')),
+      h('button', { type: 'button', onclick: () => { closeBubble(); openSettings(); } }, iel('gear', 18), '설정'),
+      h('button', { type: 'button', onclick: () => askHide() }, iel('minus', 18), '잠깐 숨기기')),
     h('div', { class: 'ask' }, input,
       h('button', { class: 'btn icon', type: 'button', title: '말로 부탁하기', 'aria-label': '말로 부탁하기', onclick: () => startRecording(null, 'command'), html: ico('mic', 16) }),
       h('button', { class: 'btn primary icon', type: 'button', 'aria-label': '보내기', onclick: () => { if (input.value.trim()) { askAssistant(input.value); input.value = ''; } }, html: ico('send', 16) })),
@@ -2299,7 +2371,7 @@ function closeBubble() { clearTimeout(bubble.t); bubble = { open: false, menu: f
 let edgeT = 0, edgeSide = null;
 function recentNotes() { return S.notes.filter((n) => !isEmpty(n)).sort((a, b) => (b.viewedAt || b.createdAt) - (a.viewedAt || a.createdAt)).slice(0, 5); }
 function handleEdge(c) {
-  if (!S.settings.peek || openId || agendaOpen || modalOpen || (bubble.open && bubble.menu) || dragging) { clearTimeout(edgeT); edgeSide = null; return; }
+  if (!S.settings.peek || isHidden() || openId || agendaOpen || modalOpen || (bubble.open && bubble.menu) || dragging) { clearTimeout(edgeT); edgeSide = null; return; }
   if (c.edge && !peek.open) {
     const el = document.elementFromPoint(c.edge === 'left' ? 1 : W() - 2, c.y);
     if (el && el.closest('.tab,.pet,.sheet')) return;
@@ -2443,6 +2515,8 @@ async function openSettings() {
     h('p', { class: 'note' }, '웹 미리보기는 보안 규칙 때문에 직접 넣은 API 키를 Claude·OpenAI 서버로 보낼 수 없어요. 내 Claude·OpenAI 키는 컴퓨터에 설치하는 데스크톱 앱의 설정에서 넣어요.'));
   // 내 사진으로 캐릭터 만들기 (자동 누끼)
   let maker = null;
+  const useCustom = (src) => { st.customChar = src; st.character = 'custom'; petChar = ''; save(); renderPet(); if (openId) renderCard(byId(openId)); };
+  const rememberCustom = (src) => { st.customHistory = [{ id: uid(), src, at: Date.now() }, ...st.customHistory.filter((x) => x.src !== src)].slice(0, 8); save(); };
   const pickChar = async (fs) => {
     try { const src = await readFileURL(fs[0]); maker = { src, mode: 'cutout', strength: 50, outline: true, result: null, busy: true }; render(); await remake(); }
     catch (err) { toast({ title: '이미지를 읽지 못했어요', body: err.message, ttl: 4000 }); }
@@ -2468,9 +2542,9 @@ async function openSettings() {
     h('div', { class: 'row' }, h('label', { style: 'min-width:72px' }, '흰 테두리'),
       h('div', { class: 'seg', role: 'group' }, [[true, '켜기'], [false, '끄기']].map(([v, l]) => h('button', { type: 'button', 'aria-pressed': String(maker.outline === v), onclick: () => { maker.outline = v; remake(); } }, l)))),
     h('div', { class: 'row' },
-      h('button', { class: 'btn primary', type: 'button', disabled: maker.busy || !maker.result, onclick: () => { st.customChar = maker.result; st.character = 'custom'; maker = null; petChar = ''; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); toast({ title: '새 캐릭터가 준비됐어요', ttl: 2500 }); } }, '이 캐릭터로 정하기'),
+      h('button', { class: 'btn primary', type: 'button', disabled: maker.busy || !maker.result, onclick: () => { rememberCustom(maker.result); useCustom(maker.result); maker = null; render(); toast({ title: '새 캐릭터가 준비됐어요', body: '최근 만든 캐릭터에도 남겨 뒀어요.', ttl: 2500 }); } }, '이 캐릭터로 정하기'),
       h('button', { class: 'btn', type: 'button', onclick: () => { maker = null; render(); } }, '취소')));
-  const armedDel = {};
+  const armedDel = {}; let locStatus = '';
   const secManager = () => h('div', { class: 'secman' },
     S.sections.map((x) => h('div', { class: 'row' },
       h('input', { type: 'text', value: x.name, maxlength: '10', 'aria-label': '섹션 이름', style: 'flex:0 1 150px;min-width:90px', onchange: (e) => { x.name = e.target.value.trim() || x.name; save(); renderTabs(); } }),
@@ -2493,8 +2567,17 @@ async function openSettings() {
       h('div', { class: 'chars' },
         C.ORDER.map((id) => h('button', { type: 'button', 'aria-pressed': String(st.character === id), onclick: () => { st.character = id; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); } },
           h('span', { class: 'cv', html: C.charHTML(id) }), C.CHARS[id].name)),
-        filePicker({ cls: 'charpick' + (st.character === 'custom' ? ' on' : ''), label: '내 이미지로 캐릭터 만들기', multiple: false, onFiles: pickChar },
-          h('span', { class: 'cv', html: st.customChar ? C.charHTML('custom', st.customChar) : ico('image', 26) }), st.customChar ? '내 사진 바꾸기' : '내 사진으로')),
+        filePicker({ cls: 'charpick', label: '내 사진으로 새 캐릭터 만들기', multiple: false, onFiles: pickChar },
+          h('span', { class: 'cv', html: ico('plus', 26) }), '내 사진으로')),
+      st.customHistory.length ? h('div', { class: 'chist' }, h('span', { class: 'lbl' }, '최근 만든 캐릭터'),
+        h('div', { class: 'chars' }, st.customHistory.map((c, i) => h('span', { class: 'cwrap' },
+          h('button', { type: 'button', 'aria-pressed': String(st.character === 'custom' && st.customChar === c.src), 'aria-label': `내 캐릭터 ${i + 1}로 바꾸기`, onclick: () => { useCustom(c.src); render(); } },
+            h('span', { class: 'cv', html: C.charHTML('custom', c.src) }), `내 캐릭터 ${i + 1}`),
+          h('button', { type: 'button', class: 'cdel', 'aria-label': `내 캐릭터 ${i + 1} 지우기`, title: '목록에서 지우기', onclick: () => {
+            st.customHistory = st.customHistory.filter((x) => x !== c);
+            if (st.character === 'custom' && st.customChar === c.src) { st.character = 'mikang'; st.customChar = ''; petChar = ''; renderPet(); }
+            save(); render();
+          }, html: ico('x', 12) }))))) : null,
       makerUI(),
       h('p', { class: 'note' }, '내 사진을 고르면 배경을 자동으로 지우고 스티커처럼 테두리를 둘러 캐릭터로 만들어요. 사진은 이 컴퓨터 밖으로 나가지 않아요.'),
       h('div', { class: 'row' }, h('label', {}, '이름'), h('input', { type: 'text', maxlength: '8', value: st.petName, placeholder: (C.CHARS[st.character] || C.CHARS.mikang).name, oninput: (e) => { st.petName = e.target.value; save(); } })),
@@ -2517,7 +2600,18 @@ async function openSettings() {
         h('input', { type: 'text', id: 'wcity', maxlength: '20', value: st.weatherCity, placeholder: '예: 서울, 강남구, 부산 해운대, 제주', onchange: (e) => { st.weatherCity = e.target.value.trim(); save(); } })) : null,
       h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWeather('오늘 날씨'); } }, iel('sun', 15), '지금 날씨 묻기'),
         h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWhere(); } }, '내 위치 묻기')),
-      h('p', { class: 'note' }, '현재 위치는 인터넷 주소(IP)로 알아낸 대략적인 도시예요 (ipapi.co). 날씨·미세먼지는 Open-Meteo를 쓰고, 둘 다 API 키가 필요 없어요.'),
+      !st.weatherCity ? h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '위치 찾는 방법'),
+        seg('locMode', [['os', '컴퓨터 위치 서비스 (정확)'], ['ip', '인터넷 주소로 대략']], () => { locCache = null; })) : null,
+      !st.weatherCity && st.locMode === 'os' ? h('div', { class: 'row' },
+        h('button', { class: 'btn', type: 'button', onclick: async (e) => {
+          const b = e.currentTarget; b.disabled = true; b.textContent = '위치 확인 중…';
+          const c = await getCoords(true); let txt;
+          if (c) { const r = await api.whereAmI(c).catch(() => null); txt = `정확한 위치를 쓰고 있어요: ${(r && r.place) || '현재 위치'} ${fmtAcc(c.acc)}`; }
+          else txt = '컴퓨터 위치를 가져오지 못해서 인터넷 주소로 대략 찾고 있어요. ' + locHelp();
+          locStatus = txt; render();
+        } }, '위치 확인 · 권한 허용'),
+        locStatus ? h('span', { class: 'keystate ' + (/정확한/.test(locStatus) ? 'good' : 'bad') }, locStatus) : null) : null,
+      h('p', { class: 'note' }, '컴퓨터 위치 서비스: Mac은 위치 서비스, Windows는 Windows 위치 서비스로 동네 단위까지 찾아요 (처음에 권한을 물어봐요). 안 되면 인터넷 주소(IP)로 도시 단위로 찾아요. 좌표는 동네 이름을 찾을 때 OpenStreetMap에만 보내요. 날씨·미세먼지는 Open-Meteo — 모두 API 키가 필요 없어요.'),
       h('h4', {}, '자동 정리 · 알람'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '자동 정리'), seg('autoOrganize', [[true, '메모를 접으면 자동으로'], [false, '버튼 누를 때만']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '마감 미리 알림'), seg('preDeadline', [[0, '없음'], [30, '30분 전'], [60, '1시간 전'], [180, '3시간 전'], [1440, '하루 전']])),
@@ -2650,6 +2744,8 @@ function normalize(s) {
   if (s.side && !s._sideMigrated) { s.settings.side = s.side; s._sideMigrated = true; }
   if (!Array.isArray(s.sections)) s.sections = DEFAULT_SECTIONS();
   if (!s._wx2) { if (s.settings.weatherCity === '서울') s.settings.weatherCity = ''; s._wx2 = true; }
+  if (!Array.isArray(s.settings.customHistory)) s.settings.customHistory = [];
+  if (s.settings.customChar && !s.settings.customHistory.some((x) => x.src === s.settings.customChar)) s.settings.customHistory.unshift({ id: uid(), src: s.settings.customChar, at: Date.now() });
   for (const n of s.notes) {
     n.events = n.events || []; n.photos = n.photos || []; n.stickers = n.stickers || []; n.summary = n.summary || []; n.audios = n.audios || [];
     n.title = n.title || ''; n.text = n.text || ''; n.keyword = n.keyword || ''; n.ring = false;
@@ -2694,7 +2790,9 @@ function bindGlobal() {
   api.onDisplay(() => { fit(); placePet(); });
   api.onOpenNote((id) => { if (id && byId(id)) openNote(id); });
   api.onCommand((cmd) => {
-    if (cmd === 'summon') onPetClick();
+    if (cmd === 'summon') { if (isHidden()) showAgain(); else onPetClick(); }
+    else if (cmd === 'show') showAgain();
+    else if (cmd.startsWith('hide:')) hideFor(cmd.slice(5));
     else if (cmd === 'board') openBoard();
     else if (cmd === 'new') newNote();
     else if (cmd === 'record') quickRecord();
@@ -2724,12 +2822,12 @@ async function boot() {
   keys = await api.keyStatus().catch(() => keys);
   api.applySettings({ launchAtLogin: S.settings.launchAtLogin, modeOverride: S.settings.modeOverride });
   bindGlobal();
-  applySide(); renderTabs(); renderPet(); fit(); applyMode();
+  applySide(); renderTabs(); renderPet(); fit(); applyMode(); applyHidden();
   save();
   tick(); setInterval(tick, 5000);
   if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 저를 누르면 책갈피가 펼쳐지고 접혀요. 책갈피 맨 위의 '메모 모아보기'로 모든 메모를 한눈에 볼 수 있고, 말풍선 버튼을 누르면 날씨나 부탁을 말할 수 있어요.`, { ttl: 14000 }), 800);
   // 디버그/스크린샷용 훅
-  window.__mk = { motion, petState, pat, placeFromText, weatherReply, askWhere, S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
+  window.__mk = { hideFor, showAgain, isHidden, getCoords, motion, petState, pat, placeFromText, weatherReply, askWhere, S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
 }
 boot();
 })();

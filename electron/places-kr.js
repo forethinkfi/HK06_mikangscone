@@ -67,4 +67,14 @@ function koName(en) {
   return byEnExact.get(low) || byEn.get(low.replace(/-(gu|si|do|gun)$/, '').replace(/ (city|province)$/, '')) || en;
 }
 
-module.exports = { findKo, koName };
+/** 좌표에서 가장 가까운 지명 (주소 서비스가 안 될 때 이름 붙이기용, 20km 이내) */
+function nearest(lat, lon) {
+  let best = null, bd = Infinity;
+  for (const [ko, la, lo] of PLACES) {
+    const d = Math.hypot((la - lat) * 111, (lo - lon) * 88);
+    if (d < bd) { bd = d; best = ko; }
+  }
+  return bd <= 20 ? best : null;
+}
+
+module.exports = { findKo, koName, nearest };
