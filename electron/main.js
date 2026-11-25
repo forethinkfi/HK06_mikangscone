@@ -9,6 +9,7 @@ const {
 const store = require('./store');
 const ai = require('./ai');
 const { watchForeground } = require('./foreground');
+const { getWeather } = require('./weather');
 
 const ARGS = process.argv.slice(1);
 const DEMO = ARGS.includes('--demo');            // 가짜 바탕화면 배경을 깔아 미리보기 (개발·스크린샷용)
@@ -98,6 +99,7 @@ function buildTrayMenu() {
     { label: '새 메모', click: () => send('cmd', 'new') },
     { label: '녹음 메모', accelerator: 'CommandOrControl+Shift+R', click: () => send('cmd', 'record') },
     { label: '일정 보기', click: () => send('cmd', 'agenda') },
+    { label: '메모 모아보기', click: () => send('cmd', 'board') },
     { type: 'separator' },
     { label: '화면 모드', submenu: [mode('auto', '자동 (바탕화면이면 책갈피, 앱을 쓰면 캐릭터만)'), mode('desktop', '항상 책갈피'), mode('pet', '항상 캐릭터만')] },
     { label: '설정…', click: () => send('cmd', 'settings') },
@@ -144,6 +146,22 @@ ipcMain.on('notify', (_e, { title, body, noteId }) => {
 ipcMain.handle('keys:status', () => store.keyStatus());
 ipcMain.handle('keys:set', (_e, name, value) => { if (['anthropic', 'openai'].includes(name)) store.setKey(name, value); return store.keyStatus(); });
 
+// 아이폰 HEIC 사진 → JPEG (화면 쪽 보안 규칙을 느슨하게 하지 않도록 메인 프로세스에서 변환)
+ipcMain.handle('image:heic', async (_e, buf) => {
+  const convert = require('heic-convert');
+  const out = await convert({ buffer: Buffer.from(buf), format: 'JPEG', quality: 0.85 });
+  return new Uint8Array(out);
+});
+ipcMain.handle('ai:summarize', async (_e, payload) => {
+  const key = store.getKey('anthropic');
+  if (!key) return { ok: false, reason: 'nokey' };
+  try { return { ok: true, text: await ai.summarizeAll(key, payload || {}) }; }
+  catch (e) { return { ok: false, reason: 'error', error: ai.describeError(e) }; }
+});
+ipcMain.handle('weather:get', async (_e, city) => {
+  try { return await getWeather(city); }
+  catch { return { ok: false, error: '날씨를 가져오지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
+});
 ipcMain.handle('keys:test', (_e, name) => ai.testKey(name, store.getKey(name)));
 ipcMain.handle('ai:organize', async (_e, payload) => {
   const key = store.getKey('anthropic');

@@ -9,7 +9,7 @@ const MODEL = 'claude-opus-5-5';
 const SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['keyword', 'title', 'body', 'summary', 'events', 'reply'],
+  required: ['keyword', 'title', 'body', 'summary', 'events', 'reply', 'section'],
   properties: {
     keyword: { type: 'string', description: '책갈피 탭에 붙일 핵심 키워드 1개. 한국어 명사 2~6자.' },
     title: { type: 'string', description: '메모 제목. 20자 이내. 없으면 빈 문자열.' },
@@ -31,6 +31,7 @@ const SCHEMA = {
         },
       },
     },
+    section: { type: 'string', description: '아래 "분류 후보" 중 이 메모에 가장 맞는 이름 하나를 그대로. 맞는 게 없거나 후보가 없으면 빈 문자열.' },
     reply: { type: 'string', description: '비서 캐릭터가 말풍선으로 사용자에게 할 한두 문장. 친근한 존댓말, 이모지 없이. 맞춘 알람이 있으면 날짜와 시간을 구체적으로 말한다.' },
   },
 };
@@ -56,17 +57,18 @@ const KIND_LABEL = { memo: '사용자가 직접 쓴 메모', transcript: '녹음
 /** 메모에 붙은 사진(data:image/jpeg;base64,...)을 Claude 이미지 입력으로 바꾼다. */
 function imageBlocks(images) {
   return (Array.isArray(images) ? images : []).slice(0, 4)
-    .map((d) => /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(d)))
+    .map((d) => /^data:(image\/(?:jpeg|png|gif|webp));base64,([A-Za-z0-9+/=]+)$/.exec(String(d)))
     .filter(Boolean)
-    .map((m) => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: m[1] } }));
+    .map((m) => ({ type: 'image', source: { type: 'base64', media_type: m[1], data: m[2] } }));
 }
 
 /** 메모 정리. 실패하면 예외를 던진다(렌더러가 규칙 기반 정리로 대신한다). */
-async function organize(apiKey, { text, title = '', kind = 'memo', images = [] }) {
+async function organize(apiKey, { text, title = '', kind = 'memo', images = [], sections = [] }) {
   const client = new Anthropic({ apiKey, timeout: 60000, maxRetries: 1 });
   const user = `현재 시각: ${nowContext()}
 종류: ${KIND_LABEL[kind] || KIND_LABEL.memo}
-${title ? `기존 제목: ${title}\n` : ''}<memo>
+${title ? `기존 제목: ${title}\n` : ''}분류 후보: ${(sections || []).slice(0, 20).join(', ') || '(없음)'}
+<memo>
 ${text}
 </memo>`;
   const res = await client.beta.messages.create({
@@ -112,6 +114,23 @@ function describeError(e) {
   return e && e.message ? e.message : String(e);
 }
 
+/** 모든 메모를 한눈에 볼 수 있게 요약 (메모 모아보기의 'AI로 전체 요약') */
+async function summarizeAll(apiKey, { notes = [] }) {
+  const client = new Anthropic({ apiKey, timeout: 90000, maxRetries: 1 });
+  const list = notes.slice(0, 80).map((n, i) => `${i + 1}. [${n.section}] ${n.keyword}${n.title ? ' / ' + n.title : ''}\n${String(n.text || '').slice(0, 600)}${n.events && n.events.length ? '\n일정: ' + n.events.join('; ') : ''}`).join('\n\n');
+  const res = await client.beta.messages.create({
+    model: MODEL,
+    max_tokens: 4000,
+    betas: ['server-side-fallback-2026-07-01'],
+    fallbacks: 'default',
+    output_config: { effort: 'low' },
+    system: '너는 사용자의 메모 비서야. 메모 전체를 한눈에 볼 수 있게 짧게 요약해. 첫 줄은 한 문장 총평. 그다음 줄마다 "- "로 시작하는 항목 3~7개: 급한 일과 마감을 먼저, 각 줄 앞에 [섹션 이름]. 날짜는 "11월 26일(목) 12:00"처럼 구체적으로. 메모에 없는 내용은 쓰지 마. 마크다운 굵게·제목은 쓰지 마.',
+    messages: [{ role: 'user', content: `현재 시각: ${nowContext()}\n\n<memos>\n${list}\n</memos>` }],
+  });
+  if (res.stop_reason === 'refusal') throw new Error('AI가 이 메모들은 요약하지 않았어요.');
+  return res.content.filter((b) => b.type === 'text').map((b) => b.text).join('').trim();
+}
+
 /** 저장한 키가 실제로 동작하는지 확인 (모델 정보 조회만 하므로 비용이 들지 않는다) */
 async function testKey(name, apiKey) {
   if (!apiKey) return { ok: false, error: '저장된 키가 없어요.' };
@@ -132,4 +151,4 @@ async function testKey(name, apiKey) {
   }
 }
 
-module.exports = { organize, transcribe, describeError, testKey };
+module.exports = { organize, transcribe, describeError, testKey, summarizeAll };

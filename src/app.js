@@ -33,6 +33,11 @@ const ICONS = {
   play: '<path d="M8 5.5v13l10-6.5z"/>', pause: '<path d="M8 5v14M16 5v14"/>',
   send: '<path d="M4 12l16-8-6 16-2.5-6.5z"/>', gear: '<circle cx="12" cy="12" r="3"/><path d="M12 2.5v3M12 18.5v3M2.5 12h3M18.5 12h3M5.2 5.2l2.1 2.1M16.7 16.7l2.1 2.1M5.2 18.8l2.1-2.1M16.7 7.3l2.1-2.1"/>',
   edit: '<path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13 7l4 4"/>',
+  pin: '<path d="M9 3h6l-1 5 3 3H7l3-3z"/><path d="M12 11v10"/>',
+  chat: '<path d="M4 5h16v11H9l-5 4z"/><path d="M8 9.5h8M8 12.5h5"/>',
+  sun: '<circle cx="12" cy="12" r="4"/><path d="M12 2v2.5M12 19.5V22M2 12h2.5M19.5 12H22M4.9 4.9l1.8 1.8M17.3 17.3l1.8 1.8M4.9 19.1l1.8-1.8M17.3 6.7l1.8-1.8"/>',
+  folder: '<path d="M3 7a2 2 0 0 1 2-2h4l2 2h8a2 2 0 0 1 2 2v8a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"/>',
+  board: '<rect x="3" y="4" width="18" height="16" rx="2"/><path d="M7 8h4v4H7zM13 8h4v3h-4zM7 14h4v2H7zM13 13h4v3h-4z"/>',
 };
 const ico = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">${ICONS[n]}</svg>`;
 const iel = (n, s = 18) => h('span', { html: ico(n, s), style: 'display:inline-grid;place-items:center' });
@@ -109,7 +114,7 @@ const DEFAULTS = {
   character: 'mikang', petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', petTarget: 'all', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true,
-  launchAtLogin: true, petPos: null, consentShown: false,
+  launchAtLogin: true, petPos: null, consentShown: false, showWidget: true, weatherCity: '서울',
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -123,6 +128,35 @@ function save() {
 }
 const byId = (id) => S.notes.find((n) => n.id === id);
 const isEmpty = (n) => !n.text.trim() && !n.title.trim() && !n.keyword.trim() && !n.photos.length && !n.stickers.length && !n.audios.length;
+
+/* ─────────── 섹션 (큰 책갈피) ─────────── */
+// 책갈피는 섹션(업무·생활·아이디어 …) 단위로 붙고, 섹션을 누르면 그 안의 메모 책갈피가 펼쳐진다.
+const SEC_COLORS = [{ bg: '#a9d3ee', ink: '#21425a' }, { bg: '#f2a9b9', ink: '#5a2331' }, { bg: '#f2dc8f', ink: '#5a4712' }, { bg: '#b9d8b0', ink: '#2f4a2a' }, { bg: '#d6c5f0', ink: '#3d2d5c' }, { bg: '#f7c39a', ink: '#5c3214' }, { bg: '#cfd4da', ink: '#2d3b4d' }, { bg: '#d6342e', ink: '#ffffff' }];
+const INBOX = { id: '', name: '분류 없음', color: 6 };
+const DEFAULT_SECTIONS = () => [{ id: 's-work', name: '업무', color: 0 }, { id: 's-life', name: '생활', color: 3 }, { id: 's-idea', name: '아이디어', color: 1 }];
+const secById = (id) => S.sections.find((x) => x.id === id);
+const secIdOf = (n) => (n.sectionId && secById(n.sectionId) ? n.sectionId : '');
+const secOf = (n) => secById(secIdOf(n)) || INBOX;
+const secColor = (x) => SEC_COLORS[(x.color || 0) % SEC_COLORS.length];
+const notesIn = (id) => S.notes.filter((n) => secIdOf(n) === id);
+const SEC_HINTS = [
+  [/업무|회사|일|프로젝트|직장|학교|공부/, /회의|미팅|발표|제출|마감|보고|기획|업무|자료|출장|메일|프로젝트|고객|계약|과제|시험|수업/],
+  [/생활|일상|집|개인|가족/, /장보기|마트|병원|치과|택배|청소|운동|약속|생일|가족|요리|은행|결제|예약|여행|우유|빨래|약/],
+  [/아이디어|생각|영감|메모/, /아이디어|후보|생각|영감|이름|떠오른/],
+];
+function guessSection(n) {
+  const text = `${n.keyword} ${n.title} ${n.text}`;
+  for (const [nameRe, textRe] of SEC_HINTS) { if (!textRe.test(text)) continue; const x = S.sections.find((y) => nameRe.test(y.name)); if (x) return x.id; }
+  return '';
+}
+function addSection(name) {
+  name = String(name || '').trim().slice(0, 10); if (!name) return null;
+  const ex = S.sections.find((x) => x.name === name); if (ex) return ex;
+  const x = { id: 's-' + uid(), name, color: S.sections.length % SEC_COLORS.length };
+  S.sections.push(x); save(); return x;
+}
+let openSec = null, addingSec = false, dockFolded = false, modalKind = '';
+function toggleSection(id) { openSec = openSec === id ? null : id; renderTabs(); }
 
 let ctx = 'desktop', fgBrowser = false, forcedMode = null;
 let summoned = false, openId = null, agendaOpen = false, selStk = null, modalOpen = false;
@@ -143,7 +177,7 @@ function petMode() {
 }
 function applyMode() {
   const pm = petMode();
-  const showDock = !pm || summoned || !!openId || agendaOpen;
+  const showDock = (!pm && !dockFolded) || summoned || !!openId || agendaOpen;
   const st = $('#stage');
   st.classList.toggle('dock-hidden', !showDock);
   st.classList.toggle('pet-mode', pm);
@@ -153,7 +187,7 @@ function applyMode() {
 }
 
 /* ─────────── 클릭 통과 판정 ─────────── */
-const HIT = '.tab,.sheet.open,.pet:not(.hide),.bubble,.peek.open,.toast,.modal';
+const HIT = '.tab,.subs,.sheet.open,.pet:not(.hide),.bubble,.peek.open,.toast,.modal,.widget';
 function setInter(on) { if (on !== interactive) { interactive = on; api.setInteractive(on); } }
 function updateHit() {
   if (modalOpen || dragging) { setInter(true); return; }
@@ -174,19 +208,44 @@ function upcomingCount() {
 }
 function renderTabs() {
   const dock = $('#dock'); dock.replaceChildren();
-  dock.append(h('button', { class: 'tab add', type: 'button', onclick: () => newNote(), 'aria-label': '새 메모 만들기' }, h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('plus', 15), '새 메모')));
-  for (const n of S.notes) {
-    const t = TH(n.theme), nx = nextEvent(n);
-    dock.append(h('button', { class: 'tab' + (openId === n.id ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, 'aria-expanded': String(openId === n.id), title: n.title || n.keyword, style: `--tc:${t.tab.bg};--ti:${t.tab.ink}`, onclick: () => toggleNote(n.id) },
-      h('span', { class: 'k' }, n.keyword || '새 메모'),
-      nx ? h('span', { class: 'when' }, iel('bell', 11), fmtWhen(nx.at)) : null));
-    bindImageDrop(dock.lastElementChild, () => byId(n.id));
+  dock.append(h('button', { class: 'tab add', type: 'button', onclick: () => newNote(true, openSec ?? undefined), 'aria-label': '새 메모 만들기' }, h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('plus', 15), '새 메모')));
+  const secs = [...S.sections]; if (notesIn('').length) secs.push(INBOX);
+  for (const x of secs) {
+    const list = notesIn(x.id), c = secColor(x), exp = openSec === x.id;
+    let nx = null; for (const n of list) { const e = nextEvent(n); if (e && (!nx || e.at < nx.at)) nx = e; }
+    const tab = h('button', { class: 'tab sec' + (exp ? ' exp' : '') + (list.some((n) => n.ring) ? ' ring' : ''), type: 'button', 'data-sec': x.id, 'aria-expanded': String(exp), title: `${x.name} · 메모 ${list.length}개 (눌러서 ${exp ? '접기' : '펼치기'})`, style: `--tc:${c.bg};--ti:${c.ink}`, onclick: () => toggleSection(x.id) },
+      h('span', { class: 'k' }, h('span', { class: 'sname' }, x.name), h('span', { class: 'cnt' }, String(list.length))),
+      nx ? h('span', { class: 'when' }, iel('bell', 11), fmtWhen(nx.at)) : null);
+    bindImageDrop(tab, () => null, () => newNote(false, x.id));
+    dock.append(tab);
+    if (exp) {
+      const wrap = h('div', { class: 'subs', role: 'group', 'aria-label': `${x.name} 메모` });
+      list.forEach((n, i) => {
+        const t = TH(n.theme), ne = nextEvent(n);
+        const st = h('button', { class: 'tab sub' + (openId === n.id ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, title: n.title || n.keyword, style: `--tc:${t.tab.bg};--ti:${t.tab.ink};--d:${i * 35}ms`, onclick: () => toggleNote(n.id) },
+          h('span', { class: 'k' }, n.keyword || '새 메모'), ne ? h('span', { class: 'when' }, iel('bell', 10), fmtWhen(ne.at)) : null);
+        bindImageDrop(st, () => byId(n.id));
+        wrap.append(st);
+      });
+      wrap.append(h('button', { class: 'tab sub addsub', type: 'button', style: `--d:${list.length * 35}ms`, onclick: () => newNote(true, x.id) }, h('span', { class: 'k', style: 'display:flex;align-items:center;gap:4px' }, iel('plus', 13), '여기에 새 메모')));
+      dock.append(wrap);
+    }
+  }
+  if (addingSec) {
+    const done = (save1) => { if (!addingSec) return; addingSec = false; const x = save1 ? addSection(inp.value) : null; if (x) openSec = x.id; renderTabs(); };
+    const inp = h('input', { id: 'secNew', class: 'secinput', type: 'text', maxlength: '10', placeholder: '섹션 이름', 'aria-label': '새 섹션 이름',
+      onkeydown: (e) => { if (e.key === 'Enter' && !e.isComposing) done(true); else if (e.key === 'Escape') { e.stopPropagation(); done(false); } },
+      onblur: () => setTimeout(() => done(true), 120) });
+    dock.append(h('div', { class: 'tab add secform' }, inp));
+  } else {
+    dock.append(h('button', { class: 'tab add secadd', type: 'button', title: '큰 책갈피(섹션) 만들기', onclick: () => { addingSec = true; renderTabs(); api.focus(); setTimeout(() => { const i = $('#secNew'); i && i.focus(); }, 40); } },
+      h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('folder', 14), '섹션 추가')));
   }
   const cnt = upcomingCount();
   dock.append(h('button', { class: 'tab agenda' + (agendaOpen ? ' open' : ''), type: 'button', 'aria-expanded': String(agendaOpen), onclick: toggleAgenda },
     h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('cal', 15), '일정'),
     cnt ? h('span', { class: 'when' }, `오늘 ${cnt}개`) : null));
-  renderPetBadges();
+  renderPetBadges(); renderWidget();
 }
 function setTabText(n) { const b = $(`.tab[data-id="${n.id}"] .k`); if (b) b.textContent = n.keyword || '새 메모'; }
 
@@ -202,6 +261,7 @@ function commitCurrent() {
   if (isEmpty(n) && !(rec && rec.noteId === n.id)) { S.notes = S.notes.filter((x) => x !== n); return; }
   if (!n.keyword.trim() && (n.text.trim() || n.title.trim())) n.keyword = P.guessKeyword(n.text, n.title);
   if (!n.summary.length && n.text.trim()) n.summary = P.summarize(n.text);
+  if (!n.secManual && !secIdOf(n)) { const g = guessSection(n); if (g) n.sectionId = g; }
   // 자동화: 내용이 바뀐 채로 접으면 비서가 알아서 정리하고 알람까지 맞춘다
   if (S.settings.autoOrganize && (n.text.trim() || (keys.anthropic && n.photos.length)) && n.orgHash !== noteHash(n)) organizeNote(n, { auto: true });
 }
@@ -219,7 +279,7 @@ function openNote(id) {
   if (openId && openId !== id) commitCurrent();
   closePeek(true); closeBubble();
   agendaOpen = false; $('#agenda').classList.remove('open');
-  openId = n.id; n.ring = false; n.viewedAt = Date.now(); selStk = null;
+  openId = n.id; n.ring = false; n.viewedAt = Date.now(); selStk = null; openSec = secIdOf(n);
   renderCard(n); fit();
   $('#sheet').classList.add('open');
   renderTabs(); applyMode(); save();
@@ -233,13 +293,14 @@ function toggleAgenda() {
   $('#agenda').classList.add('open');
   renderTabs(); applyMode();
 }
-function blankNote() {
+function blankNote(sectionId) {
   const idx = ((S.nextTheme || 0) + 1) % THEMES.length; S.nextTheme = idx;
-  return { id: uid(), theme: THEMES[idx].id, title: '', text: '', keyword: '', kwManual: false, summary: [], events: [], photos: [], stickers: [], audios: [], aiSource: '', createdAt: Date.now(), viewedAt: Date.now(), orgHash: '' };
+  const sec = sectionId ?? openSec ?? '';
+  return { id: uid(), theme: THEMES[idx].id, sectionId: sec, secManual: !!sec, title: '', text: '', keyword: '', kwManual: false, summary: [], events: [], photos: [], stickers: [], audios: [], aiSource: '', createdAt: Date.now(), viewedAt: Date.now(), orgHash: '' };
 }
-function newNote(focus = true) {
+function newNote(focus = true, sectionId) {
   if (openId) commitCurrent();
-  const n = blankNote();
+  const n = blankNote(sectionId);
   S.notes.unshift(n); save(); openNote(n.id);
   if (focus) setTimeout(() => { const t = $('#sheet .body'); t && t.focus(); }, 80);
   return n;
@@ -274,7 +335,7 @@ function renderCard(n) {
     onblur: () => { if (!n.keyword.trim() && n.text.trim()) { n.keyword = P.guessKeyword(n.text, n.title); kw.value = n.keyword; setTabText(n); } renderChips(n); save(); },
     onpaste: (e) => { const fs = imageFiles(e.clipboardData?.files); if (fs.length) { e.preventDefault(); addPhotos(n, fs); } } });
   body.value = n.text;
-  const content = h('div', { class: 'content' }, kw, ttl);
+  const content = h('div', { class: 'content' }, kw, h('div', { class: 'ttlrow' }, ttl, sectionPicker(n)));
   if (n.summary.length) content.append(h('div', { class: 'sum' },
     h('div', { class: 'sh' }, iel('sparkle', 12), n.aiSource === 'claude' ? `${C.charName(S)}가 정리한 요점` : '요점 (기본 규칙으로 정리)'),
     h('ul', {}, n.summary.map((s) => h('li', {}, s)))));
@@ -325,6 +386,29 @@ function renderCard(n) {
   renderStickers(n); renderChips(n);
 }
 
+/** 메모지 위쪽의 '분류' 고르기. 새 섹션도 바로 만들 수 있다. */
+function sectionPicker(n) {
+  const wrap = h('span', { class: 'secpick' });
+  const setSec = (id) => { n.sectionId = id; n.secManual = true; openSec = id; save(); renderTabs(); draw(); };
+  function draw() {
+    const x = secOf(n), c = secColor(x);
+    const sel = h('select', { class: 'secsel', 'aria-label': '분류(섹션)', title: '이 메모를 넣을 섹션', style: `--tc:${c.bg};--ti:${c.ink}`,
+      onchange: (e) => {
+        if (e.target.value !== '__new') { setSec(e.target.value); return; }
+        const fin = (ok) => { if (!inp.isConnected) return; const ns = ok ? addSection(inp.value) : null; if (ns) setSec(ns.id); else draw(); };
+        const inp = h('input', { class: 'secsel', type: 'text', maxlength: '10', placeholder: '새 섹션 이름', 'aria-label': '새 섹션 이름',
+          onkeydown: (ev) => { if (ev.key === 'Enter' && !ev.isComposing) fin(true); else if (ev.key === 'Escape') { ev.stopPropagation(); fin(false); } },
+          onblur: () => setTimeout(() => fin(true), 120) });
+        wrap.replaceChildren(inp); inp.focus();
+      } },
+      S.sections.map((y) => h('option', { value: y.id, selected: y.id === secIdOf(n) }, y.name)),
+      h('option', { value: '', selected: secIdOf(n) === '' }, '분류 없음'),
+      h('option', { value: '__new' }, '＋ 새 섹션 만들기…'));
+    wrap.replaceChildren(iel('folder', 14), sel);
+  }
+  draw();
+  return wrap;
+}
 function perchSay(text, ttl = 3500) {
   const el = $('#perchSay'); if (!el) return;
   el.textContent = text; el.classList.add('show');
@@ -367,29 +451,78 @@ async function togglePlay(n, a) {
 }
 
 /* ─────────── 사진 · 스티커 ─────────── */
-const MAX_PHOTOS = 4;
+const MAX_PHOTOS = 6;
+const IMG_EXT = /\.(jpe?g|jfif|pjpeg|pjp|png|apng|gif|webp|bmp|dib|svg|avif|heic|heif|ico|cur|tiff?)$/i;
+const isImageFile = (f) => !!f && ((f.type || '').startsWith('image/') || IMG_EXT.test(f.name || ''));
+const imageFiles = (list) => [...(list || [])].filter(isImageFile);
+const ACCEPT = 'image/*,.heic,.heif,.tif,.tiff,.avif,.bmp,.svg,.ico,.webp,.gif,.jfif,.png,.jpg,.jpeg';
 /** 파일 고르기 버튼: <label> 안에 진짜 파일 입력을 넣어, 스크립트 없이 브라우저가 직접 '파일 열기' 창을 띄운다.
  *  (숨긴 input을 스크립트로 click() 하면 Safari·일부 앱 화면에서 막힌다) */
 function filePicker({ cls = 'btn', label = '', title, multiple = true, onFiles }, ...kids) {
-  const input = h('input', { type: 'file', class: 'fp-input', accept: 'image/*', multiple: multiple || null, tabindex: '-1', 'aria-hidden': 'true',
-    onchange: (e) => { const fs = imageFiles(e.target.files); e.target.value = ''; if (fs.length) onFiles(fs); else if (e.target.files && e.target.files.length) toast({ title: '사진 파일(JPG, PNG 등)만 넣을 수 있어요', ttl: 3000 }); } });
+  const input = h('input', { type: 'file', class: 'fp-input', accept: ACCEPT, multiple: multiple || null, tabindex: '-1', 'aria-hidden': 'true',
+    onchange: (e) => { const fs = imageFiles(e.target.files); const total = (e.target.files || []).length; e.target.value = ''; if (fs.length) onFiles(fs); if (total > fs.length) toast({ title: '사진이 아닌 파일은 빼고 넣었어요', ttl: 3000 }); } });
   const el = h('label', { class: cls + ' fp', title: title || label || null, role: 'button', tabindex: '0', 'aria-label': label || title || null,
     onkeydown: (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); input.click(); } } }, ...kids, input);
   return el;
 }
-const imageFiles = (list) => [...(list || [])].filter((f) => f && f.type && f.type.startsWith('image/'));
 function readFileURL(file) {
   return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error('파일을 읽지 못했어요')); r.readAsDataURL(file); });
 }
+const loadImg = (src) => new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error('decode')); im.src = src; });
+// 브라우저가 바로 못 여는 형식(HEIC·TIFF)은 변환 도구를 필요할 때만 불러온다
+const LIBS = {
+  heic2any: { global: 'heic2any', path: '../node_modules/heic2any/dist/heic2any.min.js', cdn: 'https://cdn.jsdelivr.net/npm/heic2any@0.0.4/dist/heic2any.min.js' },
+  utif: { global: 'UTIF', path: '../node_modules/utif/UTIF.js', cdn: 'https://cdn.jsdelivr.net/npm/utif@3.1.0/UTIF.js' },
+};
+const libP = {};
+function loadLib(name) {
+  const L = LIBS[name];
+  if (window[L.global]) return Promise.resolve(window[L.global]);
+  if (!libP[name]) libP[name] = new Promise((res, rej) => {
+    const sc = document.createElement('script');
+    sc.src = api.libSrc ? api.libSrc(L) : L.path;
+    sc.onload = () => (window[L.global] ? res(window[L.global]) : rej(new Error('변환 도구를 불러오지 못했어요')));
+    sc.onerror = () => { libP[name] = null; rej(new Error('변환 도구를 불러오지 못했어요. 인터넷 연결을 확인해 주세요')); };
+    document.head.append(sc);
+  });
+  return libP[name];
+}
+const withTimeout = (pr, ms) => Promise.race([pr, new Promise((_, rej) => setTimeout(() => rej(new Error('사진을 여는 데 시간이 너무 오래 걸려요')), ms))]);
+async function decodeImage(file) {
+  const kind = (file.type || '') + ' ' + (file.name || '');
+  try { const src = await readFileURL(file); return { img: await loadImg(src), src }; }
+  catch (e) { if (!/heic|heif|tiff?/i.test(kind)) throw e; }
+  if (/heic|heif/i.test(kind)) {
+    if (api.convertHeic) { // 데스크톱 앱: 메인 프로세스에서 변환
+      const out = await api.convertHeic(await file.arrayBuffer());
+      const src = await readFileURL(new Blob([out], { type: 'image/jpeg' }));
+      return { img: await loadImg(src), src };
+    }
+    const heic2any = await loadLib('heic2any').catch(() => { throw new Error('이 브라우저에서는 HEIC 사진을 열 수 없어요. 데스크톱 앱이나 Safari에서 넣어주세요'); });
+    const out = await heic2any({ blob: file, toType: 'image/jpeg', quality: 0.85 });
+    const src = await readFileURL(Array.isArray(out) ? out[0] : out);
+    return { img: await loadImg(src), src };
+  }
+  const UTIF = await loadLib('utif');
+  const buf = await file.arrayBuffer(), ifds = UTIF.decode(buf); UTIF.decodeImage(buf, ifds[0]);
+  const rgba = UTIF.toRGBA8(ifds[0]), c = document.createElement('canvas'); c.width = ifds[0].width; c.height = ifds[0].height;
+  c.getContext('2d').putImageData(new ImageData(new Uint8ClampedArray(rgba.buffer), c.width, c.height), 0, 0);
+  const src = c.toDataURL('image/png');
+  return { img: await loadImg(src), src };
+}
 async function readPhoto(file, max = 1024) {
-  if (!file || !/^image\//.test(file.type || '')) throw new Error('사진 파일이 아니에요');
-  if (file.size > 40 * 1024 * 1024) throw new Error('40MB보다 큰 사진은 넣을 수 없어요');
-  const src = await readFileURL(file);
-  const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error(/heic|heif/i.test(file.type + file.name) ? 'HEIC 사진은 아직 못 열어요. JPG로 바꿔서 넣어주세요' : '이 사진 형식은 열 수 없어요')); im.src = src; });
-  const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
-  c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+  if (!isImageFile(file)) throw new Error('사진 파일이 아니에요');
+  if (file.size > 60 * 1024 * 1024) throw new Error('60MB보다 큰 사진은 넣을 수 없어요');
+  let d;
+  try { d = await withTimeout(decodeImage(file), 30000); }
+  catch (e) { throw new Error(/변환 도구|HEIC|시간/.test(e && e.message) ? e.message : '이 사진은 열 수 없어요 (파일이 손상됐거나 이 컴퓨터가 지원하지 않는 형식)'); }
+  const { img, src } = d;
+  // 작은 PNG·GIF·WebP·SVG는 원본 그대로 둔다 (투명 배경, 움직이는 GIF 유지)
+  if (/^data:image\/(png|gif|webp|svg\+xml)/.test(src) && src.length < 700000 && Math.max(img.width, img.height) <= 1600) return src;
+  const k = Math.min(1, max / Math.max(img.width || max, img.height || max)), c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round((img.width || max) * k)); c.height = Math.max(1, Math.round((img.height || max) * k));
   const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
-  return c.toDataURL('image/jpeg', 0.8);
+  return c.toDataURL('image/jpeg', 0.82);
 }
 async function addPhotos(n, files) {
   let added = 0;
@@ -404,16 +537,17 @@ async function addPhotos(n, files) {
   }
   return added;
 }
-/** 캐릭터나 책갈피에 사진을 끌어다 놓기 */
-function bindImageDrop(el, target) {
+/** 캐릭터·책갈피·모아보기 메모에 사진 파일을 끌어다 놓기 */
+function bindImageDrop(el, target, makeNew) {
   el.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); el.classList.add('dropping'); } });
   el.addEventListener('dragleave', () => el.classList.remove('dropping'));
   el.addEventListener('drop', async (e) => {
     el.classList.remove('dropping');
     const fs = imageFiles(e.dataTransfer?.files); if (!fs.length) return;
     e.preventDefault(); e.stopPropagation();
+    if (modalKind === 'board') closeBoard();
     let n = target();
-    if (!n) { n = newNote(false); }
+    if (!n) n = makeNew ? makeNew() : newNote(false);
     await addPhotos(n, fs);
     if (openId !== n.id) openNote(n.id);
   });
@@ -567,8 +701,10 @@ function morningBrief() {
   const d = new Date(), key = `${d.getFullYear()}-${d.getMonth() + 1}-${d.getDate()}`;
   if (S.lastBrief === key || d.getHours() < 7) return;
   S.lastBrief = key; save();
-  const msg = `좋은 아침이에요! ${briefing()}`;
-  setTimeout(() => { say(msg, { ttl: 12000 }); setMood('talk', 3000); }, 1200);
+  setTimeout(async () => {
+    let w = ''; if (api.weather) { const t = await weatherReply('오늘 날씨').catch(() => ''); if (/°C/.test(t)) w = ' ' + t; }
+    say(`좋은 아침이에요! ${briefing()}${w}`, { ttl: 14000 }); setMood('talk', 3000);
+  }, 1200);
   if (todayEvents().length) api.notify({ title: `${C.charName(S)}의 오늘 브리핑`, body: briefing() });
 }
 function todayEvents() {
@@ -598,16 +734,16 @@ function normalizeAI(j, text) {
   return {
     keyword: keyword || P.guessKeyword(text, ''), title: String(j.title || '').slice(0, 40), body: String(j.body || '').trim() || text,
     summary: (Array.isArray(j.summary) ? j.summary : []).map((s) => String(s).trim().slice(0, 40)).filter(Boolean).slice(0, 3),
-    events, reply: String(j.reply || '').trim(), src: 'claude',
+    events, reply: String(j.reply || '').trim(), section: String(j.section || '').trim(), src: 'claude',
   };
 }
 function localResult(text, title, kind) {
   const a = P.localAnalyze(text, title);
-  return { keyword: a.keyword, title: '', body: kind === 'transcript' ? P.tidyTranscript(text) : text, summary: a.summary, events: a.events, reply: '', src: 'local' };
+  return { keyword: a.keyword, title: '', body: kind === 'transcript' ? P.tidyTranscript(text) : text, summary: a.summary, events: a.events, reply: '', section: '', src: 'local' };
 }
 async function aiOrganize(text, title, kind, images = []) {
   if (keys.anthropic) {
-    const r = await api.organize({ text, title, kind, images: images.filter((d) => /^data:image\/jpeg;base64,/.test(d)).slice(0, MAX_PHOTOS) });
+    const r = await api.organize({ text, title, kind, sections: S.sections.map((x) => x.name), images: images.filter((d) => /^data:image\/(jpeg|png|gif|webp);base64,/.test(d)).slice(0, 4) });
     if (r.ok) { try { return normalizeAI(r.result, text); } catch {} }
     else if (r.reason === 'error') toast({ title: 'AI 정리 대신 기본 규칙으로 정리했어요', body: r.error, ttl: 4500 });
   }
@@ -627,6 +763,7 @@ function applyResult(n, r) {
   if (!n.title.trim() && r.title) n.title = r.title;
   if (r.summary.length) n.summary = r.summary;
   n.aiSource = r.src;
+  if (!n.secManual && !secIdOf(n)) { const x = S.sections.find((y) => y.name === r.section); n.sectionId = x ? x.id : guessSection(n); }
   const added = []; for (const ev of r.events) { const e = addEvent(n, ev); if (e) added.push(e); }
   return added;
 }
@@ -654,8 +791,31 @@ async function organizeNote(n, { auto }) {
   } finally { organizing.delete(n.id); if (mood === 'think') setMood('idle'); }
 }
 /** 비서에게 부탁: 글이나 말로 한 부탁을 새 메모로 만들고 알람까지 맞춘다. */
+const WMO = (c) => (c === 0 ? '맑음' : c <= 2 ? '구름 조금' : c === 3 ? '흐림' : c <= 48 ? '안개' : c <= 57 ? '이슬비' : c <= 67 ? '비' : c <= 77 ? '눈' : c <= 82 ? '소나기' : c <= 86 ? '눈 소나기' : '천둥번개');
+const josa = (w, a, b) => { const ch = String(w).charCodeAt(String(w).length - 1); return w + ((ch >= 0xac00 && ch <= 0xd7a3 && (ch - 0xac00) % 28) ? a : b); };
+const isWeatherAsk = (t) => /(날씨|기온|몇\s*도|우산|비\s*(와|오|올|내)|눈\s*(와|오|올|내)|더워|추워|덥나|춥나|미세먼지)/.test(t) && !/(까지|알람|메모해|적어)/.test(t);
+async function weatherReply(text = '') {
+  let city = (S.settings.weatherCity || '서울').trim();
+  const m = text.match(/([가-힣A-Za-z]{2,12})\s*(?:의\s*)?(?:날씨|기온)/);
+  if (m && !/^(오늘|내일|지금|요즘|이번주|주말|모레|현재|우리|여기)$/.test(m[1])) city = m[1];
+  if (!api.weather) return '날씨는 데스크톱 앱에서 알려드릴 수 있어요.';
+  const r = await api.weather(city).catch(() => ({ ok: false }));
+  if (!r || !r.ok) return (r && r.error) || '날씨를 가져오지 못했어요. 잠시 뒤에 다시 물어봐 주세요.';
+  const tm = /내일/.test(text), d = tm ? r.tomorrow : r.today, rd = (v) => Math.round(v);
+  let msg = tm ? `${r.place} 내일은 ${WMO(d.code)}, ${rd(d.min)}~${rd(d.max)}°C예요.` : `${josa(r.place, '은', '는')} 지금 ${rd(r.now.temp)}°C, ${WMO(r.now.code)}이에요. 오늘은 ${rd(d.min)}~${rd(d.max)}°C`;
+  if (!tm) msg += d.pop != null ? `, 비 올 확률 ${d.pop}%예요.` : '예요.';
+  else if (d.pop != null) msg += ` 비 올 확률은 ${d.pop}%.`;
+  if (d.pop >= 50) msg += ' 우산 꼭 챙기세요!'; else if (d.max <= 3) msg += ' 많이 추워요. 따뜻하게 입으세요.'; else if (d.max >= 30) msg += ' 더우니 물 자주 마셔요.';
+  return msg;
+}
+async function askWeather(text) {
+  setMood('think'); say('날씨를 알아볼게요…', { menu: false, ttl: 0 });
+  const msg = await weatherReply(text);
+  setMood('talk', 2500); say(msg, { ttl: 12000 });
+}
 async function askAssistant(text) {
   text = text.trim(); if (!text) return;
+  if (isWeatherAsk(text)) return askWeather(text);
   setMood('think'); say('정리하고 있어요…', { menu: false, ttl: 0 });
   const r = await aiOrganize(text, '', 'command');
   const n = blankNote();
@@ -837,7 +997,8 @@ function renderPet() {
   const sig = S.settings.character + '|' + (S.settings.character === 'custom' ? S.settings.customChar.length : '');
   if (sig !== petChar) {
     petChar = sig;
-    pet.innerHTML = C.charHTML(S.settings.character, S.settings.customChar) + '<span class="rec-badge">● 녹음</span><span class="count" hidden></span>';
+    pet.innerHTML = C.charHTML(S.settings.character, S.settings.customChar) + '<span class="rec-badge">● 녹음</span><span class="count" hidden></span>'
+      + `<span class="talk" role="button" aria-label="비서와 이야기하기" title="비서와 이야기하기 (날씨·부탁·녹음)">${ico('chat', 15)}</span>`;
   }
   pet.classList.toggle('recording', !!rec);
   pet.setAttribute('aria-label', C.charName(S) + ' (AI 비서)');
@@ -864,7 +1025,7 @@ function bindPet() {
   pet.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    const sx = e.clientX, sy = e.clientY, o = petXY(); let moved = false;
+    const sx = e.clientX, sy = e.clientY, o = petXY(); let moved = false; const onTalk = !!e.target.closest('.talk');
     pet.setPointerCapture(e.pointerId); dragging = true;
     const mv = (ev) => {
       if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
@@ -877,23 +1038,25 @@ function bindPet() {
     const up = () => {
       dragging = false;
       pet.removeEventListener('pointermove', mv); pet.removeEventListener('pointerup', up); pet.removeEventListener('pointercancel', up);
-      if (moved) save(); else onPetClick();
+      if (moved) save(); else if (onTalk) toggleMenu(); else onPetClick();
     };
     pet.addEventListener('pointermove', mv); pet.addEventListener('pointerup', up); pet.addEventListener('pointercancel', up);
   });
   pet.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPetClick(); } });
-  pet.addEventListener('contextmenu', (e) => { e.preventDefault(); openSettings(); });
+  pet.addEventListener('contextmenu', (e) => { e.preventDefault(); toggleMenu(); });
   bindImageDrop(pet, () => (openId ? byId(openId) : null));
 }
+/** 캐릭터를 누르면 책갈피가 펼쳐지고, 한 번 더 누르면 접힌다. */
 function onPetClick() {
   if (rec && rec.kind === 'command') { stopRecording(); return; }
-  if (rec) { const n = byId(rec.noteId); if (n && openId !== n.id) { openNote(n.id); return; } }
-  if (bubble.open && bubble.menu) { closeAll(); return; }
-  if (openId || agendaOpen) { closeAll(); return; }
-  summoned = true; applyMode(); renderTabs();
-  openMenu();
-  api.focus();
+  const shown = !$('#stage').classList.contains('dock-hidden');
+  if (shown) {
+    if (openId || agendaOpen || bubble.open) closeAll();
+    summoned = false; dockFolded = !petMode();
+  } else { dockFolded = false; summoned = petMode(); }
+  applyMode(); renderTabs(); setMood('talk', 700);
 }
+function toggleMenu() { if (bubble.open && bubble.menu) closeBubble(); else { openMenu(); api.focus(); } }
 
 /* 말풍선 */
 function placeBubble() {
@@ -928,11 +1091,13 @@ function appendMenu(b) {
       h('button', { type: 'button', onclick: () => { closeBubble(); newNote(); } }, iel('edit', 18), '새 메모'),
       h('button', { type: 'button', onclick: () => { closeBubble(); quickRecord(); } }, iel('mic', 18), rec ? '녹음 정지' : '녹음 메모'),
       h('button', { type: 'button', onclick: () => { closeBubble(); toggleAgenda(); } }, iel('cal', 18), '일정'),
+      h('button', { type: 'button', onclick: () => askWeather('오늘 날씨') }, iel('sun', 18), '날씨'),
+      h('button', { type: 'button', onclick: () => { closeBubble(); openBoard(); } }, iel('board', 18), '모아보기'),
       h('button', { type: 'button', onclick: () => { closeBubble(); openSettings(); } }, iel('gear', 18), '설정')),
     h('div', { class: 'ask' }, input,
       h('button', { class: 'btn icon', type: 'button', title: '말로 부탁하기', 'aria-label': '말로 부탁하기', onclick: () => startRecording(null, 'command'), html: ico('mic', 16) }),
       h('button', { class: 'btn primary icon', type: 'button', 'aria-label': '보내기', onclick: () => { if (input.value.trim()) { askAssistant(input.value); input.value = ''; } }, html: ico('send', 16) })),
-    h('div', { class: 'ex' }, '예) 내일 12시까지 회의자료 제출 · 금요일 오후 3시 치과'));
+    h('div', { class: 'ex' }, '예) 내일 12시까지 회의자료 제출 · 오늘 날씨 어때? · 부산 내일 날씨'));
 }
 function closeBubble() { clearTimeout(bubble.t); bubble = { open: false, menu: false, t: 0 }; $('#bubble').hidden = true; updateHit(); }
 
@@ -969,6 +1134,7 @@ function renderPeek() {
   const body = n.text.split('\n').filter(Boolean).slice(0, 6).join('\n');
   el.replaceChildren(h('div', { class: 'pcard', style: `--pf:${t.fill};--ps:${t.stroke};--ph:${t.hl};--pr:${t.rule}`, onclick: () => openNote(n.id), title: '눌러서 메모 열기' },
     charBox,
+    h('div', { class: 'psec', style: `--tc:${secColor(secOf(n)).bg};--ti:${secColor(secOf(n)).ink}` }, secOf(n).name),
     h('div', { class: 'pk' }, n.keyword || '메모'),
     h('div', { class: 'pt' }, body || '(내용 없음)'),
     n.photos.length ? h('div', { class: 'pph' }, n.photos.slice(0, 3).map((src) => h('img', { src: /^data:image\//.test(src) ? src : '', alt: '' }))) : null,
@@ -1110,6 +1276,22 @@ async function openSettings() {
     h('div', { class: 'row' },
       h('button', { class: 'btn primary', type: 'button', disabled: maker.busy || !maker.result, onclick: () => { st.customChar = maker.result; st.character = 'custom'; maker = null; petChar = ''; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); toast({ title: '새 캐릭터가 준비됐어요', ttl: 2500 }); } }, '이 캐릭터로 정하기'),
       h('button', { class: 'btn', type: 'button', onclick: () => { maker = null; render(); } }, '취소')));
+  const armedDel = {};
+  const secManager = () => h('div', { class: 'secman' },
+    S.sections.map((x) => h('div', { class: 'row' },
+      h('input', { type: 'text', value: x.name, maxlength: '10', 'aria-label': '섹션 이름', style: 'flex:0 1 150px;min-width:90px', onchange: (e) => { x.name = e.target.value.trim() || x.name; save(); renderTabs(); } }),
+      h('span', { class: 'secsw' }, SEC_COLORS.map((c, i) => h('button', { type: 'button', class: 'sw', 'aria-label': `색 ${i + 1}`, 'aria-pressed': String((x.color || 0) % SEC_COLORS.length === i), style: `background:${c.bg}`, onclick: () => { x.color = i; save(); renderTabs(); render(); } }))),
+      h('span', { class: 'lbl' }, `메모 ${notesIn(x.id).length}개`),
+      h('button', { class: 'btn' + (armedDel[x.id] ? ' del armed' : ''), type: 'button', onclick: () => {
+        if (!armedDel[x.id]) { armedDel[x.id] = 1; render(); setTimeout(() => { if (armedDel[x.id]) { delete armedDel[x.id]; render(); } }, 3000); return; }
+        for (const n of notesIn(x.id)) { n.sectionId = ''; n.secManual = false; }
+        S.sections = S.sections.filter((y) => y !== x); if (openSec === x.id) openSec = null; save(); renderTabs(); render();
+      } }, armedDel[x.id] ? '정말 지울까요? (메모는 남아요)' : '지우기'))),
+    (() => { const inp = h('input', { type: 'text', maxlength: '10', placeholder: '새 섹션 이름 (예: 공부)', 'aria-label': '새 섹션 이름', style: 'flex:0 1 200px' });
+      const add = () => { if (addSection(inp.value)) { renderTabs(); render(); } };
+      inp.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.isComposing) add(); });
+      return h('div', { class: 'row' }, inp, h('button', { class: 'btn', type: 'button', onclick: add }, '섹션 추가')); })(),
+    h('p', { class: 'note' }, '메모를 접으면 내용에 맞는 섹션으로 알아서 넣어줘요. 메모지 위쪽의 분류에서 직접 바꿀 수도 있어요.'));
   function render() {
     const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': '설정' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, '설정'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
@@ -1128,6 +1310,13 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '캐릭터만 남길 때'), seg('petTarget', [['all', '바탕화면이 아니면 항상'], ['browser', '웹 브라우저를 쓸 때만']], applyMode)),
       h('p', { class: 'note' }, '자동: 바탕화면이 보이면 책갈피가 펼쳐지고, 다른 앱이나 웹을 쓰는 동안에는 캐릭터만 남아요. 캐릭터를 누르면 그 화면에서 책갈피가 나와요.'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '가장자리 미리보기'), seg('peek', [[true, '켜기'], [false, '끄기']]), seg('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '모아보기 위젯'), seg('showWidget', [[true, '화면 위에 보이기'], [false, '숨기기']], renderWidget)),
+      h('h4', {}, '섹션 (큰 책갈피)'),
+      secManager(),
+      h('h4', {}, '날씨'),
+      h('div', { class: 'row' }, h('label', { for: 'wcity', style: 'min-width:96px' }, '지역'),
+        h('input', { type: 'text', id: 'wcity', maxlength: '20', value: st.weatherCity, placeholder: '예: 서울, 부산, 제주', onchange: (e) => { st.weatherCity = e.target.value.trim() || '서울'; save(); } }),
+        h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWeather('오늘 날씨'); } }, '지금 날씨 묻기')),
       h('h4', {}, '자동 정리 · 알람'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '자동 정리'), seg('autoOrganize', [[true, '메모를 접으면 자동으로'], [false, '버튼 누를 때만']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '마감 미리 알림'), seg('preDeadline', [[0, '없음'], [30, '30분 전'], [60, '1시간 전'], [180, '3시간 전'], [1440, '하루 전']])),
@@ -1149,7 +1338,95 @@ async function openSettings() {
   m.onpointerdown = (e) => { if (e.target === m) closeSettings(); };
   render();
 }
-function closeSettings() { modalOpen = false; $('#modal').hidden = true; $('#modal').replaceChildren(); renderTabs(); applyMode(); updateHit(); }
+function closeSettings() { modalOpen = false; modalKind = ''; $('#modal').hidden = true; $('#modal').replaceChildren(); renderTabs(); applyMode(); updateHit(); }
+
+/* ─────────── 메모 모아보기 (항상 위 위젯 + 전체 보드) ─────────── */
+let boardFilter = 'all';
+function renderWidget() {
+  const w = $('#widget'); if (!w || !S) return;
+  w.hidden = !S.settings.showWidget;
+  const total = S.notes.filter((n) => !isEmpty(n)).length, today = todayEvents().length;
+  w.replaceChildren(h('button', { type: 'button', class: 'wbtn', title: '모든 메모를 한눈에 보기', onclick: () => (modalKind === 'board' ? closeBoard() : openBoard()) },
+    h('span', { class: 'wpin', html: ico('pin', 15) }), h('b', {}, '메모 모아보기'), h('span', { class: 'wcount' }, String(total)),
+    today ? h('span', { class: 'wtoday' }, `오늘 ${today}`) : null));
+}
+function openBoard(filter) {
+  if (openId || agendaOpen) closeAll();
+  closePeek(true); closeBubble();
+  if (filter !== undefined) boardFilter = filter;
+  if (boardFilter !== 'all' && boardFilter !== '' && !secById(boardFilter)) boardFilter = 'all';
+  modalOpen = true; modalKind = 'board'; updateHit(); api.focus();
+  const m = $('#modal'); m.hidden = false; m.classList.add('boardwrap');
+  m.onpointerdown = (e) => { if (e.target === m) closeBoard(); };
+  renderBoard();
+}
+function closeBoard() {
+  modalOpen = false; modalKind = '';
+  const m = $('#modal'); m.hidden = true; m.classList.remove('boardwrap'); m.replaceChildren(); m.onpointerdown = null;
+  updateHit();
+}
+const boardHash = () => S.notes.map((n) => n.id + noteHash(n) + secIdOf(n)).join('|');
+function boardOverview() {
+  const notes = S.notes.filter((n) => !isEmpty(n)), now = Date.now(), lines = [];
+  const today = todayEvents();
+  lines.push(today.length ? `오늘 할 일 ${today.length}개: ${today.slice(0, 3).map((x) => `${fmtTime(new Date(x.e.at))} ${x.e.title}`).join(', ')}${today.length > 3 ? ' 외' : ''}` : '오늘 잡힌 일정은 없어요.');
+  const dls = []; S.notes.forEach((n) => n.events.forEach((e) => { if (e.deadline && !e.done && e.at > now) dls.push(e); })); dls.sort((a, b) => a.at - b.at);
+  if (dls.length) lines.push(`다가오는 마감: ${dls.slice(0, 3).map((e) => `${e.title} (${fmtWhen(e.at)})`).join(', ')}`);
+  for (const x of [...S.sections, INBOX]) { const l = notesIn(x.id).filter((n) => !isEmpty(n)); if (l.length) lines.push(`[${x.name}] ${l.length}개 · ${l.slice(0, 4).map((n) => n.keyword || '메모').join(', ')}${l.length > 4 ? ' …' : ''}`); }
+  return { head: `메모 ${notes.length}개가 섹션 ${S.sections.length}개에 정리돼 있어요.`, lines };
+}
+async function aiBoardSummary(btn) {
+  btn.disabled = true; btn.replaceChildren(iel('sparkle', 14), '요약하는 중…'); setMood('think');
+  const notes = S.notes.filter((n) => !isEmpty(n)).map((n) => ({ section: secOf(n).name, keyword: n.keyword, title: n.title, text: n.text.slice(0, 600),
+    events: n.events.filter((e) => !e.done).map((e) => `${fmtDate(new Date(e.at))} ${fmtTime(new Date(e.at))} ${e.title}${e.deadline ? ' (마감)' : ''}`) }));
+  const r = keys.anthropic && api.summarize ? await api.summarize({ notes }).catch(() => ({ ok: false })) : { ok: false, reason: 'nokey' };
+  if (r.ok && r.text) { S.boardAI = { hash: boardHash(), text: r.text.trim(), at: Date.now() }; save(); }
+  else toast({ title: r.reason === 'nokey' ? 'AI 요약에는 Claude 연결이 필요해요' : 'AI 요약을 하지 못했어요', body: r.error || (r.reason === 'nokey' ? '설정 → AI 연결을 확인해 주세요. 지금은 기본 요약을 보여드려요.' : ''), ttl: 5000 });
+  setMood('idle'); if (modalKind === 'board') renderBoard();
+}
+function boardNote(n) {
+  const t = TH(n.theme), ne = nextEvent(n);
+  const seedN = [...n.id].reduce((a, ch) => a + ch.charCodeAt(0), 0), rot = ((seedN % 7) - 3) * 0.7;
+  const lines = (n.summary.length ? n.summary : n.text.split('\n').map((l) => l.trim()).filter(Boolean)).slice(0, 3);
+  const el = h('button', { type: 'button', class: 'bnote', 'data-id': n.id, style: `--nf:${t.fill};--ns:${t.stroke};--nh:${t.hl};--rot:${rot}deg;--pin:${t.clip.c}`, title: '눌러서 이 메모 열기', 'aria-label': `${n.keyword || '메모'} 메모 열기`, onclick: () => { closeBoard(); openNote(n.id); } },
+    h('span', { class: 'bpin' }),
+    h('span', { class: 'bk' }, n.keyword || '메모'),
+    n.title ? h('span', { class: 'bt' }, n.title) : null,
+    h('span', { class: 'bl' }, lines.map((l) => h('span', {}, l))),
+    n.photos.length ? h('span', { class: 'bph' }, n.photos.slice(0, 3).map((src) => h('img', { src: /^data:image\//.test(src) ? src : '', alt: '' }))) : null,
+    ne ? h('span', { class: 'chip' }, ne.deadline ? h('span', { class: 'dl' }, '마감') : iel('bell', 11), `${fmtWhen(ne.at)} ${ne.title}`) : null);
+  bindImageDrop(el, () => byId(n.id));
+  return el;
+}
+function renderBoard() {
+  const m = $('#modal'), ov = boardOverview();
+  const ai = S.boardAI && S.boardAI.hash === boardHash() ? S.boardAI : null;
+  const live = (id) => notesIn(id).filter((n) => !isEmpty(n));
+  const secs = [...S.sections]; if (live('').length) secs.push(INBOX);
+  const total = S.notes.filter((n) => !isEmpty(n)).length;
+  const chips = h('div', { class: 'bfilter', role: 'group', 'aria-label': '섹션 고르기' },
+    h('button', { type: 'button', 'aria-pressed': String(boardFilter === 'all'), onclick: () => { boardFilter = 'all'; renderBoard(); } }, `전체 ${total}`),
+    secs.map((x) => { const c = secColor(x); return h('button', { type: 'button', 'aria-pressed': String(boardFilter === x.id), style: `--tc:${c.bg};--ti:${c.ink}`, onclick: () => { boardFilter = x.id; renderBoard(); } }, `${x.name} ${live(x.id).length}`); }));
+  const groups = h('div', { class: 'bgroups' });
+  for (const x of secs) {
+    if (boardFilter !== 'all' && boardFilter !== x.id) continue;
+    const list = live(x.id), c = secColor(x);
+    const wall = h('div', { class: 'bnotes' }, list.map(boardNote),
+      h('button', { type: 'button', class: 'bnote add', onclick: () => { closeBoard(); newNote(true, x.id); } }, iel('plus', 22), h('span', {}, `${x.name}에 새 메모`)));
+    const g = h('section', { class: 'bgroup', 'aria-label': `${x.name} 섹션` }, h('h3', { class: 'blabel', style: `--tc:${c.bg};--ti:${c.ink}` }, x.name, h('span', {}, String(list.length))), wall);
+    bindImageDrop(g, () => null, () => newNote(false, x.id));
+    groups.append(g);
+  }
+  const panel = h('div', { class: 'board', role: 'dialog', 'aria-label': '메모 모아보기' },
+    h('header', { class: 'bhead' }, h('div', { class: 'btitle' }, iel('pin', 20), h('h2', {}, '메모 모아보기'), h('span', { class: 'lbl' }, '메모를 누르면 그 메모지로 넘어가요 · 사진을 끌어다 놓으면 그 메모에 들어가요')),
+      h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeBoard, html: ico('x', 16) })),
+    h('div', { class: 'bsum' },
+      h('div', { class: 'bsum-h' }, iel('sparkle', 14), h('span', {}, ai ? `${C.charName(S)}의 AI 요약` : '한눈에 보기'),
+        h('button', { class: 'btn', type: 'button', onclick: (e) => aiBoardSummary(e.currentTarget) }, iel('sparkle', 14), ai ? '다시 요약' : 'AI로 전체 요약')),
+      ai ? h('div', { class: 'bsum-ai' }, ai.text) : [h('p', { class: 'bsum-lead' }, ov.head), h('ul', {}, ov.lines.map((l) => h('li', {}, l)))]),
+    chips, total ? groups : h('div', { class: 'empty' }, '아직 메모가 없어요. 캐릭터를 눌러 책갈피를 펼치고 새 메모를 적어보세요.'));
+  m.replaceChildren(panel);
+}
 
 /* ─────────── 시작 ─────────── */
 function applySide() {
@@ -1158,24 +1435,27 @@ function applySide() {
   placePet();
 }
 function seed() {
-  const mk = (theme, text, x = {}) => {
+  const mk = (theme, sectionId, text, x = {}) => {
     const a = P.localAnalyze(text, x.title || '');
-    const n = { id: uid(), theme, title: x.title || '', text, keyword: x.keyword || a.keyword, kwManual: false, summary: a.summary, events: [], photos: [], stickers: x.stickers || [], audios: [], aiSource: 'local', createdAt: Date.now() - (x.age || 0), viewedAt: Date.now() - (x.age || 0), orgHash: '' };
+    const n = { id: uid(), theme, sectionId, secManual: true, title: x.title || '', text, keyword: x.keyword || a.keyword, kwManual: false, summary: a.summary, events: [], photos: [], stickers: x.stickers || [], audios: [], aiSource: 'local', createdAt: Date.now() - (x.age || 0), viewedAt: Date.now() - (x.age || 0), orgHash: '' };
     for (const ev of a.events) addEvent(n, ev);
     n.orgHash = noteHash(n);
     return n;
   };
-  return { v: 2, nextTheme: 4, lastBrief: '', notes: [
-    mk('cherry', '내일 12시까지 회의자료 제출\n- 지난주 회의록 정리\n- 디자인 시안 2개 첨부', { age: 1000 }),
-    mk('olive', '우유, 달걀, 두부, 대파\n내일 저녁 7시 마트 들르기', { age: 2000 }),
-    mk('butter', '다음주 월요일 오전 10시 중간 발표\n발표 10분, 질문 5분', { age: 3000, stickers: [{ id: uid(), type: 'tape', x: 300, y: 34, s: 0.8, rot: 8 }] }),
-    mk('pink', '앱 이름 후보\n귤메모 / 책갈피 / 모아둠\n다음 회의 때 투표하기', { age: 4000, keyword: '이름 후보', title: '아이디어' }),
+  return { v: 3, nextTheme: 4, lastBrief: '', sections: DEFAULT_SECTIONS(), notes: [
+    mk('cherry', 's-work', '내일 12시까지 회의자료 제출\n- 지난주 회의록 정리\n- 디자인 시안 2개 첨부', { age: 1000 }),
+    mk('butter', 's-work', '다음주 월요일 오전 10시 중간 발표\n발표 10분, 질문 5분', { age: 3000, stickers: [{ id: uid(), type: 'tape', x: 300, y: 34, s: 0.8, rot: 8 }] }),
+    mk('blue', 's-work', '주간 보고 쓰기\n- 이번 주 한 일\n- 다음 주 계획', { age: 5000, keyword: '주간 보고' }),
+    mk('olive', 's-life', '우유, 달걀, 두부, 대파\n내일 저녁 7시 마트 들르기', { age: 2000 }),
+    mk('notebook', 's-life', '금요일 오후 4시 치과 정기검진', { age: 6000 }),
+    mk('pink', 's-idea', '앱 이름 후보\n귤메모 / 책갈피 / 모아둠\n다음 회의 때 투표하기', { age: 4000, keyword: '이름 후보', title: '아이디어' }),
   ] };
 }
 function normalize(s) {
   s.settings = Object.assign({}, DEFAULTS, s.settings || {});
   // 이전 웹 버전(chaekgalpi-memo-v1) 데이터의 side 값을 이어받는다
   if (s.side && !s._sideMigrated) { s.settings.side = s.side; s._sideMigrated = true; }
+  if (!Array.isArray(s.sections)) s.sections = DEFAULT_SECTIONS();
   for (const n of s.notes) {
     n.events = n.events || []; n.photos = n.photos || []; n.stickers = n.stickers || []; n.summary = n.summary || []; n.audios = n.audios || [];
     n.title = n.title || ''; n.text = n.text || ''; n.keyword = n.keyword || ''; n.ring = false;
@@ -1190,15 +1470,38 @@ function bindGlobal() {
   api.onForeground((f) => {
     if (f.kind === 'self') return;
     const wasPet = petMode();
+    if (f.kind !== 'app') dockFolded = false;
     ctx = f.kind === 'app' ? 'app' : 'desktop'; fgBrowser = !!f.browser;
     // 사용자가 다른 앱을 누르면 펼쳐 둔 것을 정리해서 접는다 (녹음은 계속된다)
     if ((openId || agendaOpen || summoned || (bubble.open && bubble.menu)) && !modalOpen) closeAll();
     if (wasPet !== petMode()) applyMode(); else renderPetBadges();
   });
+  // 사진 파일을 화면 어디에 놓아도 메모에 들어간다 (열린 메모가 없으면 새 메모)
+  let dragN = 0;
+  const hasFiles = (e) => [...(e.dataTransfer?.types || [])].includes('Files');
+  document.addEventListener('dragenter', (e) => { if (hasFiles(e)) { dragN++; $('#stage').classList.add('filedrag'); } });
+  document.addEventListener('dragleave', (e) => { if (hasFiles(e) && --dragN <= 0) { dragN = 0; $('#stage').classList.remove('filedrag'); } });
+  document.addEventListener('dragover', (e) => { if (hasFiles(e)) e.preventDefault(); });
+  document.addEventListener('drop', async (e) => {
+    dragN = 0; $('#stage').classList.remove('filedrag');
+    if (!hasFiles(e)) return;
+    e.preventDefault();
+    if (e.defaultPrevented && e._handled) return;
+    if ([...document.querySelectorAll('.dropping')].length) return;
+    const all = e.dataTransfer?.files || [], fs = imageFiles(all);
+    if (!fs.length) { if (all.length) toast({ title: '사진 파일만 넣을 수 있어요', ttl: 3000 }); return; }
+    if (e.target.closest && e.target.closest('.card,.pet,.tab,.bnote,.bgroup')) return; // 각자 처리
+    if (modalKind === 'board') closeBoard();
+    let n = openId ? byId(openId) : null;
+    if (!n) n = newNote(false);
+    await addPhotos(n, fs);
+    if (openId !== n.id) openNote(n.id);
+  });
   api.onDisplay(() => { fit(); placePet(); });
   api.onOpenNote((id) => { if (id && byId(id)) openNote(id); });
   api.onCommand((cmd) => {
-    if (cmd === 'summon') { if (openId || agendaOpen || summoned) closeAll(); else onPetClick(); }
+    if (cmd === 'summon') onPetClick();
+    else if (cmd === 'board') openBoard();
     else if (cmd === 'new') newNote();
     else if (cmd === 'record') quickRecord();
     else if (cmd === 'agenda') toggleAgenda();
@@ -1207,8 +1510,9 @@ function bindGlobal() {
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (modalOpen) { if (viewerKeys) closeViewer(); else closeSettings(); return; }
+    if (modalOpen) { if (viewerKeys) closeViewer(); else if (modalKind === 'board') closeBoard(); else closeSettings(); return; }
     const p = $('.pal:not([hidden])'); if (p) { p.hidden = true; return; }
+    if (addingSec) { addingSec = false; renderTabs(); return; }
     if (openId || agendaOpen || bubble.open || summoned) closeAll();
   });
   addEventListener('resize', () => { fit(); placePet(); });
@@ -1222,15 +1526,16 @@ async function boot() {
   if (info.demo && $('#demoBg')) $('#demoBg').hidden = false;
   const loaded = await api.loadState().catch(() => null);
   S = normalize(loaded && Array.isArray(loaded.notes) ? loaded : seed());
+  for (const n of S.notes) if (n.sectionId === undefined) { n.sectionId = guessSection(n); n.secManual = false; } // 섹션이 생기기 전 메모
   keys = await api.keyStatus().catch(() => keys);
   api.applySettings({ launchAtLogin: S.settings.launchAtLogin, modeOverride: S.settings.modeOverride });
   bindGlobal();
   applySide(); renderTabs(); renderPet(); fit(); applyMode();
   save();
   tick(); setInterval(tick, 5000);
-  if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 바탕화면에서는 책갈피가, 다른 앱을 쓸 때는 저만 남아 있을게요. 화면 왼쪽·오른쪽 끝에 마우스를 대면 최근 메모를 보여드려요.`, { ttl: 14000 }), 800);
+  if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 저를 누르면 책갈피가 펼쳐지고 접혀요. 말풍선 버튼을 누르면 날씨나 부탁을 말할 수 있어요. 화면 위의 '메모 모아보기'로 모든 메모를 한눈에 볼 수 있어요.`, { ttl: 14000 }), 800);
   // 디버그/스크린샷용 훅
-  window.__mk = { S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, setCtx: (c) => { ctx = c; applyMode(); } };
+  window.__mk = { S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
 }
 boot();
 })();

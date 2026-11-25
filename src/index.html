@@ -2,7 +2,7 @@
 <html lang="ko">
 <head>
 <meta charset="utf-8">
-<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self'">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self' data: blob:; worker-src 'self' blob:">
 <title>Mikang Memo</title>
 <link rel="stylesheet" href="../node_modules/@fontsource/jua/index.css">
 <link rel="stylesheet" href="../node_modules/@fontsource/gaegu/400.css">
@@ -23,6 +23,7 @@
   </div>
 
   <nav class="dock" id="dock" aria-label="메모 책갈피"></nav>
+  <div class="widget" id="widget" role="region" aria-label="메모 모아보기"></div>
   <section class="sheet" id="sheet" role="dialog" aria-label="메모지"></section>
   <section class="sheet" id="agenda" role="dialog" aria-label="일정 정리"></section>
   <aside class="peek" id="peek" aria-live="polite"></aside>

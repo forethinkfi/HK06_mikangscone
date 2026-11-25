@@ -68,11 +68,11 @@ const DESKTOP = `
     <aside class="guide" id="guide" aria-label="체험 안내">
       <div class="gh2"><b>귤메모 체험하기</b><button type="button" id="gClose" aria-label="안내 접기">접기</button></div>
       <ol>
-        <li><b>웹 쓰는 중</b>: 지금처럼 브라우저를 쓰면 귤 캐릭터만 남아요. 캐릭터를 누르면 책갈피가 나와요.</li>
-        <li><b>바탕화면</b>: 브라우저 창의 <b>─</b>를 누르거나 빈 바탕화면을 누르면 책갈피가 모두 펼쳐져요.</li>
-        <li><b>화면 끝</b>: 화면 왼쪽 끝(점선 띠)에 마우스를 대면 최근 메모가 나와요. 휠로 넘기고, 떼면 사라져요.</li>
-        <li><b>사진</b>: 메모를 열고 <b>사진</b> 버튼으로 내 파일에서 골라 넣어요. 사진을 끌어다 놓거나 붙여넣어도 돼요.</li>
-        <li><b>내 캐릭터</b>: 캐릭터를 우클릭 → 설정 → <b>내 사진으로</b>를 고르면 배경을 지워 캐릭터로 만들어요.</li>
+        <li><b>캐릭터 누르기</b>: 책갈피가 펼쳐지고, 한 번 더 누르면 접혀요. 캐릭터 왼쪽 위 말풍선 버튼은 비서 메뉴(부탁·날씨·녹음)예요.</li>
+        <li><b>섹션</b>: 책갈피는 업무·생활·아이디어 같은 큰 섹션이에요. 섹션을 누르면 그 안의 메모들이 펼쳐지고, 메모를 누르면 메모지가 열려요.</li>
+        <li><b>모아보기</b>: 화면 위 <b>메모 모아보기</b>를 누르면 모든 메모가 보드에 붙어 있어요. 메모를 누르면 그 메모로 가요.</li>
+        <li><b>바탕화면·화면 끝</b>: 브라우저 창의 <b>─</b>로 바탕화면을 보면 책갈피가 펼쳐져요. 화면 왼쪽 끝(점선 띠)에 마우스를 대면 최근 메모가 나와요.</li>
+        <li><b>사진</b>: 메모의 <b>사진</b> 버튼으로 고르거나, 사진 파일을 화면 아무 데나 끌어다 놓아요. 아이폰 HEIC 사진도 돼요.</li>
       </ol>
     </aside>
   </div>
@@ -107,10 +107,10 @@ const SHIM = `
   var KIND = { memo:'사용자가 직접 쓴 메모', transcript:'말로 한 메모를 받아쓴 글', command:'사용자가 비서에게 한 부탁 (메모로 만들어 줘)' };
   function prompt(p, withImages){
     return '너는 사용자의 바탕화면에 사는 메모 비서 캐릭터야. 아래 메모를 메모지 한 장으로 정리해서 JSON 하나만 출력해. 설명이나 코드블록은 쓰지 마.\\n'
-      + '형식: {"keyword":"책갈피 키워드 1개, 한국어 명사 2~6자","title":"제목 20자 이내 또는 빈 문자열","body":"메모지에 적을 정리된 본문. 줄마다 \\'- \\'로 시작","summary":["요점 최대 3개, 각 30자 이내"],"events":[{"title":"할 일 20자 이내","when":"YYYY-MM-DDTHH:mm (현지 시각)","deadline":true/false,"repeat":"none|daily|weekly","all_day":true/false}],"reply":"캐릭터가 말풍선으로 할 1~2문장. 친근한 존댓말, 이모지 없이. 맞춘 알람의 날짜와 시간을 구체적으로"}\\n'
+      + '형식: {"keyword":"책갈피 키워드 1개, 한국어 명사 2~6자","title":"제목 20자 이내 또는 빈 문자열","body":"메모지에 적을 정리된 본문. 줄마다 \\'- \\'로 시작","summary":["요점 최대 3개, 각 30자 이내"],"events":[{"title":"할 일 20자 이내","when":"YYYY-MM-DDTHH:mm (현지 시각)","deadline":true/false,"repeat":"none|daily|weekly","all_day":true/false}],"reply":"캐릭터가 말풍선으로 할 1~2문장. 친근한 존댓말, 이모지 없이. 맞춘 알람의 날짜와 시간을 구체적으로","section":"분류 후보 중 가장 맞는 이름 하나 그대로, 없으면 빈 문자열"}\\n'
       + '규칙: 오늘·내일·모레·금요일·다음 주 월요일·3일 뒤 같은 표현은 현재 시각 기준 미래 날짜로 계산해. "12시"처럼 오전/오후가 없으면 1~6시는 오후, 12시는 정오. 시간 없이 날짜만 있으면 all_day=true, when은 그날 09:00. "~까지", 마감, 제출은 deadline=true. 날짜가 없으면 events는 빈 배열. 원문에 없는 내용은 지어내지 마.'
       + (withImages ? ' 첨부한 사진 속 글(포스터, 공지, 화이트보드 등)의 날짜와 할 일도 읽어서 정리해.' : '')
-      + '\\n현재 시각: ' + nowText() + '\\n종류: ' + (KIND[p.kind] || KIND.memo) + (p.title ? '\\n기존 제목: ' + p.title : '') + '\\n메모:\\n"""\\n' + p.text + '\\n"""';
+      + '\\n현재 시각: ' + nowText() + '\\n종류: ' + (KIND[p.kind] || KIND.memo) + (p.title ? '\\n기존 제목: ' + p.title : '') + '\\n분류 후보: ' + ((p.sections || []).join(', ') || '(없음)') + '\\n메모:\\n"""\\n' + p.text + '\\n"""';
   }
   function toBlob(d){ var m = /^data:([^;]+);base64,(.*)$/.exec(d); var bin = atob(m[2]), a = new Uint8Array(bin.length); for (var i=0;i<bin.length;i++) a[i] = bin.charCodeAt(i); return new Blob([a], {type:m[1]}); }
   var ERR = { not_granted:'Claude 사용을 허용하지 않아서 기본 규칙으로 정리했어요.', rate_limited:'요청이 많아요. 잠시 뒤에 다시 시도해 주세요.', images_unavailable:'사진은 빼고 글만 정리했어요.' };
@@ -130,6 +130,15 @@ const SHIM = `
       try { return {ok:true, result: await s.json(prompt(p, !!opts.images), opts)}; }
       catch(e){ return {ok:false, reason:'error', error: ERR[e && e.code] || 'Claude가 응답하지 않아서 기본 규칙으로 정리했어요.'}; }
     },
+    summarize: async function(p){
+      var s = await pSample; if (!s) return {ok:false, reason:'nokey'};
+      var list = (p.notes || []).slice(0, 60).map(function(n, i){ return (i+1) + '. [' + n.section + '] ' + n.keyword + (n.title ? ' / ' + n.title : '') + '\\n' + String(n.text || '').slice(0, 500) + (n.events && n.events.length ? '\\n일정: ' + n.events.join('; ') : ''); }).join('\\n\\n');
+      var q = '너는 사용자의 메모 비서야. 아래 메모 전체를 한눈에 볼 수 있게 짧게 요약해. 첫 줄은 한 문장 총평. 그다음 줄마다 "- "로 시작하는 항목 3~7개: 급한 일과 마감을 먼저, 각 줄 앞에 [섹션 이름]. 날짜는 "11월 26일(목) 12:00"처럼 구체적으로. 메모에 없는 내용은 쓰지 마. 마크다운 굵게·제목은 쓰지 마.\\n현재 시각: ' + nowText() + '\\n\\n' + list;
+      try { var r = await s(q, { modelTier:'quick', cache:false }); return {ok:true, text:r.text}; }
+      catch(e){ return {ok:false, reason:'error', error: ERR[e && e.code] || 'Claude가 응답하지 않았어요.'}; }
+    },
+    weather: async function(){ return {ok:false, error:'웹 미리보기에서는 보안 규칙 때문에 날씨 서버에 연결할 수 없어요. 컴퓨터에 설치한 데스크톱 앱에서는 바로 알려드려요.'}; },
+    libSrc: function(l){ return l.cdn; },
     saveAudio: async function(id,buf){ audio.set(id,buf); return true; },
     readAudio: async function(id){ return audio.get(id) || null; },
     deleteAudio: async function(id){ audio.delete(id); return true; },
@@ -238,7 +247,7 @@ body{overflow:hidden}
 @media (max-width:760px){.tsearch,.tray .ti,.tray .ime{display:none}.bwin{left:8px;width:calc(100% - 110px);min-width:0}.icons{display:none}}
 /* 앱 화면(오버레이)은 예시 화면 위에 겹쳐 있고, 빈 곳은 아래로 클릭이 지나간다 (데스크톱 앱과 같은 동작) */
 #stage{position:absolute;inset:0;height:auto;pointer-events:none;z-index:10}
-#stage .dock,#stage .pet,#stage .bubble,#stage .modal,#stage .toast{pointer-events:auto}
+#stage .dock,#stage .pet,#stage .bubble,#stage .modal,#stage .toast,#stage .widget{pointer-events:auto}
 #stage .toasts{pointer-events:none}
 #stage.dock-hidden .dock{pointer-events:none}
 #stage .pet.hide{pointer-events:none}`;
