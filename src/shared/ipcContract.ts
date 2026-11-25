@@ -15,7 +15,15 @@ export const IPC = {
   TRAY_SHOW_HIDE: 'tray:toggleVisibility',
   QUIT_REQUESTED: 'app:quitRequested',
   SCENE_COMMAND: 'scene:command',
+  PET_MENU_SPECIES: 'pet:menuSpecies',
+  PET_MENU_ACTION: 'pet:menuAction',
+  PET_DISMISSED: 'pet:dismissed',
+  CURSOR_POINT: 'pet:cursorPoint',
 } as const;
+
+export type SceneCommand = 'demo' | 'quiet' | 'toy';
+export type PetMenuAction = { kind: 'select' | 'dismiss'; id: string } | { kind: 'openImage' | 'addSchedule' | 'today' | 'quit' };
+export interface PetMenuSpecies { id: string; label: string; selected: boolean; visible: boolean; dismissed: boolean }
 
 export interface Rect {
   x: number;
@@ -29,7 +37,7 @@ export interface DragMovePayload {
   y: number;
 }
 
-export type LoadSpeciesPayload = SpeciesConfig;
+export type LoadSpeciesPayload = SpeciesConfig & { dismissedIds?: string[] };
 
 export interface SetStatPayload {
   key: string;
@@ -43,7 +51,10 @@ export interface IncrementStatPayload {
 
 export interface PetAPI {
   ready(): void;
-  onSceneCommand(callback: (command: 'demo' | 'quiet') => void): void;
+  onSceneCommand(callback: (command: SceneCommand) => void): void;
+  getPetMenuSpecies(): Promise<PetMenuSpecies[]>;
+  runPetMenuAction(action: PetMenuAction): void;
+  getCursorPoint(): Promise<{ x: number; y: number }>;
   setClickThrough(ignore: boolean): void;
   dragStart(): void;
   dragMove(payload: DragMovePayload): void;
@@ -58,6 +69,7 @@ export interface PetAPI {
   setStat(payload: SetStatPayload): void;
   incrementStat(payload: IncrementStatPayload): void;
   onSpeciesLoaded(callback: (species: LoadSpeciesPayload) => void): void;
+  onPetDismissed(callback: (id: string) => void): void;
   onVisibilityToggled(callback: (visible: boolean) => void): void;
   onQuitRequested(callback: () => void): void;
 }

@@ -4,6 +4,7 @@ import path from 'node:path';
 
 interface PersistedSettings {
   selectedSpeciesId?: string;
+  dismissedSpeciesIds?: string[];
 }
 
 const DEFAULT_SPECIES_ID = 'placeholder';
@@ -41,6 +42,17 @@ export class AppSettings {
 
   setSelectedSpeciesId(id: string): void {
     this.settings.selectedSpeciesId = id;
+    this.settings.dismissedSpeciesIds = this.getDismissedSpeciesIds().filter((dismissed) => dismissed !== id);
+    this.save();
+  }
+
+  getDismissedSpeciesIds(): string[] {
+    const ids = this.settings.dismissedSpeciesIds;
+    return Array.isArray(ids) ? ids.filter((id) => typeof id === 'string') : [];
+  }
+
+  dismissSpecies(id: string): void {
+    this.settings.dismissedSpeciesIds = [...new Set([...this.getDismissedSpeciesIds(), id])];
     this.save();
   }
 }

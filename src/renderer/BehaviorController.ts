@@ -27,7 +27,7 @@ export class BehaviorController {
     private stateMachine: PetStateMachine,
     private behavior: SpeciesBehaviorDef,
     startPosition: Vec2,
-    private getUnlockedIdleVariants: () => PetState[] = () => ['idle'],
+    private getUnlockedIdleVariants: (position: Vec2) => PetState[] = () => ['idle'],
   ) {
     this.position = { ...startPosition };
     this.beginIdlePhase();
@@ -41,6 +41,10 @@ export class BehaviorController {
     this.position = position;
   }
 
+  turnAround(): void {
+    this.direction = this.direction === 1 ? -1 : 1;
+  }
+
   /**
    * Hubs through 'idle' (always a legal transition per PetStateMachine's
    * table), then, if a variant other than plain idle gets picked, hops
@@ -50,7 +54,7 @@ export class BehaviorController {
   private beginIdlePhase(): void {
     this.stateMachine.transition('idle');
 
-    const variants = this.getUnlockedIdleVariants();
+    const variants = this.getUnlockedIdleVariants(this.position);
     const pool: PetState[] = ['idle', ...variants];
     const chosen = pool[Math.floor(Math.random() * pool.length)];
     if (chosen === 'sleep') {

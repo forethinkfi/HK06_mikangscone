@@ -6,13 +6,17 @@ import {
   type LoadSpeciesPayload,
   type SetStatPayload,
   type IncrementStatPayload,
+  type SceneCommand,
 } from '../shared/ipcContract';
 
 const petAPI: PetAPI = {
   ready() { ipcRenderer.send(IPC.RENDERER_READY); },
   onSceneCommand(callback) {
-    ipcRenderer.on(IPC.SCENE_COMMAND, (_event, command: 'demo' | 'quiet') => callback(command));
+    ipcRenderer.on(IPC.SCENE_COMMAND, (_event, command: SceneCommand) => callback(command));
   },
+  getPetMenuSpecies() { return ipcRenderer.invoke(IPC.PET_MENU_SPECIES); },
+  runPetMenuAction(action) { ipcRenderer.send(IPC.PET_MENU_ACTION, action); },
+  getCursorPoint() { return ipcRenderer.invoke(IPC.CURSOR_POINT); },
   setClickThrough(ignore: boolean) {
     ipcRenderer.send(IPC.SET_CLICK_THROUGH, ignore);
   },
@@ -43,6 +47,7 @@ const petAPI: PetAPI = {
   onSpeciesLoaded(callback: (species: LoadSpeciesPayload) => void) {
     ipcRenderer.on(IPC.LOAD_SPECIES, (_event, species: LoadSpeciesPayload) => callback(species));
   },
+  onPetDismissed(callback) { ipcRenderer.on(IPC.PET_DISMISSED, (_event, id: string) => callback(id)); },
   onVisibilityToggled(callback: (visible: boolean) => void) {
     ipcRenderer.on(IPC.TRAY_SHOW_HIDE, (_event, visible: boolean) => callback(visible));
   },

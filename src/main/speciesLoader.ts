@@ -135,16 +135,29 @@ export function loadSpecies(id: string): SpeciesConfig {
   // query string is otherwise ignored (assetProtocol.ts resolves purely
   // from the URL's host+pathname).
   const cacheBust = Date.now();
+  const assetUrl = (sheet: string) => `${ASSET_PROTOCOL}://${source}/${id}/${sheet}?v=${cacheBust}`;
+  const resolveSheets = <T extends SpeciesConfig['animations'] | SpeciesConfig['motions']>(definitions: T): T => {
+    if (!definitions) return definitions;
+    return Object.fromEntries(Object.entries(definitions).map(([key, def]) => [
+      key, { ...def, sheet: assetUrl(def.sheet), leftSheet: def.leftSheet && assetUrl(def.leftSheet) },
+    ])) as T;
+  };
 
   const resolved: SpeciesConfig = {
     ...parsed,
-    animations: Object.fromEntries(
-      Object.entries(parsed.animations).map(([state, def]) => [
-        state,
-        { ...def, sheet: `${ASSET_PROTOCOL}://${source}/${id}/${def.sheet}?v=${cacheBust}` },
-      ]),
-    ),
+    animations: resolveSheets(parsed.animations),
+    motions: resolveSheets(parsed.motions),
+    fishingToy: parsed.fishingToy && { handle: assetUrl(parsed.fishingToy.handle), fish: assetUrl(parsed.fishingToy.fish) },
   };
 
+  const dialoguePath = path.join(dir, 'dialogue.json');
+  if (fs.existsSync(dialoguePath)) {
+    const dialogue = JSON.parse(fs.readFileSync(dialoguePath, 'utf8'));
+    if (Array.isArray(dialogue?.solo) && dialogue.solo.every((line: unknown) => typeof line === 'string') &&
+        Array.isArray(dialogue.dialogues) && dialogue.dialogues.every((pair: unknown) =>
+          Array.isArray(pair) && pair.length === 2 && pair.every((line) => typeof line === 'string'))) {
+      resolved.dialogue = dialogue;
+    }
+  }
   return resolved;
 }

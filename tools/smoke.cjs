@@ -19,7 +19,19 @@ app.whenReady().then(async () => {
     const background = await win.webContents.executeJavaScript('getComputedStyle(document.body).backgroundColor');
     assert.equal(background, 'rgba(0, 0, 0, 0)', 'Renderer background transparent');
     const count = await win.webContents.executeJavaScript('document.querySelectorAll(".speech").length');
-    assert.equal(count, 2, 'Both companions loaded');
+    assert.ok(count >= 2, 'Both original companions loaded');
+    // Keep the initial pets awake so this pointer test does not depend on the idle roll.
+    await win.webContents.executeJavaScript('Math.random = () => 0; void 0;');
+    const speciesRoot = path.join(root, 'personal-species');
+    const loadFixture = (id) => {
+      const config = JSON.parse(fs.readFileSync(path.join(speciesRoot, id, 'species.json'), 'utf8').replace(/^\uFEFF/, ''));
+      const localSheets = (clips) => Object.fromEntries(Object.entries(clips ?? {}).map(([key, clip]) =>
+        [key, { ...clip, sheet: `pet-asset://local/${id}/${clip.sheet}` }]));
+      return { ...config, animations: localSheets(config.animations), motions: localSheets(config.motions) };
+    };
+    const { chatter } = JSON.parse(fs.readFileSync(path.join(speciesRoot, 'scene.json'), 'utf8').replace(/^\uFEFF/, ''));
+    win.webContents.send('species:load', { ...loadFixture('munchlax'), companions: [loadFixture('psyduck')], chatter });
+    await delay(350);
     win.webContents.send('scene:command', 'demo');
     await delay(2200);
     const lines = await win.webContents.executeJavaScript('Array.from(document.querySelectorAll(".speech")).filter(e => !e.hidden).map(e => e.textContent)');
@@ -64,6 +76,27 @@ app.whenReady().then(async () => {
     const landedTop = await win.webContents.executeJavaScript(spriteTop);
     assert.ok(landedTop > liftedTop + 35, 'Released pet falls back to the floor');
     assert.match(await win.webContents.executeJavaScript(firstSpeech), /다음엔/, 'Hard landing shows the landing-specific message');
+
+    const floorGrab = { x: grab.x + 100, y: grab.y - 6 };
+    win.webContents.sendInputEvent({ type: 'mouseMove', ...floorGrab });
+    await delay(75);
+    win.webContents.sendInputEvent({ type: 'mouseDown', button: 'left', clickCount: 1, ...floorGrab });
+    await delay(60);
+    const flick = (x) => win.webContents.sendInputEvent({ type: 'mouseMove', x, y: floorGrab.y });
+    flick(floorGrab.x + 22);
+    await delay(155);
+    flick(floorGrab.x + 23);
+    await delay(51);
+    flick(floorGrab.x + 28);
+    const beforeFlick = await win.webContents.executeJavaScript(spriteTop);
+    await delay(28);
+    win.webContents.sendInputEvent({ type: 'mouseUp', button: 'left', clickCount: 1, x: floorGrab.x + 28, y: floorGrab.y });
+    await delay(105);
+    const duringFlick = await win.webContents.executeJavaScript(spriteTop);
+    assert.ok(duringFlick < beforeFlick - 2, `The gentle throw lifts off the floor (${beforeFlick} → ${duringFlick})`);
+    await delay(305);
+    assert.match(await win.webContents.executeJavaScript(firstSpeech), /한 번 더|조금 더 멀리|또 해줘/, 'A small floor-level flick gets the gentle throw reaction');
+
     win.webContents.send('scene:command', 'quiet');
     await delay(200);
     assert.equal(await win.webContents.executeJavaScript('Array.from(document.querySelectorAll(".speech")).filter(e => !e.hidden).length'), 0, 'Quiet mode hides bubbles');

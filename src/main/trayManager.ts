@@ -2,6 +2,7 @@ import { app, Menu, Tray, nativeImage, shell } from 'electron';
 import { getLocalSpeciesRoot } from './speciesLoader';
 import path from 'node:path';
 import type { SpeciesListing } from './speciesLoader';
+import type { SceneCommand } from '../shared/ipcContract';
 
 /**
  * build-resources/ is only used by electron-builder's own icon config at
@@ -19,15 +20,17 @@ function getBuildResourcesRoot(): string {
 
 export class TrayManager {
   private tray: Tray | null = null;
+  private rebuildMenu?: () => void;
 
   create(options: {
     onToggleVisibility: () => void;
     isVisible: () => boolean;
     onQuit: () => void;
     listSpecies: () => SpeciesListing[];
+    isSpeciesDismissed: (id: string) => boolean;
     getSelectedSpeciesId: () => string;
     onSelectSpecies: (id: string) => void;
-    onSceneCommand: (command: 'demo' | 'quiet') => void;
+    onSceneCommand: (command: SceneCommand) => void;
   }): Tray {
     const iconPath = path.join(getBuildResourcesRoot(), 'tray-icon.png');
     const icon = nativeImage.createFromPath(iconPath);
@@ -37,7 +40,7 @@ export class TrayManager {
     const rebuildMenu = () => {
       const selectedId = options.getSelectedSpeciesId();
       const speciesSubmenu = options.listSpecies().map((species) => ({
-        label: `${species.displayName} (${species.source})`,
+        label: `${species.displayName} (${species.source})${options.isSpeciesDismissed(species.id) ? ' · 불러오기' : ''}`,
         type: 'radio' as const,
         checked: species.id === selectedId,
         click: () => options.onSelectSpecies(species.id),
@@ -70,12 +73,16 @@ export class TrayManager {
     };
 
     rebuildMenu();
+    this.rebuildMenu = rebuildMenu;
     this.tray = tray;
     return tray;
   }
 
+  refresh() { this.rebuildMenu?.(); }
+
   destroy(): void {
     this.tray?.destroy();
     this.tray = null;
+    this.rebuildMenu = undefined;
   }
 }

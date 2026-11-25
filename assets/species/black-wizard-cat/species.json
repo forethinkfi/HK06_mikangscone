@@ -1,0 +1,264 @@
+{
+  "id": "black-wizard-cat",
+  "displayName": "꼬마 검은 마법사 고양이",
+  "version": "1.0.0",
+  "animations": {
+    "idle": {
+      "sheet": "sprites/idle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 5,
+      "fps": 3,
+      "loop": true,
+      "displaySize": 120
+    },
+    "walk": {
+      "sheet": "sprites/walk.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 9,
+      "fps": 8,
+      "loop": true,
+      "displaySize": 120,
+      "leftSheet": "sprites/walk-left.png"
+    },
+    "sleep": {
+      "sheet": "sprites/sleep.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 5,
+      "fps": 2.3,
+      "loop": true,
+      "displaySize": 120
+    },
+    "dragged": {
+      "sheet": "sprites/dragged.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 5,
+      "fps": 8,
+      "loop": true,
+      "displaySize": 120,
+      "authoredGrip": true
+    },
+    "react": {
+      "sheet": "sprites/recover.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 7,
+      "loop": false,
+      "displaySize": 120
+    }
+  },
+  "motions": {
+    "look": {
+      "sheet": "sprites/side-idle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": false,
+      "displaySize": 120,
+      "leftSheet": "sprites/side-idle-left.png"
+    },
+    "sideIdle": {
+      "sheet": "sprites/side-idle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 3,
+      "loop": true,
+      "displaySize": 120,
+      "leftSheet": "sprites/side-idle-left.png"
+    },
+    "jump": {
+      "sheet": "sprites/jump.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 7,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "land": {
+      "sheet": "sprites/land.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 10,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "wallIdle": {
+      "sheet": "sprites/climb.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 7,
+      "loop": true,
+      "displaySize": 120,
+      "mirrorWhen": "right",
+      "wallInsets": {
+        "left": 0,
+        "right": 102
+      }
+    },
+    "wallFront": {
+      "sheet": "sprites/idle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 3,
+      "loop": true,
+      "displaySize": 120,
+      "wallInsets": {
+        "left": 33,
+        "right": 33
+      }
+    },
+    "frontWalk": {
+      "sheet": "sprites/walk-front.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 6,
+      "fps": 7.5,
+      "loop": true,
+      "displaySize": 120
+    },
+    "backWalk": {
+      "sheet": "sprites/walk-back.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 6,
+      "fps": 7.5,
+      "loop": true,
+      "displaySize": 120
+    },
+    "fly": {
+      "sheet": "sprites/fly.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 5,
+      "fps": 11,
+      "loop": true,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "wallImpact": {
+      "sheet": "sprites/wallImpact.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 12,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "right"
+    },
+    "wallFall": {
+      "sheet": "sprites/wallFall.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 8,
+      "loop": true,
+      "displaySize": 120,
+      "mirrorWhen": "right"
+    },
+    "ouch": {
+      "sheet": "sprites/ouch.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 5,
+      "fps": 8,
+      "loop": false,
+      "displaySize": 120
+    },
+    "recover": {
+      "sheet": "sprites/recover.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 7,
+      "loop": false,
+      "displaySize": 120
+    },
+    "toyWatch": {
+      "sheet": "sprites/toyWatch.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 5,
+      "fps": 11,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "toyPounce": {
+      "sheet": "sprites/toyPounce.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 7,
+      "fps": 15,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "toyLand": {
+      "sheet": "sprites/toyLand.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 12,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "toyAfter": {
+      "sheet": "sprites/toyAfter.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 8,
+      "fps": 13,
+      "loop": false,
+      "displaySize": 120,
+      "mirrorWhen": "left"
+    },
+    "toyRod": {
+      "sheet": "sprites/toyRod.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 8,
+      "fps": 9,
+      "loop": true,
+      "displaySize": 120
+    },
+    "toyRodHit": {
+      "sheet": "sprites/toyRodHit.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 7,
+      "fps": 17,
+      "loop": false,
+      "displaySize": 120
+    }
+  },
+  "fishingToy": {
+    "handle": "sprites/fishing-handle.png",
+    "fish": "sprites/fishing-fish.png"
+  },
+  "behavior": {
+    "walkSpeedPxPerSec": 61,
+    "idleMinMs": 1400,
+    "idleMaxMs": 3100,
+    "walkMinMs": 4000,
+    "walkMaxMs": 9500,
+    "spriteScale": 0.625,
+    "personality": "curious"
+  },
+  "attribution": {
+    "author": "사용자 제공 이미지",
+    "license": "User-provided project artwork"
+  }
+}

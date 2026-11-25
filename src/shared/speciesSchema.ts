@@ -1,11 +1,19 @@
 import type { PetState } from './petState';
 
+export type PetMotion = 'fly' | 'wallImpact' | 'wallFall' | 'petBump' | 'land' | 'ouch' | 'recover' |
+  'wake' | 'doze' | 'curious' | 'peek' | 'slip' | 'look' | 'startle' | 'meet' | 'jump' | 'climb' |
+  'toyWatch' | 'toyPounce' | 'toyLand' | 'toyAfter' | 'toyRod' | 'toyRodHit' | 'sideIdle' | 'wallIdle' | 'wallFront' |
+  'frontWalk' | 'backWalk';
+export type PetPersonality = 'relaxed' | 'cautious' | 'curious';
+
 /**
  * A single animation's sprite-sheet definition. Frames are laid out left-to-right
  * in one row of `sheet`, each `frameWidth x frameHeight` pixels.
  */
 export interface SpeciesAnimationDef {
   sheet: string;
+  /** Optional authored left view with the same frame layout as the primary sheet. */
+  leftSheet?: string;
   frameWidth: number;
   frameHeight: number;
   frameCount: number;
@@ -17,10 +25,15 @@ export interface SpeciesAnimationDef {
   bottomInset?: number;
   pixelArt?: boolean;
   displaySize?: number;
+  mirrorWhen?: 'left' | 'right';
+  /** Transparent horizontal margins of a static wall pose, in source pixels. */
+  wallInsets?: { left: number; right: number };
+  authoredGrip?: boolean;
   sourceFrames?: { sx: number; sy: number; sw: number; sh: number }[][];
 }
 
 export interface SpeciesBehaviorDef {
+  personality?: PetPersonality;
   walkSpeedPxPerSec: number;
   idleMinMs: number;
   idleMaxMs: number;
@@ -57,12 +70,15 @@ export interface ProgressionTier {
  * swapping in real art later.
  */
 export interface SpeciesConfig {
+  fishingToy?: { handle: string; fish: string };
   companions?: SpeciesConfig[];
   chatter?: ChatterConfig;
+  dialogue?: Pick<ChatterConfig, 'solo' | 'dialogues'>;
   id: string;
   displayName: string;
   version: string;
   animations: Partial<Record<PetState, SpeciesAnimationDef>>;
+  motions?: Partial<Record<PetMotion, SpeciesAnimationDef>>;
   behavior: SpeciesBehaviorDef;
   attribution?: SpeciesAttribution;
   progression?: ProgressionTier[];
@@ -83,8 +99,24 @@ export function isSpeciesConfig(value: unknown): value is SpeciesConfig {
   if (typeof v.id !== 'string' || typeof v.displayName !== 'string') return false;
   if (typeof v.version !== 'string') return false;
   if (typeof v.animations !== 'object' || v.animations === null) return false;
+  if (v.fishingToy !== undefined) {
+    if (typeof v.fishingToy !== 'object' || !v.fishingToy) return false;
+    const toy = v.fishingToy as Record<string, unknown>;
+    if (typeof toy.handle !== 'string' || !toy.handle || typeof toy.fish !== 'string' || !toy.fish) return false;
+  }
+  if (v.motions !== undefined) {
+    if (typeof v.motions !== 'object' || !v.motions || Array.isArray(v.motions)) return false;
+    for (const definition of Object.values(v.motions)) {
+      if (typeof definition !== 'object' || !definition) return false;
+      const clip = definition as Record<string, unknown>;
+      if (typeof clip.sheet !== 'string' || !clip.sheet || typeof clip.loop !== 'boolean') return false;
+      if (![clip.frameWidth, clip.frameHeight, clip.frameCount].every((n) => typeof n === 'number' && Number.isSafeInteger(n) && n > 0)) return false;
+      if (typeof clip.fps !== 'number' || !Number.isFinite(clip.fps) || clip.fps <= 0) return false;
+    }
+  }
   if (typeof v.behavior !== 'object' || v.behavior === null) return false;
   const b = v.behavior as Record<string, unknown>;
+  if (b.personality !== undefined && !['relaxed', 'cautious', 'curious'].includes(String(b.personality))) return false;
   const requiredBehaviorKeys: (keyof SpeciesBehaviorDef)[] = [
     'walkSpeedPxPerSec',
     'idleMinMs',

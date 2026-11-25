@@ -1,4 +1,4 @@
-import { app, ipcMain, type BrowserWindow } from 'electron';
+import { app, ipcMain, screen } from 'electron';
 import { PetWindowManager } from './petWindow';
 import { TrayManager } from './trayManager';
 import { registerIpcHandlers, sendSpeciesLoaded } from './ipcHandlers';
@@ -16,6 +16,8 @@ import { loadCompanionScene } from './sceneLoader';
 import fs from 'node:fs';
 import { getLocalSpeciesRoot } from './speciesLoader';
 import { IPC } from '../shared/ipcContract';
+import { runPetMenuAction } from './petMenu';
+import type { SpeciesConfig } from '../shared/speciesSchema';
 
 const FALLBACK_SPECIES_ID = 'placeholder';
 
@@ -61,11 +63,11 @@ function loadSpeciesWithFallback(id: string) {
  * on the next change, not silently switch the user's selected species —
  * that self-healing behavior is only appropriate at startup.
  */
-function watchActiveSpecies(window: BrowserWindow, speciesId: string): void {
+function watchActiveSpecies(speciesId: string, publish: (scene: SpeciesConfig) => void): void {
   unwatchSpecies?.();
   const reload = () => {
     try {
-      sendSpeciesLoaded(window, loadCompanionScene(loadSpecies(speciesId)));
+      publish(loadCompanionScene(loadSpecies(speciesId)));
     } catch (error) {
       console.error(`Species "${speciesId}" reload failed, keeping the last good version:`, error);
     }
@@ -87,25 +89,59 @@ function bootstrap(): void {
   const window = windowManager.create();
   registerIpcHandlers(windowManager, progressionTracker, statsTracker);
 
+  let activeSpecies = process.env.PET_SPECIES_ID ?? appSettings.getSelectedSpeciesId();
+  const dismissed = new Set(appSettings.getDismissedSpeciesIds());
+  let visibleSpecies = new Set<string>();
+  const publish = (scene: SpeciesConfig) => {
+    visibleSpecies = new Set([scene, ...(scene.companions ?? [])].map(({ id }) => id).filter((id) => !dismissed.has(id)));
+    sendSpeciesLoaded(window, { ...scene, dismissedIds: [...dismissed] });
+    trayManager.refresh();
+  };
+  const selectPet = (id: string) => {
+    const scene = loadCompanionScene(loadSpecies(id));
+    activeSpecies = id;
+    dismissed.delete(id);
+    appSettings.setSelectedSpeciesId(id);
+    publish(scene);
+    watchActiveSpecies(id, publish);
+  };
+  const dismissPet = (id: string) => {
+    if (!visibleSpecies.delete(id)) return;
+    dismissed.add(id);
+    appSettings.dismissSpecies(id);
+    window.webContents.send(IPC.PET_DISMISSED, id);
+    trayManager.refresh();
+  };
+  ipcMain.handle(IPC.CURSOR_POINT, (event) => {
+    if (window.isDestroyed() || event.sender !== window.webContents) return { x: -1, y: -1 };
+    const cursor = screen.getCursorScreenPoint();
+    const bounds = window.getContentBounds();
+    return { x: cursor.x - bounds.x, y: cursor.y - bounds.y };
+  });
+  ipcMain.handle(IPC.PET_MENU_SPECIES, (event) => {
+    if (event.sender !== window.webContents) return [];
+    return listAvailableSpecies().map(({ id, displayName }) => ({ id, label: displayName,
+      visible: visibleSpecies.has(id), dismissed: dismissed.has(id), selected: id === activeSpecies && visibleSpecies.has(id) }));
+  });
+  ipcMain.on(IPC.PET_MENU_ACTION, (event, action: unknown) => {
+    if (event.sender === window.webContents) void runPetMenuAction(window, action, selectPet, dismissPet);
+  });
+
   trayManager.create({
     onSceneCommand: (command) => window.webContents.send(IPC.SCENE_COMMAND, command),
     onToggleVisibility: () => windowManager.toggleVisibility(),
     isVisible: () => windowManager.isVisible(),
     onQuit: () => app.quit(),
     listSpecies: () => listAvailableSpecies(),
-    getSelectedSpeciesId: () => appSettings.getSelectedSpeciesId(),
-    onSelectSpecies: (id) => {
-      appSettings.setSelectedSpeciesId(id);
-      app.relaunch();
-      app.exit(0);
-    },
+    isSpeciesDismissed: (id) => dismissed.has(id),
+    getSelectedSpeciesId: () => visibleSpecies.has(activeSpecies) ? activeSpecies : '',
+    onSelectSpecies: selectPet,
   });
 
   ipcMain.on(IPC.RENDERER_READY, (event) => {
     if (event.sender !== window.webContents) return;
-    const speciesId = process.env.PET_SPECIES_ID ?? appSettings.getSelectedSpeciesId();
-    sendSpeciesLoaded(window, loadCompanionScene(loadSpeciesWithFallback(speciesId)));
-    watchActiveSpecies(window, speciesId);
+    publish(loadCompanionScene(loadSpeciesWithFallback(activeSpecies)));
+    watchActiveSpecies(activeSpecies, publish);
   });
 }
 
