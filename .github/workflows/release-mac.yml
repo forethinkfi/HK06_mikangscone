@@ -1,0 +1,44 @@
+# v0.2.0 릴리스(Windows .exe만 있던 것)에 같은 버전의 Mac 설치 파일(.dmg)을 붙인다.
+# 릴리스 페이지에서 바로 받을 수 있는 고정 주소:
+#   .../releases/download/v0.2.0/MikangMemo-Mac.dmg        (Apple 실리콘 M1~M4)
+#   .../releases/download/v0.2.0/MikangMemo-Mac-Intel.dmg  (인텔 맥)
+name: Release Mac build
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Mac 파일을 붙일 릴리스 태그'
+        default: 'v0.2.0'
+  push:
+    branches: ['claude/quirky-mayer-sc9las']
+    paths: ['.github/workflows/release-mac.yml']
+permissions:
+  contents: write
+jobs:
+  mac:
+    runs-on: macos-latest
+    env:
+      TAG: ${{ github.event.inputs.tag || 'v0.2.0' }}
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.inputs.tag || 'v0.2.0' }}
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Build dmg (arm64 + x64)
+        run: npm run dist:mac -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Check signature
+        run: |
+          for app in dist/mac*/*.app; do codesign --verify --deep --strict --verbose=2 "$app"; done
+      - name: Attach to release
+        run: |
+          ls -la dist
+          cp dist/*-mac-arm64.dmg MikangMemo-Mac.dmg
+          cp dist/*-mac-x64.dmg MikangMemo-Mac-Intel.dmg
+          gh release upload "$TAG" MikangMemo-Mac.dmg MikangMemo-Mac-Intel.dmg --clobber --repo "$GITHUB_REPOSITORY"
