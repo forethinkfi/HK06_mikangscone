@@ -144,6 +144,7 @@ ipcMain.on('notify', (_e, { title, body, noteId }) => {
 ipcMain.handle('keys:status', () => store.keyStatus());
 ipcMain.handle('keys:set', (_e, name, value) => { if (['anthropic', 'openai'].includes(name)) store.setKey(name, value); return store.keyStatus(); });
 
+ipcMain.handle('keys:test', (_e, name) => ai.testKey(name, store.getKey(name)));
 ipcMain.handle('ai:organize', async (_e, payload) => {
   const key = store.getKey('anthropic');
   if (!key) return { ok: false, reason: 'nokey' };

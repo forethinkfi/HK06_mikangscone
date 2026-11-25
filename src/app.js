@@ -38,7 +38,8 @@ const ico = (n, s = 18) => `<svg width="${s}" height="${s}" viewBox="0 0 24 24" 
 const iel = (n, s = 18) => h('span', { html: ico(n, s), style: 'display:inline-grid;place-items:center' });
 const uid = () => Math.random().toString(36).slice(2, 9);
 const clamp = (v, a, b) => Math.min(b, Math.max(a, v));
-const W = () => innerWidth, H = () => innerHeight;
+const stageBox = () => document.getElementById('stage');
+const W = () => (stageBox() && stageBox().clientWidth) || innerWidth, H = () => (stageBox() && stageBox().clientHeight) || innerHeight;
 
 /* ─────────── 스타일 테마 ─────────── */
 const THEMES = [
@@ -377,24 +378,24 @@ function filePicker({ cls = 'btn', label = '', title, multiple = true, onFiles }
   return el;
 }
 const imageFiles = (list) => [...(list || [])].filter((f) => f && f.type && f.type.startsWith('image/'));
-function readPhoto(file, max = 1280) {
-  return new Promise((res, rej) => {
-    const url = URL.createObjectURL(file), img = new Image();
-    img.onload = () => {
-      const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
-      c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
-      const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
-      URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.82));
-    };
-    img.onerror = () => { URL.revokeObjectURL(url); rej(new Error('read')); };
-    img.src = url;
-  });
+function readFileURL(file) {
+  return new Promise((res, rej) => { const r = new FileReader(); r.onload = () => res(String(r.result)); r.onerror = () => rej(new Error('파일을 읽지 못했어요')); r.readAsDataURL(file); });
+}
+async function readPhoto(file, max = 1024) {
+  if (!file || !/^image\//.test(file.type || '')) throw new Error('사진 파일이 아니에요');
+  if (file.size > 40 * 1024 * 1024) throw new Error('40MB보다 큰 사진은 넣을 수 없어요');
+  const src = await readFileURL(file);
+  const img = await new Promise((res, rej) => { const im = new Image(); im.onload = () => res(im); im.onerror = () => rej(new Error(/heic|heif/i.test(file.type + file.name) ? 'HEIC 사진은 아직 못 열어요. JPG로 바꿔서 넣어주세요' : '이 사진 형식은 열 수 없어요')); im.src = src; });
+  const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
+  const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
+  return c.toDataURL('image/jpeg', 0.8);
 }
 async function addPhotos(n, files) {
   let added = 0;
   for (const f of files) {
     if (n.photos.length >= MAX_PHOTOS) { toast({ title: `사진은 메모 하나에 ${MAX_PHOTOS}장까지 넣을 수 있어요`, ttl: 2600 }); break; }
-    try { n.photos.push(await readPhoto(f)); added++; } catch { toast({ title: '사진을 읽지 못했어요', ttl: 3000 }); }
+    try { n.photos.push(await readPhoto(f)); added++; } catch (err) { toast({ title: '사진을 넣지 못했어요', body: `${f.name}: ${err.message}`, ttl: 5000 }); }
   }
   if (added) {
     n.viewedAt = Date.now(); save(); renderTabs();
@@ -671,12 +672,15 @@ async function askAssistant(text) {
 function recBar() {
   const el = h('div', { class: 'recbar', id: 'recbar' },
     h('span', { class: 'dot' }), h('span', { id: 'recTime' }, '0:00'),
+    rec && rec.dict ? h('span', { id: 'recLive', class: 'live' }, '듣고 있어요…') : null,
     h('span', { class: 'lvl' }, h('i', { id: 'recLvl' })),
     h('button', { class: 'btn', type: 'button', onclick: stopRecording }, iel('stop', 13), '정지·정리'));
   return el;
 }
 async function startRecording(n, kind) {
   if (rec) { toast({ title: '이미 녹음 중이에요', ttl: 2000 }); return; }
+  const dict = api.dictation ? api.dictation() : null;
+  if (dict) { startDictation(dict, n, kind); return; }
   if (!S.settings.consentShown) {
     S.settings.consentShown = true; save();
     toast({ title: '녹음 전에 확인해 주세요', body: '회의를 녹음할 때는 참석자에게 먼저 알리고 동의를 받아주세요. 받아쓰기는 녹음 길이만큼 비용이 들어요.', ttl: 8000 });
@@ -708,8 +712,52 @@ async function startRecording(n, kind) {
     toast({ title: '마이크를 쓸 수 없어요', body: '시스템 설정에서 Mikang Memo의 마이크 권한을 켜주세요.', ttl: 5000 });
   }
 }
+/** 말하는 즉시 글로 바뀌는 받아쓰기 (웹 미리보기의 dictation) */
+function startDictation(d, n, kind) {
+  let finalText = '', partial = '';
+  const r = { noteId: n ? n.id : null, kind, dict: d, t0: Date.now(), offs: [], done: false };
+  r.text = () => (finalText + ' ' + partial).trim();
+  const showLive = () => {
+    const l = $('#recLive'); if (l) l.textContent = r.text().slice(-70) || '듣고 있어요…';
+    if (kind === 'command' && bubble.open) { const m = $('#bubble .msg'); if (m) m.textContent = r.text() || '듣고 있어요. 다 말하면 저를 한 번 더 눌러주세요.'; }
+  };
+  r.offs.push(d.onPartial(({ text }) => { partial = text || ''; showLive(); }));
+  r.offs.push(d.onFinal(({ text }) => { if (text) finalText += (finalText ? ' ' : '') + text; partial = ''; showLive(); }));
+  r.offs.push(d.onState(({ state, reason }) => { if (state === 'idle' && !r.done) finishDictation(r, reason); }));
+  rec = r;
+  d.start().catch((e) => {
+    if (r.done) return; r.done = true; r.offs.forEach((f) => f()); if (rec === r) rec = null; setMood('idle'); renderPet();
+    const n0 = r.noteId && byId(r.noteId); if (n0 && openId === n0.id) renderCard(n0);
+    toast({ title: '받아쓰기를 시작하지 못했어요', body: e && e.code === 'not_granted' ? '마이크나 받아쓰기 권한이 꺼져 있어요.' : '이 브라우저에서는 받아쓰기를 쓸 수 없어요. Chrome에서 열어주세요.', ttl: 5000 });
+  });
+  r.timer = setInterval(() => {
+    const t = $('#recTime'); if (t) t.textContent = fmtDur((Date.now() - r.t0) / 1000);
+    const l = $('#recLvl'); if (l) l.style.width = (30 + 30 * Math.sin(Date.now() / 180)) + '%';
+  }, 100);
+  setMood('listen'); renderPet();
+  if (n && openId === n.id) renderCard(n);
+  if (kind === 'command') say('듣고 있어요. 다 말하면 저를 한 번 더 눌러주세요.', { ttl: 0, menu: false });
+}
+async function finishDictation(r, reason) {
+  if (r.done) return; r.done = true;
+  clearInterval(r.timer); r.offs.forEach((f) => f());
+  if (rec === r) rec = null;
+  renderPet();
+  const text = r.text();
+  const n = r.noteId && byId(r.noteId);
+  if (!text) {
+    setMood('idle'); if (n && openId === n.id) renderCard(n);
+    if (r.kind === 'command') closeBubble();
+    toast({ title: reason === 'not_granted' ? '받아쓰기 권한이 꺼져 있어요' : '말소리를 듣지 못했어요', ttl: 3500 });
+    return;
+  }
+  setMood('think');
+  if (r.kind === 'command') { await askAssistant(text); return; }
+  if (n) await applyTranscript(n, text, r.t0);
+}
 function stopRecording() {
   if (!rec) return;
+  if (rec.dict) { const r = rec; r.dict.stop().catch(() => {}).finally(() => finishDictation(r, 'stopped')); return; }
   const r = rec; rec = null;
   clearInterval(r.timer);
   r.mr.onstop = async () => {
@@ -746,8 +794,13 @@ async function processRecording(n, aud) {
     const text = await transcribeAudio(aud);
     if (!text) return;
     aud.transcript = text;
+    await applyTranscript(n, text, aud.at);
+  } finally { if (mood === 'think') setMood('idle'); }
+}
+async function applyTranscript(n, text, at) {
+  try {
     const r = await aiOrganize(text, n.title, 'transcript');
-    const d = new Date(aud.at);
+    const d = new Date(at);
     const head = `[녹음 정리 · ${d.getMonth() + 1}/${d.getDate()} ${fmtTime(d)}]`;
     n.text = (n.text.trim() ? n.text.trimEnd() + '\n\n' : '') + head + '\n' + r.body;
     const added = applyResult(n, r);
@@ -1000,14 +1053,63 @@ async function openSettings() {
   const m = $('#modal'); m.hidden = false;
   const st = S.settings;
   const seg = (key, opts, after) => h('div', { class: 'seg', role: 'group' }, opts.map(([v, l]) => h('button', { type: 'button', 'aria-pressed': String(String(st[key]) === String(v)), onclick: () => { st[key] = v; save(); after && after(); render(); } }, l)));
-  const keyRow = (name, label, ph) => {
-    const inp = h('input', { type: 'password', placeholder: keys[name] ? '저장됨 — 바꾸려면 새 키 입력' : ph, 'aria-label': label });
-    return h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, label), inp,
-      h('button', { class: 'btn', type: 'button', onclick: async () => { keys = await api.setKey(name, inp.value); render(); } }, '저장'),
-      keys[name] ? h('button', { class: 'btn', type: 'button', onclick: async () => { keys = await api.setKey(name, ''); render(); } }, '지우기') : null,
-      keys[name] ? h('span', { class: 'ok' }, '연결됨') : null);
+  const keyMsg = {};
+  const testKey = async (name) => {
+    keyMsg[name] = { t: '연결 확인 중…', ok: null }; render();
+    const r = api.testKey ? await api.testKey(name) : { ok: keys[name] };
+    keyMsg[name] = r.ok ? { t: '연결됐어요. 이제 AI가 이 키로 동작해요.', ok: true } : { t: r.error || '키를 확인하지 못했어요', ok: false };
+    render();
   };
-  const pickChar = async (fs) => { try { st.customChar = await readPhoto(fs[0], 480); st.character = 'custom'; save(); renderPet(); render(); } catch { toast({ title: '이미지를 읽지 못했어요', ttl: 3000 }); } };
+  const keyRow = (name, label, ph, help) => {
+    const inp = h('input', { type: 'password', id: 'key-' + name, autocomplete: 'off', spellcheck: 'false', placeholder: keys[name] ? '저장됨 · 바꾸려면 새 키를 붙여넣기' : ph, 'aria-label': label + ' API 키' });
+    const saveKey = async () => {
+      const v = inp.value.trim();
+      if (!v) { keyMsg[name] = { t: '키를 붙여넣은 뒤 저장을 눌러주세요.', ok: false }; render(); return; }
+      keys = await api.setKey(name, v); await testKey(name);
+    };
+    inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveKey(); });
+    const msg = keyMsg[name];
+    return h('div', { class: 'keybox' },
+      h('div', { class: 'row' }, h('label', { for: 'key-' + name, style: 'min-width:120px' }, label), inp,
+        h('button', { class: 'btn primary', type: 'button', onclick: saveKey }, '저장'),
+        keys[name] ? h('button', { class: 'btn', type: 'button', onclick: () => testKey(name) }, '연결 확인') : null,
+        keys[name] ? h('button', { class: 'btn', type: 'button', onclick: async () => { keys = await api.setKey(name, ''); keyMsg[name] = { t: '키를 지웠어요.', ok: null }; render(); } }, '지우기') : null),
+      h('div', { class: 'keystate ' + (msg ? (msg.ok ? 'good' : msg.ok === false ? 'bad' : '') : keys[name] ? 'good' : '') },
+        msg ? msg.t : keys[name] ? '저장된 키가 있어요.' : help));
+  };
+  const builtinAI = () => h('div', { class: 'keybox' },
+    h('div', { class: 'keystate ' + (keys.anthropic ? 'good' : 'bad') }, keys.anthropic ? 'Claude: 키 없이 바로 연결돼요 (지금 로그인한 Claude 계정 사용). 처음 쓸 때 허용을 물어봐요.' : 'Claude: 이 화면에서는 연결할 수 없어요. claude.ai에서 열어주세요.'),
+    h('div', { class: 'keystate ' + (keys.openai ? 'good' : 'bad') }, keys.openai ? '음성 메모: 말하면 바로 글로 바뀌어요.' : '음성 메모: 이 브라우저에서는 받아쓰기를 쓸 수 없어요 (Chrome에서 열어주세요).'),
+    h('p', { class: 'note' }, '웹 미리보기는 보안 규칙 때문에 직접 넣은 API 키를 Claude·OpenAI 서버로 보낼 수 없어요. 내 Claude·OpenAI 키는 컴퓨터에 설치하는 데스크톱 앱의 설정에서 넣어요.'));
+  // 내 사진으로 캐릭터 만들기 (자동 누끼)
+  let maker = null;
+  const pickChar = async (fs) => {
+    try { const src = await readFileURL(fs[0]); maker = { src, mode: 'cutout', strength: 50, outline: true, result: null, busy: true }; render(); await remake(); }
+    catch (err) { toast({ title: '이미지를 읽지 못했어요', body: err.message, ttl: 4000 }); }
+  };
+  const remake = async () => {
+    if (!maker) return; maker.busy = true; render();
+    try { const r = await window.Cutout.makeCharacter(maker.src, maker); maker.result = r.dataURL; maker.used = r.mode; }
+    catch (err) { toast({ title: '캐릭터를 만들지 못했어요', body: err.message, ttl: 4000 }); }
+    maker.busy = false; render();
+  };
+  const makerUI = () => !maker ? null : h('div', { class: 'maker' },
+    h('div', { class: 'mk-imgs' },
+      h('figure', {}, h('img', { src: maker.src, alt: '고른 사진' }), h('figcaption', {}, '고른 사진')),
+      h('span', { class: 'mk-arrow', html: ico('fold', 18) }),
+      h('figure', { class: 'mk-out' }, maker.result ? h('img', { src: maker.result, alt: '만든 캐릭터' }) : h('span', { class: 'lbl' }, '만드는 중…'),
+        h('figcaption', {}, maker.busy ? '배경 지우는 중…' : maker.used === 'circle' && maker.mode === 'cutout' ? '주인공을 못 찾아 동그랗게 잘랐어요' : '이렇게 보여요'))),
+    h('div', { class: 'row' }, h('label', { style: 'min-width:72px' }, '모양'),
+      h('div', { class: 'seg', role: 'group' }, [['cutout', '배경 지우기(누끼)'], ['circle', '동그랗게 자르기'], ['original', '그대로']].map(([v, l]) =>
+        h('button', { type: 'button', 'aria-pressed': String(maker.mode === v), onclick: () => { maker.mode = v; remake(); } }, l)))),
+    maker.mode === 'cutout' ? h('div', { class: 'row' }, h('label', { for: 'mk-str', style: 'min-width:72px' }, '지우는 정도'),
+      h('input', { type: 'range', id: 'mk-str', min: '0', max: '100', value: String(maker.strength), onchange: (e) => { maker.strength = +e.target.value; remake(); } }),
+      h('span', { class: 'lbl' }, '배경이 남으면 오른쪽, 몸이 잘리면 왼쪽')) : null,
+    h('div', { class: 'row' }, h('label', { style: 'min-width:72px' }, '흰 테두리'),
+      h('div', { class: 'seg', role: 'group' }, [[true, '켜기'], [false, '끄기']].map(([v, l]) => h('button', { type: 'button', 'aria-pressed': String(maker.outline === v), onclick: () => { maker.outline = v; remake(); } }, l)))),
+    h('div', { class: 'row' },
+      h('button', { class: 'btn primary', type: 'button', disabled: maker.busy || !maker.result, onclick: () => { st.customChar = maker.result; st.character = 'custom'; maker = null; petChar = ''; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); toast({ title: '새 캐릭터가 준비됐어요', ttl: 2500 }); } }, '이 캐릭터로 정하기'),
+      h('button', { class: 'btn', type: 'button', onclick: () => { maker = null; render(); } }, '취소')));
   function render() {
     const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': '설정' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, '설정'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
@@ -1016,7 +1118,9 @@ async function openSettings() {
         C.ORDER.map((id) => h('button', { type: 'button', 'aria-pressed': String(st.character === id), onclick: () => { st.character = id; save(); renderPet(); if (openId) renderCard(byId(openId)); render(); } },
           h('span', { class: 'cv', html: C.charHTML(id) }), C.CHARS[id].name)),
         filePicker({ cls: 'charpick' + (st.character === 'custom' ? ' on' : ''), label: '내 이미지로 캐릭터 만들기', multiple: false, onFiles: pickChar },
-          h('span', { class: 'cv', html: st.customChar ? C.charHTML('custom', st.customChar) : ico('image', 26) }), '내 이미지')),
+          h('span', { class: 'cv', html: st.customChar ? C.charHTML('custom', st.customChar) : ico('image', 26) }), st.customChar ? '내 사진 바꾸기' : '내 사진으로')),
+      makerUI(),
+      h('p', { class: 'note' }, '내 사진을 고르면 배경을 자동으로 지우고 스티커처럼 테두리를 둘러 캐릭터로 만들어요. 사진은 이 컴퓨터 밖으로 나가지 않아요.'),
       h('div', { class: 'row' }, h('label', {}, '이름'), h('input', { type: 'text', maxlength: '8', value: st.petName, placeholder: (C.CHARS[st.character] || C.CHARS.mikang).name, oninput: (e) => { st.petName = e.target.value; save(); } })),
       h('h4', {}, '화면'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '책갈피 위치'), seg('side', [['left', '왼쪽'], ['right', '오른쪽']], applySide)),
@@ -1030,9 +1134,10 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 알림'), seg('preNormal', [[0, '없음'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '아침 브리핑'), seg('morningBrief', [[true, '켜기'], [false, '끄기']])),
       h('h4', {}, 'AI 연결'),
-      keyRow('anthropic', 'Claude (정리)', 'sk-ant-…'),
-      keyRow('openai', 'OpenAI (받아쓰기)', 'sk-…'),
-      h('p', { class: 'note' }, '키는 이 컴퓨터에만 암호화해서 저장돼요. Claude 키가 없으면 기본 규칙으로 정리하고, 녹음 받아쓰기에는 OpenAI 음성 인식 키가 필요해요.'),
+      keys.builtin ? builtinAI() : [
+        keyRow('anthropic', 'Claude API 키', 'sk-ant-로 시작하는 키 붙여넣기', '메모 정리·사진 속 일정 읽기·부탁하기에 써요. 없으면 기본 규칙으로 정리해요.'),
+        keyRow('openai', 'OpenAI API 키', 'sk-로 시작하는 키 붙여넣기', '녹음을 글로 바꾸는 받아쓰기에 써요.'),
+        h('p', { class: 'note' }, '키는 이 컴퓨터에만 암호화해서 저장되고, 저장하면 바로 연결을 확인해요. 환경변수 ANTHROPIC_API_KEY, OPENAI_API_KEY로도 넣을 수 있어요.')],
       h('h4', {}, '기타'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '컴퓨터 켤 때 실행'), seg('launchAtLogin', [[true, '켜기'], [false, '끄기']], () => api.applySettings({ launchAtLogin: st.launchAtLogin }))),
       h('div', { class: 'row' },
@@ -1114,7 +1219,7 @@ async function boot() {
   info = await api.info().catch(() => info);
   const m = (info.args || []).find((a) => a.startsWith('--mode='));
   if (m) forcedMode = m.slice(7);
-  if (info.demo) $('#demoBg').hidden = false;
+  if (info.demo && $('#demoBg')) $('#demoBg').hidden = false;
   const loaded = await api.loadState().catch(() => null);
   S = normalize(loaded && Array.isArray(loaded.notes) ? loaded : seed());
   keys = await api.keyStatus().catch(() => keys);

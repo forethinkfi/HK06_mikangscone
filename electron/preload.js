@@ -16,6 +16,7 @@ contextBridge.exposeInMainWorld('api', {
   notify: (o) => ipcRenderer.send('notify', o),
   keyStatus: () => ipcRenderer.invoke('keys:status'),
   setKey: (name, value) => ipcRenderer.invoke('keys:set', name, value),
+  testKey: (name) => ipcRenderer.invoke('keys:test', name),
   organize: (payload) => ipcRenderer.invoke('ai:organize', payload),
   saveAudio: (id, buf, ext) => ipcRenderer.invoke('audio:save', id, buf, ext),
   readAudio: (id) => ipcRenderer.invoke('audio:read', id),

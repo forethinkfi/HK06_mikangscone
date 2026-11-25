@@ -11,7 +11,8 @@
     "test": "node --test test/*.test.js",
     "dist": "electron-builder",
     "dist:win": "electron-builder --win",
-    "dist:mac": "electron-builder --mac"
+    "dist:mac": "electron-builder --mac",
+    "preview": "node tools/build-preview.js"
   },
   "dependencies": {
     "@anthropic-ai/sdk": "1.7.0",
@@ -26,11 +27,30 @@
   "build": {
     "appId": "com.mikangscone.bookmarkmemo",
     "productName": "Mikang Memo",
-    "directories": { "output": "dist", "buildResources": "build" },
-    "files": ["electron/**", "src/**", "build/icon.png", "build/trayTemplate.png", "build/trayTemplate@2x.png", "build/tray.png", "package.json"],
+    "directories": {
+      "output": "dist",
+      "buildResources": "build"
+    },
+    "files": [
+      "electron/**",
+      "src/**",
+      "build/icon.png",
+      "build/trayTemplate.png",
+      "build/trayTemplate@2x.png",
+      "build/tray.png",
+      "package.json"
+    ],
     "mac": {
       "category": "public.app-category.productivity",
-      "target": [{ "target": "dmg", "arch": ["arm64", "x64"] }],
+      "target": [
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.png",
       "extendInfo": {
         "LSUIElement": true,
@@ -41,9 +61,20 @@
       "hardenedRuntime": true
     },
     "win": {
-      "target": [{ "target": "nsis", "arch": ["x64"] }],
+      "target": [
+        {
+          "target": "nsis",
+          "arch": [
+            "x64"
+          ]
+        }
+      ],
       "icon": "build/icon.png"
     },
-    "nsis": { "oneClick": false, "allowToChangeInstallationDirectory": true, "shortcutName": "Mikang Memo" }
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "shortcutName": "Mikang Memo"
+    }
   }
 }

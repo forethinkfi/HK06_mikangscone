@@ -112,4 +112,24 @@ function describeError(e) {
   return e && e.message ? e.message : String(e);
 }
 
-module.exports = { organize, transcribe, describeError };
+/** 저장한 키가 실제로 동작하는지 확인 (모델 정보 조회만 하므로 비용이 들지 않는다) */
+async function testKey(name, apiKey) {
+  if (!apiKey) return { ok: false, error: '저장된 키가 없어요.' };
+  try {
+    if (name === 'anthropic') {
+      const client = new Anthropic({ apiKey, timeout: 20000, maxRetries: 0 });
+      await client.models.retrieve(MODEL);
+      return { ok: true };
+    }
+    const r = await fetch('https://api.openai.com/v1/models', { headers: { Authorization: `Bearer ${apiKey}` } });
+    if (r.status === 401) return { ok: false, error: 'OpenAI 키가 올바르지 않아요. 키를 다시 복사해 주세요.' };
+    if (!r.ok) return { ok: false, error: `OpenAI 연결 실패 (${r.status})` };
+    return { ok: true };
+  } catch (e) {
+    if (e instanceof Anthropic.AuthenticationError) return { ok: false, error: 'Claude 키가 올바르지 않아요. sk-ant-로 시작하는 키를 다시 복사해 주세요.' };
+    if (e instanceof Anthropic.PermissionDeniedError) return { ok: false, error: '이 키로는 Claude 모델을 쓸 권한이 없어요.' };
+    return { ok: false, error: describeError(e) };
+  }
+}
+
+module.exports = { organize, transcribe, describeError, testKey };
