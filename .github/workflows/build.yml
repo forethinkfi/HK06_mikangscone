@@ -1,10 +1,12 @@
 # Windows(.exe 설치 파일)와 macOS(.dmg)를 GitHub에서 자동으로 만든다.
-# Actions 탭 → "Build desktop app" → Run workflow 로 실행하거나, v* 태그를 올리면 실행된다.
+# Actions 탭 → "Build desktop app" → Run workflow 로 실행하거나, v* 태그를 올리거나, 작업 브랜치에 앱 코드가 바뀌면 실행된다.
 name: Build desktop app
 on:
   workflow_dispatch:
   push:
     tags: ['v*']
+    branches: ['claude/quirky-mayer-sc9las']
+    paths: ['src/**', 'electron/**', 'build/**', 'package.json', 'package-lock.json', '.github/workflows/build.yml']
 jobs:
   build:
     strategy:
