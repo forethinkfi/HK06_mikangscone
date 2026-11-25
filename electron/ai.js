@@ -40,6 +40,7 @@ const SYSTEM = `너는 사용자의 바탕화면에 사는 메모 비서 캐릭�
 - "12시"처럼 오전/오후가 없으면 상식적으로 해석해 (1~6시는 보통 오후, 12시는 정오).
 - 시간이 없고 날짜만 있으면 all_day=true, when은 그날 09:00.
 - 녹음 받아쓰기라면 말버릇·반복을 빼고 결정사항, 할 일, 기억할 내용 위주로 정리해.
+- 사진이 함께 오면 사진 속 글(포스터, 공지, 화이트보드, 영수증 등)의 날짜·시간·할 일도 읽어서 정리해.
 - 원문에 없는 사실은 지어내지 마.`;
 
 function nowContext() {
@@ -52,8 +53,16 @@ function nowContext() {
 
 const KIND_LABEL = { memo: '사용자가 직접 쓴 메모', transcript: '녹음을 받아쓴 원문', command: '사용자가 비서에게 한 부탁 (메모로 만들어 줘)' };
 
+/** 메모에 붙은 사진(data:image/jpeg;base64,...)을 Claude 이미지 입력으로 바꾼다. */
+function imageBlocks(images) {
+  return (Array.isArray(images) ? images : []).slice(0, 4)
+    .map((d) => /^data:image\/jpeg;base64,([A-Za-z0-9+/=]+)$/.exec(String(d)))
+    .filter(Boolean)
+    .map((m) => ({ type: 'image', source: { type: 'base64', media_type: 'image/jpeg', data: m[1] } }));
+}
+
 /** 메모 정리. 실패하면 예외를 던진다(렌더러가 규칙 기반 정리로 대신한다). */
-async function organize(apiKey, { text, title = '', kind = 'memo' }) {
+async function organize(apiKey, { text, title = '', kind = 'memo', images = [] }) {
   const client = new Anthropic({ apiKey, timeout: 60000, maxRetries: 1 });
   const user = `현재 시각: ${nowContext()}
 종류: ${KIND_LABEL[kind] || KIND_LABEL.memo}
@@ -67,7 +76,7 @@ ${text}
     fallbacks: 'default',
     output_config: { effort: 'low', format: { type: 'json_schema', schema: SCHEMA } },
     system: SYSTEM,
-    messages: [{ role: 'user', content: user }],
+    messages: [{ role: 'user', content: [...imageBlocks(images), { type: 'text', text: user }] }],
   });
   if (res.stop_reason === 'refusal') throw new Error('AI가 이 메모는 정리하지 않았어요.');
   const txt = res.content.filter((b) => b.type === 'text').map((b) => b.text).join('');

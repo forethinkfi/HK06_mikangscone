@@ -111,7 +111,15 @@ const DEFAULTS = {
   launchAtLogin: true, petPos: null, consentShown: false,
 };
 let S = null, saveT = 0;
-function save() { clearTimeout(saveT); saveT = setTimeout(() => { api.saveState(S).catch(() => {}); }, 300); }
+let saveWarned = false;
+function save() {
+  clearTimeout(saveT);
+  saveT = setTimeout(async () => {
+    const ok = await api.saveState(S).catch(() => false);
+    if (ok === false && !saveWarned) { saveWarned = true; toast({ title: '저장 공간이 부족해요', body: '사진을 몇 장 지우면 다시 저장돼요.', ttl: 6000 }); }
+    if (ok) saveWarned = false;
+  }, 300);
+}
 const byId = (id) => S.notes.find((n) => n.id === id);
 const isEmpty = (n) => !n.text.trim() && !n.title.trim() && !n.keyword.trim() && !n.photos.length && !n.stickers.length && !n.audios.length;
 
@@ -171,6 +179,7 @@ function renderTabs() {
     dock.append(h('button', { class: 'tab' + (openId === n.id ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, 'aria-expanded': String(openId === n.id), title: n.title || n.keyword, style: `--tc:${t.tab.bg};--ti:${t.tab.ink}`, onclick: () => toggleNote(n.id) },
       h('span', { class: 'k' }, n.keyword || '새 메모'),
       nx ? h('span', { class: 'when' }, iel('bell', 11), fmtWhen(nx.at)) : null));
+    bindImageDrop(dock.lastElementChild, () => byId(n.id));
   }
   const cnt = upcomingCount();
   dock.append(h('button', { class: 'tab agenda' + (agendaOpen ? ' open' : ''), type: 'button', 'aria-expanded': String(agendaOpen), onclick: toggleAgenda },
@@ -186,14 +195,14 @@ function fit() {
 }
 
 /* ─────────── 열기 · 닫기 ─────────── */
-const noteHash = (n) => n.title + '\u0001' + n.text;
+const noteHash = (n) => n.title + '\u0001' + n.text + '\u0001' + n.photos.length;
 function commitCurrent() {
   const n = openId && byId(openId); if (!n) return;
   if (isEmpty(n) && !(rec && rec.noteId === n.id)) { S.notes = S.notes.filter((x) => x !== n); return; }
   if (!n.keyword.trim() && (n.text.trim() || n.title.trim())) n.keyword = P.guessKeyword(n.text, n.title);
   if (!n.summary.length && n.text.trim()) n.summary = P.summarize(n.text);
   // 자동화: 내용이 바뀐 채로 접으면 비서가 알아서 정리하고 알람까지 맞춘다
-  if (S.settings.autoOrganize && n.text.trim() && n.orgHash !== noteHash(n)) organizeNote(n, { auto: true });
+  if (S.settings.autoOrganize && (n.text.trim() || (keys.anthropic && n.photos.length)) && n.orgHash !== noteHash(n)) organizeNote(n, { auto: true });
 }
 function closeAll() {
   commitCurrent();
@@ -262,7 +271,7 @@ function renderCard(n) {
   const body = h('textarea', { class: 'body', placeholder: '여기에 메모를 적어요.\n예) 내일 12시까지 회의자료 제출', 'aria-label': '메모 내용',
     oninput: (e) => { n.text = e.target.value; save(); },
     onblur: () => { if (!n.keyword.trim() && n.text.trim()) { n.keyword = P.guessKeyword(n.text, n.title); kw.value = n.keyword; setTabText(n); } renderChips(n); save(); },
-    onpaste: (e) => { const fs = [...(e.clipboardData?.files || [])].filter((f) => f.type.startsWith('image/')); if (fs.length) { e.preventDefault(); addPhotos(n, fs); } } });
+    onpaste: (e) => { const fs = imageFiles(e.clipboardData?.files); if (fs.length) { e.preventDefault(); addPhotos(n, fs); } } });
   body.value = n.text;
   const content = h('div', { class: 'content' }, kw, ttl);
   if (n.summary.length) content.append(h('div', { class: 'sum' },
@@ -271,12 +280,15 @@ function renderCard(n) {
   if (rec && rec.noteId === n.id) content.append(recBar());
   content.append(body);
   if (n.audios.length) content.append(h('div', { class: 'audios' }, n.audios.map((a) => audioChip(n, a))));
-  if (n.photos.length) content.append(h('div', { class: 'photos' }, n.photos.map((src, i) =>
-    h('div', { class: 'ph', style: `--r:${(i % 2 ? 1 : -1) * (1 + i % 3)}deg` },
-      h('img', { src: /^data:image\//.test(src) ? src : '', alt: '첨부 사진' }),
-      h('div', { class: 'pa' },
-        h('button', { type: 'button', 'aria-label': '스티커로 붙이기', title: '스티커로 붙이기', onclick: () => photoToSticker(n, i), html: ico('star', 13) }),
-        h('button', { type: 'button', 'aria-label': '사진 삭제', title: '삭제', onclick: () => { n.photos.splice(i, 1); save(); renderCard(n); }, html: ico('x', 13) }))))));
+  if (n.photos.length) content.append(h('div', { class: 'photos' },
+    n.photos.map((src, i) =>
+      h('div', { class: 'ph', style: `--r:${(i % 2 ? 1 : -1) * (1 + i % 3)}deg` },
+        h('button', { type: 'button', class: 'pv-open', 'aria-label': `사진 ${i + 1} 크게 보기`, title: '크게 보기', onclick: () => openViewer(n, i) },
+          h('img', { src: /^data:image\//.test(src) ? src : '', alt: `첨부 사진 ${i + 1}` })),
+        h('div', { class: 'pa' },
+          h('button', { type: 'button', 'aria-label': '스티커로 붙이기', title: '스티커로 붙이기', onclick: () => photoToSticker(n, i), html: ico('star', 13) }),
+          h('button', { type: 'button', 'aria-label': '사진 삭제', title: '삭제', onclick: () => { n.photos.splice(i, 1); save(); renderCard(n); }, html: ico('x', 13) })))),
+    n.photos.length < MAX_PHOTOS ? h('button', { type: 'button', class: 'ph-add', 'aria-label': '사진 더 넣기', title: '사진 더 넣기', onclick: () => $('#photoPick')?.click(), html: ico('plus', 20) }) : null));
   content.append(h('div', { class: 'chips', id: 'chips' }));
   card.append(content);
   card.append(h('div', { class: 'stk-layer', id: 'stkLayer' }));
@@ -284,10 +296,10 @@ function renderCard(n) {
 
   card.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); card.classList.add('drop'); } });
   card.addEventListener('dragleave', (e) => { if (!card.contains(e.relatedTarget)) card.classList.remove('drop'); });
-  card.addEventListener('drop', (e) => { card.classList.remove('drop'); const fs = [...(e.dataTransfer?.files || [])].filter((f) => f.type.startsWith('image/')); if (fs.length) { e.preventDefault(); addPhotos(n, fs); } });
+  card.addEventListener('drop', (e) => { card.classList.remove('drop'); const fs = imageFiles(e.dataTransfer?.files); if (fs.length) { e.preventDefault(); addPhotos(n, fs); } });
   card.addEventListener('pointerdown', (e) => { if (!e.target.closest('.stk,.sbar') && selStk) { selStk = null; renderStickers(n); } });
 
-  const file = h('input', { type: 'file', accept: 'image/*', multiple: true, hidden: true, onchange: (e) => { addPhotos(n, [...e.target.files]); e.target.value = ''; } });
+  const file = h('input', { type: 'file', id: 'photoPick', accept: 'image/*', multiple: true, hidden: true, onchange: (e) => { addPhotos(n, [...e.target.files]); e.target.value = ''; } });
   const pal = h('div', { class: 'pal', hidden: true, role: 'menu', 'aria-label': '스티커' }, PAL.map((k) => h('button', { type: 'button', role: 'menuitem', 'aria-label': STK[k].n, title: STK[k].n, onclick: () => { pal.hidden = true; addSticker(n, k); }, html: stkSVG(k) })));
   const aiBtn = h('button', { class: 'btn primary', type: 'button', id: 'aiBtn', onclick: () => organizeNote(n, {}) }, iel('sparkle', 16), 'AI 정리');
   const recOn = rec && rec.noteId === n.id;
@@ -355,11 +367,13 @@ async function togglePlay(n, a) {
 }
 
 /* ─────────── 사진 · 스티커 ─────────── */
-function readPhoto(file) {
+const MAX_PHOTOS = 4;
+const imageFiles = (list) => [...(list || [])].filter((f) => f && f.type && f.type.startsWith('image/'));
+function readPhoto(file, max = 1280) {
   return new Promise((res, rej) => {
     const url = URL.createObjectURL(file), img = new Image();
     img.onload = () => {
-      const k = Math.min(1, 640 / Math.max(img.width, img.height)), c = document.createElement('canvas');
+      const k = Math.min(1, max / Math.max(img.width, img.height)), c = document.createElement('canvas');
       c.width = Math.max(1, Math.round(img.width * k)); c.height = Math.max(1, Math.round(img.height * k));
       const x = c.getContext('2d'); x.fillStyle = '#fff'; x.fillRect(0, 0, c.width, c.height); x.drawImage(img, 0, 0, c.width, c.height);
       URL.revokeObjectURL(url); res(c.toDataURL('image/jpeg', 0.82));
@@ -371,10 +385,60 @@ function readPhoto(file) {
 async function addPhotos(n, files) {
   let added = 0;
   for (const f of files) {
-    if (n.photos.length >= 4) { toast({ title: '사진은 메모 하나에 4장까지 붙일 수 있어요', ttl: 2600 }); break; }
+    if (n.photos.length >= MAX_PHOTOS) { toast({ title: `사진은 메모 하나에 ${MAX_PHOTOS}장까지 넣을 수 있어요`, ttl: 2600 }); break; }
     try { n.photos.push(await readPhoto(f)); added++; } catch { toast({ title: '사진을 읽지 못했어요', ttl: 3000 }); }
   }
-  if (added) { save(); if (openId === n.id) renderCard(n); }
+  if (added) {
+    n.viewedAt = Date.now(); save(); renderTabs();
+    if (openId === n.id) { renderCard(n); perchSay(keys.anthropic ? `사진 ${added}장 넣었어요. 사진 속 일정도 읽어드릴게요!` : `사진 ${added}장 넣었어요.`, 3500); }
+    else say(`'${n.keyword || '새 메모'}' 메모에 사진 ${added}장을 넣었어요.`, { ttl: 5000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] });
+  }
+  return added;
+}
+/** 캐릭터나 책갈피에 사진을 끌어다 놓기 */
+function bindImageDrop(el, target) {
+  el.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); el.classList.add('dropping'); } });
+  el.addEventListener('dragleave', () => el.classList.remove('dropping'));
+  el.addEventListener('drop', async (e) => {
+    el.classList.remove('dropping');
+    const fs = imageFiles(e.dataTransfer?.files); if (!fs.length) return;
+    e.preventDefault(); e.stopPropagation();
+    let n = target();
+    if (!n) { n = newNote(false); }
+    await addPhotos(n, fs);
+    if (openId !== n.id) openNote(n.id);
+  });
+}
+
+/* 사진 크게 보기 */
+function openViewer(n, i) {
+  closePeek(true); closeBubble();
+  modalOpen = true; updateHit();
+  const m = $('#modal'); m.hidden = false;
+  const show = () => {
+    if (!n.photos.length) { closeViewer(); return; }
+    i = (i + n.photos.length) % n.photos.length;
+    const src = n.photos[i];
+    m.replaceChildren(h('div', { class: 'viewer', role: 'dialog', 'aria-label': '사진 보기' },
+      h('img', { src: /^data:image\//.test(src) ? src : '', alt: `첨부 사진 ${i + 1}` }),
+      h('div', { class: 'vbar' },
+        n.photos.length > 1 ? h('button', { class: 'btn icon', type: 'button', 'aria-label': '이전 사진', onclick: () => { i--; show(); }, html: '<span style="display:inline-block;transform:scaleX(-1)">' + ico('fold', 16) + '</span>' }) : null,
+        h('span', { class: 'vcount' }, `${i + 1} / ${n.photos.length}`),
+        n.photos.length > 1 ? h('button', { class: 'btn icon', type: 'button', 'aria-label': '다음 사진', onclick: () => { i++; show(); }, html: ico('fold', 16) }) : null,
+        h('span', { style: 'flex:1' }),
+        h('button', { class: 'btn', type: 'button', onclick: () => { closeViewer(); photoToSticker(n, i); } }, iel('star', 15), '스티커로 붙이기'),
+        h('button', { class: 'btn', type: 'button', onclick: () => { n.photos.splice(i, 1); save(); if (openId === n.id) renderCard(n); show(); } }, iel('trash', 15), '삭제'),
+        h('button', { class: 'btn primary icon', type: 'button', 'aria-label': '닫기', onclick: closeViewer, html: ico('x', 16) }))));
+  };
+  m.onpointerdown = (e) => { if (e.target === m) closeViewer(); };
+  viewerKeys = (e) => { if (e.key === 'ArrowLeft') { i--; show(); } else if (e.key === 'ArrowRight') { i++; show(); } };
+  document.addEventListener('keydown', viewerKeys);
+  show();
+}
+let viewerKeys = null;
+function closeViewer() {
+  if (viewerKeys) document.removeEventListener('keydown', viewerKeys); viewerKeys = null;
+  modalOpen = false; const m = $('#modal'); m.hidden = true; m.replaceChildren(); m.onpointerdown = null; updateHit();
 }
 function photoToSticker(n, i) {
   const src = n.photos.splice(i, 1)[0];
@@ -532,9 +596,9 @@ function localResult(text, title, kind) {
   const a = P.localAnalyze(text, title);
   return { keyword: a.keyword, title: '', body: kind === 'transcript' ? P.tidyTranscript(text) : text, summary: a.summary, events: a.events, reply: '', src: 'local' };
 }
-async function aiOrganize(text, title, kind) {
+async function aiOrganize(text, title, kind, images = []) {
   if (keys.anthropic) {
-    const r = await api.organize({ text, title, kind });
+    const r = await api.organize({ text, title, kind, images: images.filter((d) => /^data:image\/jpeg;base64,/.test(d)).slice(0, MAX_PHOTOS) });
     if (r.ok) { try { return normalizeAI(r.result, text); } catch {} }
     else if (r.reason === 'error') toast({ title: 'AI 정리 대신 기본 규칙으로 정리했어요', body: r.error, ttl: 4500 });
   }
@@ -560,12 +624,13 @@ function applyResult(n, r) {
 let organizing = new Set();
 async function organizeNote(n, { auto }) {
   const text = n.text.trim();
-  if (!text) { if (!auto) perchSay('메모를 먼저 적어주세요!'); return; }
+  const usePhotos = keys.anthropic && n.photos.length > 0;
+  if (!text && !usePhotos) { if (!auto) perchSay(n.photos.length ? '사진 속 글은 AI 연결(Claude 키)이 있어야 읽을 수 있어요.' : '메모를 먼저 적어주세요!', 4500); return; }
   if (organizing.has(n.id)) return;
   organizing.add(n.id); setMood('think');
   const btn = !auto && $('#aiBtn'); if (btn) { btn.disabled = true; btn.replaceChildren(iel('sparkle', 16), '정리하는 중…'); }
   try {
-    const r = await aiOrganize(text, n.title, 'memo');
+    const r = await aiOrganize(text || '(글 없이 사진만 있는 메모)', n.title, 'memo', usePhotos ? n.photos : []);
     if (!byId(n.id)) return;
     const added = applyResult(n, r);
     n.orgHash = noteHash(n);
@@ -757,6 +822,7 @@ function bindPet() {
   });
   pet.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPetClick(); } });
   pet.addEventListener('contextmenu', (e) => { e.preventDefault(); openSettings(); });
+  bindImageDrop(pet, () => (openId ? byId(openId) : null));
 }
 function onPetClick() {
   if (rec && rec.kind === 'command') { stopRecording(); return; }
@@ -844,6 +910,7 @@ function renderPeek() {
     charBox,
     h('div', { class: 'pk' }, n.keyword || '메모'),
     h('div', { class: 'pt' }, body || '(내용 없음)'),
+    n.photos.length ? h('div', { class: 'pph' }, n.photos.slice(0, 3).map((src) => h('img', { src: /^data:image\//.test(src) ? src : '', alt: '' }))) : null,
     nx ? h('div', { class: 'pe' }, h('span', { class: 'chip' }, iel('bell', 12), `${fmtWhen(nx.at)} ${nx.title}`)) : null,
     h('div', { class: 'pf' }, h('span', {}, peek.list.length > 1 ? '휠로 넘겨보기 · 눌러서 열기' : '눌러서 열기'),
       h('span', { class: 'dots' }, peek.list.map((_, i) => h('i', { class: i === peek.idx ? 'on' : '' }))))));
@@ -1031,7 +1098,7 @@ function bindGlobal() {
   });
   document.addEventListener('keydown', (e) => {
     if (e.key !== 'Escape') return;
-    if (modalOpen) { closeSettings(); return; }
+    if (modalOpen) { if (viewerKeys) closeViewer(); else closeSettings(); return; }
     const p = $('.pal:not([hidden])'); if (p) { p.hidden = true; return; }
     if (openId || agendaOpen || bubble.open || summoned) closeAll();
   });
