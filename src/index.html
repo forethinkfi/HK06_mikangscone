@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; media-src 'self' blob: data:; font-src 'self' data:; connect-src 'self'">
+<title>Mikang Memo</title>
+<link rel="stylesheet" href="../node_modules/@fontsource/jua/index.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/gaegu/400.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/gaegu/700.css">
+<link rel="stylesheet" href="../node_modules/@fontsource/gowun-dodum/index.css">
+<link rel="stylesheet" href="styles.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true"><defs>
+  <pattern id="g-red" width="8" height="8" patternUnits="userSpaceOnUse"><rect width="8" height="8" fill="#fff"/><rect width="4" height="8" fill="#d93a35" opacity=".85"/><rect width="8" height="4" fill="#d93a35" opacity=".85"/></pattern>
+</defs></svg>
+
+<div class="stage side-right" id="stage">
+  <div class="demo-bg" id="demoBg" hidden>
+    <div class="win back"><div class="tb"><i style="background:#e8b7b0"></i><i style="background:#e8d9a5"></i><i style="background:#b8d6b4"></i>&nbsp;참고 자료.pdf</div></div>
+    <div class="win"><div class="tb"><i style="background:#ef9a93"></i><i style="background:#efd37f"></i><i style="background:#9fcf98"></i>&nbsp;<span id="demoTitle">팀 프로젝트 기획서 — 웹 브라우저</span></div>
+      <div class="doc"><h2>팀 프로젝트 기획서</h2><div class="sk" style="width:92%"></div><div class="sk" style="width:78%"></div><div class="sk" style="width:86%"></div><div class="sk" style="width:40%;margin-top:10px;height:14px;background:#e3ddd0"></div><div class="sk" style="width:90%"></div><div class="sk" style="width:70%"></div></div></div>
+  </div>
+
+  <nav class="dock" id="dock" aria-label="메모 책갈피"></nav>
+  <section class="sheet" id="sheet" role="dialog" aria-label="메모지"></section>
+  <section class="sheet" id="agenda" role="dialog" aria-label="일정 정리"></section>
+  <aside class="peek" id="peek" aria-live="polite"></aside>
+  <div class="pet" id="pet" role="button" tabindex="0" aria-label="AI 비서"></div>
+  <div class="bubble" id="bubble" hidden></div>
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <div class="modal" id="modal" hidden></div>
+</div>
+
+<script src="parse.js"></script>
+<script src="characters.js"></script>
+<script src="app.js"></script>
+</body>
+</html>
