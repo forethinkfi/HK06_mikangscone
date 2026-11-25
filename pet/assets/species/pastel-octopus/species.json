@@ -1,0 +1,58 @@
+{
+  "id": "pastel-octopus",
+  "displayName": "문어비서",
+  "version": "1.0.0",
+  "animations": {
+    "idle": {
+      "sheet": "sprite.png",
+      "frameWidth": 384,
+      "frameHeight": 384,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "breathe"
+    },
+    "walk": {
+      "sheet": "sprite.png",
+      "frameWidth": 384,
+      "frameHeight": 384,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "waddle",
+      "mirrorWhen": "left"
+    },
+    "sleep": {
+      "sheet": "sprite.png",
+      "frameWidth": 384,
+      "frameHeight": 384,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "motion": "sleep",
+      "effect": "sleep"
+    },
+    "dragged": {
+      "sheet": "sprite.png",
+      "frameWidth": 384,
+      "frameHeight": 384,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "authoredGrip": true,
+      "motion": "wriggle"
+    }
+  },
+  "behavior": {
+    "walkSpeedPxPerSec": 45,
+    "idleMinMs": 1800,
+    "idleMaxMs": 3700,
+    "walkMinMs": 4500,
+    "walkMaxMs": 8500,
+    "spriteScale": 0.276
+  },
+  "attribution": {
+    "author": "진현주 (파스텔 테마)",
+    "license": "Original artwork drawn for this project"
+  }
+}

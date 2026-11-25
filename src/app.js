@@ -58,6 +58,33 @@ const THEMES = [
 ];
 const TH = (id) => THEMES.find((t) => t.id === id) || THEMES[0];
 
+/* ─────────── 테마 묶음 (src/themes) ───────────
+ * 테마마다 메모지 색·모양, AI 비서 캐릭터, 데스크톱 펫이 정해져 있다. 메모지 색이 있는 테마에서는
+ * 메모마다 고른 색(n.paperColor)을 쓰고, 모양은 메모마다 자동으로 하나씩 정해진다. */
+const themePack = () => (window.MemoThemes ? window.MemoThemes.get(S && S.settings.themePack) : null);
+function paperOf(n) {
+  const tp = themePack(), cs = tp && tp.noteColors;
+  if (!n || !cs || !cs.length) return null;
+  const seed = [...String(n.id)].reduce((a, ch) => a * 31 + ch.charCodeAt(0) >>> 0, 7);
+  const c = cs.find((x) => x.id === n.paperColor) || cs[seed % cs.length];
+  const shapes = tp.paperShapes || [];
+  return { ...c, shape: shapes.length ? shapes[(seed >>> 3) % shapes.length] : '' };
+}
+function applyThemePack(id, fromUser) {
+  const tp = window.MemoThemes && window.MemoThemes.get(id || S.settings.themePack);
+  if (!tp) return;
+  S.settings.themePack = tp.id;
+  document.documentElement.dataset.themePack = tp.id;
+  if (fromUser) {
+    if (tp.character && C.CHARS[tp.character]) S.settings.character = tp.character;
+    if (tp.petSpecies && api.petControls) Promise.resolve(api.petControls('show', tp.petSpecies)).catch(() => {});
+    save();
+  }
+  if (openId && byId(openId)) renderCard(byId(openId));
+  renderTabs();
+  if (modalKind === 'board') renderBoard();
+}
+
 /* ─────────── 스티커 ─────────── */
 const starP = 'M24 4l5.6 13.2 14.4 1.2-11 9.4 3.4 14L24 34.6 11.6 41.8l3.4-14-11-9.4 14.4-1.2z';
 const heartP = 'M24 42C8 30 4 21 4 15 4 9 9 5 14 5c4 0 8 2.5 10 6 2-3.5 6-6 10-6 5 0 10 4 10 10 0 6-4 15-20 27z';
@@ -115,7 +142,7 @@ const DEFAULTS = {
   character: 'mikang', petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true, petScheduleBrief: true,
-  launchAtLogin: true, consentShown: false, weatherCity: '서울',
+  launchAtLogin: true, consentShown: false, weatherCity: '서울', themePack: window.__defaultThemePack || 'default',
   proPreview: false,
 };
 let S = null, saveT = 0;
@@ -222,7 +249,7 @@ function renderTabs() {
       const wrap = h('div', { class: 'subs', role: 'group', 'aria-label': `${x.name} 메모` });
       list.forEach((n, i) => {
         const t = TH(n.theme);
-        const st = h('button', { class: 'tab sub' + (openId === n.id ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, title: memoTitle(n), style: `--tc:${t.tab.bg};--ti:${t.tab.ink};--d:${i * 35}ms`, onclick: () => toggleNote(n.id) },
+        const st = h('button', { class: 'tab sub' + (openId === n.id ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, title: memoTitle(n), style: `--tc:${(paperOf(n) || t.tab).tab || t.tab.bg};--ti:${(paperOf(n) || t.tab).ink || t.tab.ink};--d:${i * 35}ms`, onclick: () => toggleNote(n.id) },
           h('span', { class: 'k' }, memoTitle(n) || '새 메모'));
         bindImageDrop(st, () => byId(n.id));
         wrap.append(st);
@@ -326,6 +353,9 @@ function renderCard(n) {
   const basic = !hasPremiumMemo();
   sheet.classList.toggle('basic-note', basic);
   sheet.classList.toggle('basic-details', basic && basicDetails);
+  const pp = paperOf(n);
+  sheet.dataset.paper = pp ? pp.shape : '';
+  for (const [k, v] of [['--pc', pp && pp.bg], ['--pi', pp && pp.ink], ['--pt', pp && pp.tape]]) { if (v) sheet.style.setProperty(k, v); else sheet.style.removeProperty(k); }
   const card = h('div', { class: 'card', 'data-id': n.id, style: `--pad:${t.pad};--hl:${t.hl};--rule:${t.rule};--br:${t.br}deg` });
   const bk = t.back;
   card.append(h('div', { class: 'backing', style: bk.t === 'g'
@@ -423,6 +453,11 @@ function renderCard(n) {
       titleInput, menu,
       h('button', { class: 'basic-icon', type: 'button', 'aria-label': '메모 닫기', title: '메모 닫기', onclick: closeAll, html: ico('x', 16) })));
     editor.toolbar.append(filePicker({ cls: 'basic-photo', title: '사진 첨부', label: '사진 첨부', onFiles: onImages }, iel('image', 16)));
+    const tp = themePack();
+    if (pp && tp.noteColors) editor.toolbar.append(h('span', { class: 'paper-colors', role: 'group', 'aria-label': '메모지 색' },
+      tp.noteColors.map((c) => h('button', { type: 'button', 'aria-label': `${c.name} 메모지`, title: c.name, 'aria-pressed': String(c.id === pp.id), style: `--sw:${c.bg}`,
+        onmousedown: (e) => e.preventDefault(),
+        onclick: () => { n.paperColor = c.id; save(); renderCard(n); renderTabs(); } }))));
     card.append(editor.toolbar);
   }
   sheet.replaceChildren(card, bar);
@@ -1180,7 +1215,8 @@ function renderPeek() {
   }
   const t = TH(n.theme);
   const body = n.text.split('\n').filter(Boolean).slice(0, 6).join('\n');
-  el.replaceChildren(h('div', { class: 'pcard', style: `--pf:${t.fill};--ps:${t.stroke};--ph:${t.hl};--pr:${t.rule}`, onclick: () => openNote(n.id), title: '눌러서 메모 열기' },
+  const pp = paperOf(n);
+  el.replaceChildren(h('div', { class: 'pcard', style: pp ? `--pf:${pp.bg};--ps:${pp.tab};--ph:${pp.tab};--pr:#00000014` : `--pf:${t.fill};--ps:${t.stroke};--ph:${t.hl};--pr:${t.rule}`, onclick: () => openNote(n.id), title: '눌러서 메모 열기' },
     charBox,
     h('div', { class: 'psec', style: `--tc:${secColor(secOf(n)).bg};--ti:${secColor(secOf(n)).ink}` }, secOf(n).name),
     h('div', { class: 'pk' }, memoTitle(n) || '메모'),
@@ -1336,6 +1372,12 @@ async function openSettings() {
   function render() {
     const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': '설정' },
       h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, '설정'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
+      window.MemoThemes ? [h('h4', {}, '테마'),
+        h('div', { class: 'theme-list', role: 'group', 'aria-label': '테마' }, window.MemoThemes.list().map((tp) =>
+          h('button', { type: 'button', class: 'theme-card', 'aria-pressed': String(st.themePack === tp.id), onclick: () => { applyThemePack(tp.id, true); render(); } },
+            h('span', { class: 'tsw' }, (tp.preview || []).map((c) => h('i', { style: `background:${c}` }))),
+            h('b', {}, tp.name), tp.author ? h('small', {}, `만든 사람: ${tp.author}`) : null))),
+        h('p', { class: 'note' }, '테마를 바꾸면 색·글꼴·메모지·AI 비서 캐릭터·데스크톱 펫이 함께 바뀌어요. 캐릭터는 아래에서 따로 바꿀 수 있어요.')] : null,
       h('h4', {}, 'AI 비서 캐릭터'),
       h('div', { class: 'chars' },
         C.ORDER.map((id) => h('button', { type: 'button', 'aria-pressed': String(st.character === id), onclick: () => { st.character = id; save(); if (openId) renderCard(byId(openId)); render(); } },
@@ -1518,7 +1560,8 @@ function boardNote(n) {
         pin.title = n.pinned ? '고정 해제' : '메모 고정';
       }
     } }, iel('pin', 15));
-  const el = h('div', { class: 'overview-item' },
+  const pc = paperOf(n);
+  const el = h('div', { class: 'overview-item', style: pc ? `--paper-dot:${pc.bg}` : null },
     toggle,
     h('button', { class: 'overview-note-open', type: 'button', 'aria-label': `${title} 메모 열기`, title, onclick: () => openNote(n.id) },
       h('span', { class: 'overview-note-text' }, h('span', {}, title),
@@ -1849,13 +1892,14 @@ async function boot() {
   keys = await api.keyStatus().catch(() => keys);
   api.applySettings({ launchAtLogin: S.settings.launchAtLogin, modeOverride: S.settings.modeOverride, proPreview: S.settings.proPreview });
   bindGlobal();
+  applyThemePack(S.settings.themePack, !loaded); // 처음 켤 때는 테마의 캐릭터·펫도 함께
   applySide(); renderTabs(); fit(); applyMode();
   if (info.args?.includes('--overview')) openBoard();
   else void refreshPetControls();
   save();
   tick(); setInterval(tick, 5000);
   // 디버그/스크린샷용 훅
-  window.__mk = { S: () => S, openNote, newNote, toggleDock, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
+  window.__mk = { applyThemePack, paperOf, S: () => S, openNote, newNote, toggleDock, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
 }
 boot();
 })();

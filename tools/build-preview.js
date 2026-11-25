@@ -8,12 +8,24 @@ const fs = require('fs');
 const path = require('path');
 const ROOT = path.join(__dirname, '..');
 const R = (p) => fs.readFileSync(path.join(ROOT, 'src', p), 'utf8');
-const out = process.argv[2] || path.join(ROOT, 'preview', 'mikang-preview.html');
+const args = process.argv.slice(2);
+const themeArg = args.indexOf('--theme');
+const startTheme = themeArg >= 0 ? args.splice(themeArg, 2)[1] : '';   // 예: --theme pastel → 처음부터 그 테마로
+const out = args[0] || path.join(ROOT, 'preview', 'mikang-preview.html');
 
 const html = R('index.html');
 let stage = html.slice(html.indexOf('<div class="stage side-right" id="stage">'), html.indexOf('<script src="parse.js">'));
 stage = stage.slice(0, stage.indexOf('<div class="demo-bg"')) + stage.slice(stage.indexOf('<nav class="dock"'));
-const scripts = ['parse.js', 'characters.js', 'cutout.js', 'basic-note.js', 'app.js'];
+// 테마: src/themes/themes.js 다음에 src/themes/<이름>/theme.js·theme.css 를 모두 넣는다
+const THEME_DIR = path.join(ROOT, 'src', 'themes');
+const themeIds = fs.readdirSync(THEME_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
+const scripts = ['parse.js', 'characters.js', 'themes/themes.js', ...themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.js'))).map((id) => `themes/${id}/theme.js`), 'cutout.js', 'basic-note.js', 'app.js'];
+// 테마 CSS 안의 url('fonts/…') 는 파일이 있으면 미리보기 안에 넣고, 없으면 지운다 (설치된 글꼴을 쓴다)
+const themeCss = themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.css'))).map((id) =>
+  fs.readFileSync(path.join(THEME_DIR, id, 'theme.css'), 'utf8').replace(/,?\s*url\('(fonts\/[^']+)'\)\s*format\('(\w+)'\)/g, (m, rel, fmt) => {
+    const f = path.join(THEME_DIR, id, rel);
+    return fs.existsSync(f) ? `, url('data:font/${fmt};base64,${fs.readFileSync(f).toString('base64')}') format('${fmt}')` : '';
+  })).join('\n');
 const avatar = fs.readFileSync(path.join(ROOT, 'src', 'mikkang.png')).toString('base64');
 const designSystem = R('design-system.css').replace("url('mikkang.png')", `url('data:image/png;base64,${avatar}')`);
 for (const f of scripts) if (/<\/script/i.test(R(f))) throw new Error('</script> inside ' + f);
@@ -261,10 +273,12 @@ const page = `<title>귤메모 미리보기</title>
 <style>
 ${R('styles.css')}
 ${designSystem}
+${themeCss}
 ${CSS}
 </style>
 ${DESKTOP}
 <script>${SHIM}</script>
+${startTheme ? `<script>window.__defaultThemePack = ${JSON.stringify(startTheme)};</script>` : ''}
 ${scripts.map((f) => `<script>${R(f)}</script>`).join('\n')}
 `;
 fs.mkdirSync(path.dirname(out), { recursive: true });
