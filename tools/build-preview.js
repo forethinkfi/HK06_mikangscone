@@ -138,6 +138,7 @@ const SHIM = `
       catch(e){ return {ok:false, reason:'error', error: ERR[e && e.code] || 'Claude가 응답하지 않았어요.'}; }
     },
     weather: async function(){ return {ok:false, error:'웹 미리보기에서는 보안 규칙 때문에 날씨 서버에 연결할 수 없어요. 컴퓨터에 설치한 데스크톱 앱에서는 바로 알려드려요.'}; },
+    whereAmI: async function(){ return {ok:false, error:'웹 미리보기에서는 보안 규칙 때문에 위치·날씨 서버에 연결할 수 없어요. 컴퓨터에 설치한 데스크톱 앱에서는 알려드려요.'}; },
     libSrc: function(l){ return l.cdn; },
     saveAudio: async function(id,buf){ audio.set(id,buf); return true; },
     readAudio: async function(id){ return audio.get(id) || null; },

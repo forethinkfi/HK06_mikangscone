@@ -114,7 +114,7 @@ const DEFAULTS = {
   character: 'mikang', petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', petTarget: 'all', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true,
-  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '서울',
+  launchAtLogin: true, petPos: null, consentShown: false, weatherCity: '', petWalk: true,
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -798,20 +798,56 @@ async function organizeNote(n, { auto }) {
 /** 비서에게 부탁: 글이나 말로 한 부탁을 새 메모로 만들고 알람까지 맞춘다. */
 const WMO = (c) => (c === 0 ? '맑음' : c <= 2 ? '구름 조금' : c === 3 ? '흐림' : c <= 48 ? '안개' : c <= 57 ? '이슬비' : c <= 67 ? '비' : c <= 77 ? '눈' : c <= 82 ? '소나기' : c <= 86 ? '눈 소나기' : '천둥번개');
 const josa = (w, a, b) => { const ch = String(w).charCodeAt(String(w).length - 1); return w + ((ch >= 0xac00 && ch <= 0xd7a3 && (ch - 0xac00) % 28) ? a : b); };
-const isWeatherAsk = (t) => /(날씨|기온|몇\s*도|우산|비\s*(와|오|올|내)|눈\s*(와|오|올|내)|더워|추워|덥나|춥나|미세먼지)/.test(t) && !/(까지|알람|메모해|적어)/.test(t);
+const isWeatherAsk = (t) => /(날씨|기온|몇\s*도|우산|비\s*(와|오|올|내)|눈\s*(와|오|올|내)|더워|추워|덥나|춥나|덥지|춥지|미세먼지|초미세|공기\s*질|공기\s*어때)/.test(t) && !/(까지|알람|메모해|적어)/.test(t);
+const isWhereAsk = (t) => /(여기|지금|내|현재|나)\s*(는|가)?\s*(위치|어디)|어디야|어디에\s*있|어디쯤|내\s*위치|현재\s*위치|위치\s*(알려|어디)/.test(t) && !isWeatherAsk(t);
+/** "부산 내일 날씨", "서울 강남구 날씨 어때" → "부산", "서울 강남구" (없으면 '' = 현재 위치/설정 지역) */
+function placeFromText(text) {
+  const m = text.match(/^(.*?)(?:의\s*)?(?:날씨|기온|미세먼지|초미세|공기|비\s*와|비\s*올|눈\s*와|우산|더워|추워)/);
+  if (!m) return '';
+  const STOP = /^(오늘|내일|모레|지금|요즘|이번\s*주|주말|현재|우리|여기|그럼|혹시|저기|좀|요|은|는|이|가|에|의|어때|알려줘|궁금해)$/;
+  const words = m[1].replace(/[?!.,~]/g, ' ').split(/\s+/).map((w) => w.replace(/(은|는|이|가|에|의|쪽|에서)$/, '')).filter((w) => w && !STOP.test(w));
+  return words.join(' ').trim();
+}
 async function weatherReply(text = '') {
-  let city = (S.settings.weatherCity || '서울').trim();
-  const m = text.match(/([가-힣A-Za-z]{2,12})\s*(?:의\s*)?(?:날씨|기온)/);
-  if (m && !/^(오늘|내일|지금|요즘|이번주|주말|모레|현재|우리|여기)$/.test(m[1])) city = m[1];
   if (!api.weather) return '날씨는 데스크톱 앱에서 알려드릴 수 있어요.';
+  const city = placeFromText(text) || (S.settings.weatherCity || '').trim();
   const r = await api.weather(city).catch(() => ({ ok: false }));
   if (!r || !r.ok) return (r && r.error) || '날씨를 가져오지 못했어요. 잠시 뒤에 다시 물어봐 주세요.';
   const tm = /내일/.test(text), d = tm ? r.tomorrow : r.today, rd = (v) => Math.round(v);
-  let msg = tm ? `${r.place} 내일은 ${WMO(d.code)}, ${rd(d.min)}~${rd(d.max)}°C예요.` : `${josa(r.place, '은', '는')} 지금 ${rd(r.now.temp)}°C, ${WMO(r.now.code)}이에요. 오늘은 ${rd(d.min)}~${rd(d.max)}°C`;
-  if (!tm) msg += d.pop != null ? `, 비 올 확률 ${d.pop}%예요.` : '예요.';
-  else if (d.pop != null) msg += ` 비 올 확률은 ${d.pop}%.`;
+  const where = r.auto ? `지금 계신 ${r.place}(대략)` : r.place;
+  let msg;
+  if (/미세먼지|초미세|공기/.test(text) && r.air && r.air.grade) {
+    msg = `${josa(where, '은', '는')} 지금 미세먼지 ${r.air.grade}이에요 (PM10 ${rd(r.air.pm10)}, 초미세 ${rd(r.air.pm25)}㎍/㎥).`;
+    if (/나쁨/.test(r.air.grade)) msg += ' 마스크 챙기세요!';
+    return msg;
+  }
+  if (tm) {
+    msg = `${where} 내일은 ${WMO(d.code)}, ${rd(d.min)}~${rd(d.max)}°C예요.`;
+    if (d.pop != null) msg += ` 비 올 확률은 ${d.pop}%.`;
+  } else {
+    msg = `${josa(where, '은', '는')} 지금 ${rd(r.now.temp)}°C`;
+    if (r.now.feels != null && Math.abs(r.now.feels - r.now.temp) >= 2) msg += `(체감 ${rd(r.now.feels)}°C)`;
+    msg += `, ${WMO(r.now.code)}이에요. 오늘은 ${rd(d.min)}~${rd(d.max)}°C`;
+    msg += d.pop != null ? `, 비 올 확률 ${d.pop}%예요.` : '예요.';
+    if (r.air && r.air.grade) msg += ` 미세먼지는 ${r.air.grade}.`;
+  }
   if (d.pop >= 50) msg += ' 우산 꼭 챙기세요!'; else if (d.max <= 3) msg += ' 많이 추워요. 따뜻하게 입으세요.'; else if (d.max >= 30) msg += ' 더우니 물 자주 마셔요.';
   return msg;
+}
+async function askWhere() {
+  setMood('think'); say('어디쯤인지 볼게요…', { menu: false, ttl: 0 });
+  let msg;
+  if (!api.whereAmI) msg = '위치는 데스크톱 앱에서 알려드릴 수 있어요.';
+  else {
+    const r = await api.whereAmI().catch(() => ({ ok: false }));
+    if (!r || !r.ok) msg = (r && r.error) || '지금 위치를 알아내지 못했어요.';
+    else {
+      msg = `지금 ${r.place} 근처에 계신 것 같아요. 인터넷 주소로 알아낸 대략적인 위치라 실제와 조금 다를 수 있어요.`;
+      const w = await weatherReply('지금 날씨').catch(() => '');
+      if (/°C/.test(w)) msg += ' ' + w;
+    }
+  }
+  setMood('talk', 2500); say(msg, { ttl: 14000 });
 }
 async function askWeather(text) {
   setMood('think'); say('날씨를 알아볼게요…', { menu: false, ttl: 0 });
@@ -821,6 +857,7 @@ async function askWeather(text) {
 async function askAssistant(text) {
   text = text.trim(); if (!text) return;
   if (isWeatherAsk(text)) return askWeather(text);
+  if (isWhereAsk(text)) return askWhere();
   setMood('think'); say('정리하고 있어요…', { menu: false, ttl: 0 });
   const r = await aiOrganize(text, '', 'command');
   const n = blankNote();
@@ -1002,7 +1039,7 @@ function renderPet() {
   const sig = S.settings.character + '|' + (S.settings.character === 'custom' ? S.settings.customChar.length : '');
   if (sig !== petChar) {
     petChar = sig;
-    pet.innerHTML = C.charHTML(S.settings.character, S.settings.customChar) + '<span class="rec-badge">● 녹음</span><span class="count" hidden></span>'
+    pet.innerHTML = '<div class="pbody">' + C.charHTML(S.settings.character, S.settings.customChar) + '</div><span class="zzz">z</span><span class="heart">♥</span><span class="rec-badge">● 녹음</span><span class="count" hidden></span>'
       + `<span class="talk" role="button" aria-label="비서와 이야기하기" title="비서와 이야기하기 (날씨·부탁·녹음)">${ico('chat', 15)}</span>`;
   }
   pet.classList.toggle('recording', !!rec);
@@ -1015,41 +1052,172 @@ function renderPetBadges() {
   const n = upcomingCount();
   c.hidden = !n || !petMode(); c.textContent = n;
 }
-function petXY() {
-  const p = S.settings.petPos, size = 92;
-  if (p) return { x: clamp(p.x * W(), 0, W() - size), y: clamp(p.y * H(), 0, H() - size) };
-  return { x: S.settings.side === 'left' ? 18 : W() - size - 18, y: H() - size - 28 };
+/* ─────────── 캐릭터 움직임 ───────────
+ * 상태 기계와 '쉬기 ↔ 걷기' 자율 행동은 Pety(MIT, github.com/Gavin-Dementia/Pety)의
+ * PetStateMachine · BehaviorController 구조를 따랐다. 던지기(중력·튕김·착지)와 쓰다듬기·잠들기는 여기서 더했다.
+ *   idle ─▶ walk / sit / sleep / react / dragged / fall
+ *   dragged ─(놓기)▶ fall ─(바닥)▶ land ─▶ idle */
+const PET = 92, GRAV = 2600, FLOOR_PAD = 4;
+const MOVES = {
+  idle: ['walk', 'sit', 'sleep', 'react', 'dragged', 'fall'],
+  walk: ['idle', 'dragged', 'fall', 'react'],
+  sit: ['idle', 'walk', 'dragged', 'fall', 'react'],
+  sleep: ['idle', 'dragged', 'fall', 'react'],
+  react: ['idle', 'dragged', 'fall'],
+  dragged: ['fall'],
+  fall: ['land', 'dragged'],
+  land: ['idle', 'dragged', 'react'],
+};
+const motion = { state: 'idle', x: 0, y: 0, vx: 0, vy: 0, dir: -1, spin: 0, phaseMs: 2000, lastT: 0, lastTouch: performance.now(), hover: false, inited: false, saveT: 0, hitT: 0 };
+const floorY = () => Math.max(0, H() - PET - FLOOR_PAD);
+const reduceMotion = () => matchMedia('(prefers-reduced-motion: reduce)').matches;
+const rnd = (a, b) => a + Math.random() * (b - a);
+function petState(next) {
+  if (next === motion.state || !MOVES[motion.state].includes(next)) return false;
+  motion.state = next;
+  const pet = $('#pet');
+  pet.classList.remove('st-idle', 'st-walk', 'st-sit', 'st-sleep', 'st-react', 'st-dragged', 'st-fall', 'st-land');
+  pet.classList.add('st-' + next);
+  return true;
+}
+// Pety의 beginIdlePhase / beginWalkPhase 와 같은 흐름: 쉬는 시간이 끝나면 걷고, 걷는 시간이 끝나면 쉰다
+function beginRest() {
+  motion.phaseMs = rnd(3500, 9000);
+  if (motion.state !== 'idle') petState('idle');
+  const quiet = performance.now() - motion.lastTouch;
+  const pool = ['idle', 'idle', 'sit'];
+  if (quiet > 90000) pool.push('sleep', 'sleep');
+  const pick = pool[Math.floor(Math.random() * pool.length)];
+  if (pick !== 'idle') petState(pick);
+}
+function beginWalk() {
+  motion.phaseMs = rnd(2500, 7000);
+  motion.dir = Math.random() < 0.5 ? -1 : 1;
+  if (motion.state !== 'idle') petState('idle');
+  petState('walk');
+}
+function petXY() { return { x: motion.x, y: motion.y }; }
+function renderPetPos() {
+  const pet = $('#pet');
+  pet.style.left = Math.round(motion.x) + 'px'; pet.style.top = Math.round(motion.y) + 'px';
+  pet.style.setProperty('--fx', motion.dir < 0 ? 1 : -1);
+  pet.style.setProperty('--spin', motion.spin.toFixed(1) + 'deg');
+  pet.style.setProperty('--tilt', clamp(-motion.vx / 40, -25, 25).toFixed(1) + 'deg');
+  if (bubble.open) placeBubble();
 }
 function placePet() {
-  const pet = $('#pet'), { x, y } = petXY();
-  pet.style.left = x + 'px'; pet.style.top = y + 'px';
-  if (bubble.open) placeBubble();
+  if (!motion.inited) {
+    const p = S.settings.petPos;
+    motion.x = p && typeof p.x === 'number' ? p.x * W() : (S.settings.side === 'left' ? 18 : W() - PET - 18);
+    motion.y = floorY(); motion.inited = true;
+    $('#pet').classList.add('st-idle');
+  }
+  motion.x = clamp(motion.x, 0, Math.max(0, W() - PET));
+  if (motion.state !== 'dragged' && motion.state !== 'fall') motion.y = floorY();
+  renderPetPos();
+}
+function savePetPos() { clearTimeout(motion.saveT); motion.saveT = setTimeout(() => { S.settings.petPos = { x: motion.x / Math.max(1, W()) }; save(); }, 800); }
+const canWander = () => S.settings.petWalk !== false && !reduceMotion() && !dragging && !motion.hover && !(bubble.open && bubble.menu) && !modalOpen && !rec;
+function petTick(t) {
+  const dt = Math.min(0.05, (t - (motion.lastT || t)) / 1000); motion.lastT = t;
+  const st = motion.state;
+  if (st === 'fall') {
+    motion.vy += GRAV * dt;
+    motion.x += motion.vx * dt; motion.y += motion.vy * dt;
+    motion.spin += motion.vx * dt * 0.9;
+    const maxX = Math.max(0, W() - PET), fy = floorY();
+    if (motion.x < 0) { motion.x = 0; motion.vx = -motion.vx * 0.55; }
+    if (motion.x > maxX) { motion.x = maxX; motion.vx = -motion.vx * 0.55; }
+    if (motion.y < 0) { motion.y = 0; motion.vy = -motion.vy * 0.4; }
+    if (motion.y >= fy) {
+      motion.y = fy;
+      if (motion.vy > 420) { // 통통 튀기
+        const hard = motion.vy;
+        motion.vy = -motion.vy * 0.36; motion.vx *= 0.75;
+        const pet = $('#pet'); pet.classList.remove('bounce'); void pet.offsetWidth; pet.classList.add('bounce');
+        motion.hardest = Math.max(motion.hardest || 0, hard);
+      } else {
+        motion.vy = 0; motion.vx = 0; motion.spin = 0;
+        petState('land');
+        const dizzy = (motion.hardest || 0) > 1700; motion.hardest = 0;
+        setTimeout(() => {
+          if (motion.state !== 'land') return;
+          petState('idle'); beginRest(); savePetPos();
+          if (dizzy) { petState('react'); setMood('talk', 1500); say(['어지러워요…', '우와, 날았다!', '살살 던져주세요!'][Math.floor(Math.random() * 3)], { ttl: 2500 }); setTimeout(() => { if (motion.state === 'react') { petState('idle'); beginRest(); } }, 1400); }
+        }, 380);
+      }
+    }
+  } else if (st !== 'dragged') {
+    if (motion.y < floorY() - 1) { motion.vx = 0; motion.vy = 0; petState('fall'); }
+    else if (canWander()) {
+      motion.phaseMs -= dt * 1000;
+      if (st === 'walk') {
+        const maxX = Math.max(0, W() - PET);
+        let nx = motion.x + 52 * dt * motion.dir;
+        if (nx <= 0) { nx = 0; motion.dir = 1; } else if (nx >= maxX) { nx = maxX; motion.dir = -1; }
+        motion.x = nx;
+      }
+      if (motion.phaseMs <= 0 && st !== 'react') { if (st === 'walk') { beginRest(); savePetPos(); } else beginWalk(); }
+    } else if (st === 'walk') { petState('idle'); motion.phaseMs = rnd(2000, 4000); }
+  }
+  renderPetPos();
+  // 캐릭터가 걸어서 마우스 아래로 와도 클릭이 되도록 가끔 다시 판정
+  if (t - motion.hitT > 120) { motion.hitT = t; updateHit(); }
+  requestAnimationFrame(petTick);
 }
 function bindPet() {
   const pet = $('#pet');
+  pet.addEventListener('pointerenter', () => { motion.hover = true; if (motion.state === 'walk') { petState('idle'); motion.phaseMs = rnd(2000, 4000); } });
+  pet.addEventListener('pointerleave', () => { motion.hover = false; });
   pet.addEventListener('pointerdown', (e) => {
     if (e.button !== 0) return;
     e.preventDefault();
-    const sx = e.clientX, sy = e.clientY, o = petXY(); let moved = false; const onTalk = !!e.target.closest('.talk');
+    motion.lastTouch = performance.now();
+    const sx = e.clientX, sy = e.clientY, ox = sx - motion.x, oy = sy - motion.y, t0 = performance.now();
+    const onTalk = !!e.target.closest('.talk');
+    let moved = false; const samples = [];
     pet.setPointerCapture(e.pointerId); dragging = true;
+    if (motion.state === 'sleep') { petState('idle'); }
+    const longT = setTimeout(() => { if (!moved && !onTalk) pat(); }, 480); // 길게 누르면 쓰다듬기
     const mv = (ev) => {
-      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 5) return;
-      moved = true;
-      const x = clamp(o.x + ev.clientX - sx, 0, W() - 92), y = clamp(o.y + ev.clientY - sy, 0, H() - 92);
-      pet.style.left = x + 'px'; pet.style.top = y + 'px';
-      S.settings.petPos = { x: x / W(), y: y / H() };
-      if (bubble.open) placeBubble();
+      if (!moved && Math.hypot(ev.clientX - sx, ev.clientY - sy) < 6) return;
+      if (!moved) { moved = true; clearTimeout(longT); if (motion.state !== 'idle' && motion.state !== 'fall') petState('idle'); petState('dragged'); motion.spin = 0; }
+      const now = performance.now();
+      samples.push({ t: now, x: ev.clientX, y: ev.clientY }); while (samples.length && now - samples[0].t > 90) samples.shift();
+      const px = motion.x;
+      motion.x = clamp(ev.clientX - ox, -PET / 2, W() - PET / 2); motion.y = clamp(ev.clientY - oy, -PET / 2, H() - PET / 2);
+      motion.vx = (motion.x - px) / Math.max(0.008, 1 / 60) ; // 기울기용
+      renderPetPos();
     };
-    const up = () => {
+    const up = (ev) => {
+      clearTimeout(longT);
       dragging = false;
       pet.removeEventListener('pointermove', mv); pet.removeEventListener('pointerup', up); pet.removeEventListener('pointercancel', up);
-      if (moved) save(); else if (onTalk) toggleMenu(); else onPetClick();
+      if (moved) {
+        // 놓을 때의 손 속도로 던진다
+        let vx = 0, vy = 0;
+        if (samples.length >= 2) { const a = samples[0], b = samples[samples.length - 1], dts = Math.max(0.016, (b.t - a.t) / 1000); vx = (b.x - a.x) / dts; vy = (b.y - a.y) / dts; }
+        if (performance.now() - (samples.length ? samples[samples.length - 1].t : 0) > 120) { vx = 0; vy = 0; } // 멈췄다가 놓으면 그냥 떨어진다
+        motion.vx = clamp(vx, -2600, 2600); motion.vy = clamp(vy, -2600, 2600);
+        petState('fall');
+        return;
+      }
+      if (performance.now() - t0 >= 480 && !onTalk) return; // 쓰다듬기였다
+      if (onTalk) toggleMenu(); else onPetClick();
     };
     pet.addEventListener('pointermove', mv); pet.addEventListener('pointerup', up); pet.addEventListener('pointercancel', up);
   });
   pet.addEventListener('keydown', (e) => { if (e.key === 'Enter' || e.key === ' ') { e.preventDefault(); onPetClick(); } });
   pet.addEventListener('contextmenu', (e) => { e.preventDefault(); toggleMenu(); });
   bindImageDrop(pet, () => (openId ? byId(openId) : null));
+  requestAnimationFrame(petTick);
+}
+function pat() {
+  motion.lastTouch = performance.now();
+  if (!petState('react')) { petState('idle'); petState('react'); }
+  setMood('talk', 1400);
+  say(['헤헤, 좋아요!', '기분 좋아요~', '오늘도 힘내요!', '더 쓰다듬어 주세요!'][Math.floor(Math.random() * 4)], { ttl: 2200 });
+  setTimeout(() => { if (motion.state === 'react') { petState('idle'); beginRest(); } }, 1500);
 }
 /** 캐릭터를 누르면 책갈피가 펼쳐지고, 한 번 더 누르면 접힌다. */
 function onPetClick() {
@@ -1096,13 +1264,13 @@ function appendMenu(b) {
       h('button', { type: 'button', onclick: () => { closeBubble(); newNote(); } }, iel('edit', 18), '새 메모'),
       h('button', { type: 'button', onclick: () => { closeBubble(); quickRecord(); } }, iel('mic', 18), rec ? '녹음 정지' : '녹음 메모'),
       h('button', { type: 'button', onclick: () => { closeBubble(); toggleAgenda(); } }, iel('cal', 18), '일정'),
-      h('button', { type: 'button', onclick: () => askWeather('오늘 날씨') }, iel('sun', 18), '날씨'),
+      h('button', { type: 'button', onclick: () => askWeather('오늘 날씨') }, iel('sun', 18), '날씨·위치'),
       h('button', { type: 'button', onclick: () => { closeBubble(); openBoard(); } }, iel('board', 18), '모아보기'),
       h('button', { type: 'button', onclick: () => { closeBubble(); openSettings(); } }, iel('gear', 18), '설정')),
     h('div', { class: 'ask' }, input,
       h('button', { class: 'btn icon', type: 'button', title: '말로 부탁하기', 'aria-label': '말로 부탁하기', onclick: () => startRecording(null, 'command'), html: ico('mic', 16) }),
       h('button', { class: 'btn primary icon', type: 'button', 'aria-label': '보내기', onclick: () => { if (input.value.trim()) { askAssistant(input.value); input.value = ''; } }, html: ico('send', 16) })),
-    h('div', { class: 'ex' }, '예) 내일 12시까지 회의자료 제출 · 오늘 날씨 어때? · 부산 내일 날씨'));
+    h('div', { class: 'ex' }, '예) 내일 12시까지 회의자료 제출 · 오늘 날씨 어때? · 강남구 미세먼지 · 여기 어디야?'));
 }
 function closeBubble() { clearTimeout(bubble.t); bubble = { open: false, menu: false, t: 0 }; $('#bubble').hidden = true; updateHit(); }
 
@@ -1315,12 +1483,20 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '캐릭터만 남길 때'), seg('petTarget', [['all', '바탕화면이 아니면 항상'], ['browser', '웹 브라우저를 쓸 때만']], applyMode)),
       h('p', { class: 'note' }, '자동: 바탕화면이 보이면 책갈피가 펼쳐지고, 다른 앱이나 웹을 쓰는 동안에는 캐릭터만 남아요. 캐릭터를 누르면 그 화면에서 책갈피가 나와요.'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '가장자리 미리보기'), seg('peek', [[true, '켜기'], [false, '끄기']]), seg('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '캐릭터 움직임'), seg('petWalk', [[true, '화면 아래를 걸어다니기'], [false, '가만히 있기']])),
+      h('p', { class: 'note' }, '캐릭터를 잡아서 던지면 날아가서 통통 튀고, 길게 누르면 쓰다듬을 수 있어요. 마우스를 올리면 멈춰서 기다려요.'),
       h('h4', {}, '섹션 (큰 책갈피)'),
       secManager(),
-      h('h4', {}, '날씨'),
-      h('div', { class: 'row' }, h('label', { for: 'wcity', style: 'min-width:96px' }, '지역'),
-        h('input', { type: 'text', id: 'wcity', maxlength: '20', value: st.weatherCity, placeholder: '예: 서울, 부산, 제주', onchange: (e) => { st.weatherCity = e.target.value.trim() || '서울'; save(); } }),
-        h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWeather('오늘 날씨'); } }, '지금 날씨 묻기')),
+      h('h4', {}, '날씨 · 위치'),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '날씨 지역'),
+        h('div', { class: 'seg', role: 'group' },
+          h('button', { type: 'button', 'aria-pressed': String(!st.weatherCity), onclick: () => { st.weatherCity = ''; save(); render(); } }, '현재 위치 (자동)'),
+          h('button', { type: 'button', 'aria-pressed': String(!!st.weatherCity), onclick: () => { if (!st.weatherCity) st.weatherCity = '서울'; save(); render(); } }, '직접 정하기'))),
+      st.weatherCity ? h('div', { class: 'row' }, h('label', { for: 'wcity', style: 'min-width:96px' }, '지역 이름'),
+        h('input', { type: 'text', id: 'wcity', maxlength: '20', value: st.weatherCity, placeholder: '예: 서울, 강남구, 부산 해운대, 제주', onchange: (e) => { st.weatherCity = e.target.value.trim(); save(); } })) : null,
+      h('div', { class: 'row' }, h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWeather('오늘 날씨'); } }, iel('sun', 15), '지금 날씨 묻기'),
+        h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWhere(); } }, '내 위치 묻기')),
+      h('p', { class: 'note' }, '현재 위치는 인터넷 주소(IP)로 알아낸 대략적인 도시예요 (ipapi.co). 날씨·미세먼지는 Open-Meteo를 쓰고, 둘 다 API 키가 필요 없어요.'),
       h('h4', {}, '자동 정리 · 알람'),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '자동 정리'), seg('autoOrganize', [[true, '메모를 접으면 자동으로'], [false, '버튼 누를 때만']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '마감 미리 알림'), seg('preDeadline', [[0, '없음'], [30, '30분 전'], [60, '1시간 전'], [180, '3시간 전'], [1440, '하루 전']])),
@@ -1452,6 +1628,7 @@ function normalize(s) {
   // 이전 웹 버전(chaekgalpi-memo-v1) 데이터의 side 값을 이어받는다
   if (s.side && !s._sideMigrated) { s.settings.side = s.side; s._sideMigrated = true; }
   if (!Array.isArray(s.sections)) s.sections = DEFAULT_SECTIONS();
+  if (!s._wx2) { if (s.settings.weatherCity === '서울') s.settings.weatherCity = ''; s._wx2 = true; }
   for (const n of s.notes) {
     n.events = n.events || []; n.photos = n.photos || []; n.stickers = n.stickers || []; n.summary = n.summary || []; n.audios = n.audios || [];
     n.title = n.title || ''; n.text = n.text || ''; n.keyword = n.keyword || ''; n.ring = false;
@@ -1531,7 +1708,7 @@ async function boot() {
   tick(); setInterval(tick, 5000);
   if (!loaded) setTimeout(() => say(`안녕하세요, ${C.charName(S)}예요! 저를 누르면 책갈피가 펼쳐지고 접혀요. 책갈피 맨 위의 '메모 모아보기'로 모든 메모를 한눈에 볼 수 있고, 말풍선 버튼을 누르면 날씨나 부탁을 말할 수 있어요.`, { ttl: 14000 }), 800);
   // 디버그/스크린샷용 훅
-  window.__mk = { S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
+  window.__mk = { motion, petState, pat, placeFromText, weatherReply, askWhere, S: () => S, openNote, newNote, onPetClick, openPeek, openSettings, toggleAgenda, say, closeAll, askAssistant, setMood, applyMode, openBoard, closeBoard, toggleSection, toggleMenu, setCtx: (c) => { ctx = c; applyMode(); } };
 }
 boot();
 })();

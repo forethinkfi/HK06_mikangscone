@@ -20,6 +20,7 @@ contextBridge.exposeInMainWorld('api', {
   organize: (payload) => ipcRenderer.invoke('ai:organize', payload),
   summarize: (payload) => ipcRenderer.invoke('ai:summarize', payload),
   weather: (city) => ipcRenderer.invoke('weather:get', city),
+  whereAmI: () => ipcRenderer.invoke('place:here'),
   convertHeic: (buf) => ipcRenderer.invoke('image:heic', buf),
   saveAudio: (id, buf, ext) => ipcRenderer.invoke('audio:save', id, buf, ext),
   readAudio: (id) => ipcRenderer.invoke('audio:read', id),

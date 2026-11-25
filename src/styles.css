@@ -375,3 +375,29 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 
 /* 사진 끌어다 놓는 중 */
 .stage.filedrag::after{content:'사진을 놓으면 메모에 들어가요';position:absolute;top:52px;left:50%;transform:translateX(-50%);z-index:95;padding:10px 18px;border-radius:14px;background:#d93a35;color:#fff;font:16px var(--f-display);box-shadow:0 10px 24px rgba(0,0,0,.25);pointer-events:none}
+
+/* ───── 캐릭터 움직임 (걷기 · 들기 · 던지기 · 착지 · 앉기 · 잠자기 · 쓰다듬기) ───── */
+.pet{transition:opacity .3s}
+.pet .pbody{position:relative;width:100%;height:100%;transform:scaleX(var(--fx,1)) rotate(var(--spin,0deg));transform-origin:50% 88%}
+.pet.st-walk .c-svg .c-body,.pet.st-walk .c-custom img{animation:waddle .46s ease-in-out infinite}
+.pet.st-dragged{cursor:grabbing}
+.pet.st-dragged .pbody{transform:scaleX(var(--fx,1)) rotate(var(--tilt,0deg));transform-origin:50% 8%;transition:transform .12s}
+.pet.st-dragged .c-svg .c-body,.pet.st-dragged .c-custom img{animation:dangle .7s ease-in-out infinite}
+.pet.st-dragged .c-svg .c-open{opacity:1}.pet.st-dragged .c-svg .c-smile{opacity:0}
+.pet.st-fall .pbody{transform-origin:50% 50%}
+.pet.st-land .pbody,.pet.bounce .pbody{animation:squash .38s ease-out}
+.pet.st-sit .pbody{transform:scaleX(var(--fx,1)) scale(1.04,.9);transform-origin:50% 100%}
+.pet.st-sleep .c-svg .c-eyes{transform:scaleY(.12);animation:none}
+.pet.st-sleep .c-svg .c-body,.pet.st-sleep .c-custom img{animation:breathe 3.6s ease-in-out infinite}
+.pet .zzz,.pet .heart{display:none;position:absolute;pointer-events:none}
+.pet .zzz{top:-8px;right:6px;font:400 18px var(--f-display);color:#6f7d8c;animation:zz 2.4s ease-in-out infinite}
+.pet.st-sleep .zzz{display:block}
+.pet .heart{top:-6px;left:50%;margin-left:-8px;color:#e5536a;font-size:22px;animation:heartUp 1.3s ease-out forwards}
+.pet.st-react .heart{display:block}
+.pet.st-react .c-svg .c-body,.pet.st-react .c-custom img{animation:hop .5s ease-in-out 2}
+@keyframes waddle{0%,100%{transform:translateY(0) rotate(-5deg)}50%{transform:translateY(-5px) rotate(5deg)}}
+@keyframes dangle{0%,100%{transform:rotate(-6deg)}50%{transform:rotate(6deg)}}
+@keyframes squash{0%{transform:scaleX(var(--fx,1)) scale(1.25,.72)}55%{transform:scaleX(var(--fx,1)) scale(.92,1.1)}100%{transform:scaleX(var(--fx,1)) scale(1,1)}}
+@keyframes breathe{0%,100%{transform:scale(1,1)}50%{transform:scale(1.03,.97)}}
+@keyframes zz{0%{opacity:0;transform:translate(0,6px) scale(.7)}30%{opacity:1}100%{opacity:0;transform:translate(10px,-18px) scale(1.2)}}
+@keyframes heartUp{0%{opacity:0;transform:translateY(8px) scale(.6)}25%{opacity:1;transform:translateY(0) scale(1.1)}100%{opacity:0;transform:translateY(-26px) scale(1)}}

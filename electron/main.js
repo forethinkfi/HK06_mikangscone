@@ -9,7 +9,7 @@ const {
 const store = require('./store');
 const ai = require('./ai');
 const { watchForeground } = require('./foreground');
-const { getWeather } = require('./weather');
+const { getWeather, whereAmI } = require('./weather');
 
 const ARGS = process.argv.slice(1);
 const DEMO = ARGS.includes('--demo');            // 가짜 바탕화면 배경을 깔아 미리보기 (개발·스크린샷용)
@@ -157,6 +157,10 @@ ipcMain.handle('ai:summarize', async (_e, payload) => {
   if (!key) return { ok: false, reason: 'nokey' };
   try { return { ok: true, text: await ai.summarizeAll(key, payload || {}) }; }
   catch (e) { return { ok: false, reason: 'error', error: ai.describeError(e) }; }
+});
+ipcMain.handle('place:here', async () => {
+  try { return await whereAmI(); }
+  catch { return { ok: false, error: '지금 위치를 알아내지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
 });
 ipcMain.handle('weather:get', async (_e, city) => {
   try { return await getWeather(city); }
