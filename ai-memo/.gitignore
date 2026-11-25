@@ -1,0 +1,12 @@
+node_modules
+dist
+.env
+*.log
+
+# 저작권 때문에 올리지 않는 파일 (README의 "직접 넣는 파일" 참고)
+src/assets/chichi.png
+public/fonts/*.ttf
+
+# 로컬 도구 설정
+.claude/
+.impeccable/

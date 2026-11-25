@@ -1,0 +1,235 @@
+@import 'tailwindcss';
+
+
+/* Tailwind colour names map onto the theme's CSS variables (set by applyTheme). */
+@theme inline {
+  --color-surface: var(--surface);
+  --color-surface-alt: var(--surface-alt);
+  --color-text: var(--text);
+  --color-muted: var(--text-muted);
+  --color-accent: var(--accent);
+  --color-on-accent: var(--on-accent);
+  --color-accent-soft: var(--accent-soft);
+  --color-ink: var(--ink);
+  --color-on-ink: var(--on-ink);
+  --color-line: var(--line);
+  --font-display: var(--font-display);
+  --font-body: var(--font-body);
+}
+
+html,
+body,
+#root {
+  height: 100%;
+  margin: 0;
+}
+
+body {
+  font-family: var(--font-body);
+  color: var(--text);
+  background: transparent;
+  -webkit-font-smoothing: antialiased;
+  overflow: hidden;
+  user-select: none;
+}
+
+input,
+textarea {
+  user-select: text;
+}
+
+.app-bg {
+  background: var(--pattern);
+}
+
+/* the open panel: no backdrop, the cards float over whatever is on screen */
+.panel-bg {
+  background: var(--panel-bg);
+}
+
+:focus-visible {
+  outline: 2.5px solid var(--focus);
+  outline-offset: 2px;
+}
+
+/* ---------- Card: decorative bead ring + solid inside ---------- */
+.card {
+  position: relative;
+  border-radius: 28px;
+  padding: var(--border-w);
+  /* lifted off the desktop like a loose sheet of paper */
+  box-shadow:
+    0 14px 28px -10px rgba(30, 10, 20, 0.38),
+    0 3px 8px rgba(30, 10, 20, 0.16);
+}
+.card::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  padding: var(--border-w);
+  background: var(--border);
+  -webkit-mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  mask:
+    linear-gradient(#000 0 0) content-box exclude,
+    linear-gradient(#000 0 0);
+  pointer-events: none;
+  z-index: 1;
+}
+.card-body {
+  position: relative;
+  height: 100%;
+  border-radius: calc(28px - var(--border-w) / 2);
+  background: var(--surface);
+}
+.card-hero > .card-body {
+  background: var(--hero-fill);
+}
+
+/* Big sticker-style titles */
+.display-title {
+  font-family: var(--font-display);
+  color: var(--title-color);
+  text-shadow: var(--title-shadow);
+  letter-spacing: -0.01em;
+  line-height: 1.05;
+}
+
+/* Lace edge: white scallops along the top of the panel */
+.lace {
+  height: 14px;
+  background:
+    radial-gradient(circle at 50% 0, transparent 2px, #fff 2.5px 4px, transparent 4.5px) 0 2px / 12px 12px repeat-x,
+    radial-gradient(circle at 50% 0, #fff 0 6px, transparent 6.5px) 0 0 / 12px 14px repeat-x;
+  filter: drop-shadow(0 1px 0 rgba(214, 23, 95, 0.25));
+}
+
+/* ---------- Motion: small and calm ---------- */
+.hover-pop {
+  transition: transform 160ms ease, box-shadow 160ms ease;
+}
+.hover-pop:hover {
+  transform: scale(1.05);
+}
+.hover-pop:active {
+  transform: scale(0.97);
+}
+
+@keyframes sparkle-burst {
+  0% {
+    opacity: 0;
+    transform: translate(0, 0) scale(0.3) rotate(0deg);
+  }
+  25% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+    transform: translate(var(--dx), var(--dy)) scale(1) rotate(90deg);
+  }
+}
+.sparkle {
+  position: absolute;
+  color: var(--sparkle);
+  text-shadow: 0 0 6px var(--ribbon-shade);
+  pointer-events: none;
+  animation: sparkle-burst 900ms ease-out forwards;
+}
+
+@keyframes twinkle {
+  0%,
+  100% {
+    opacity: 0.35;
+    transform: scale(0.8);
+  }
+  50% {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+.twinkle {
+  animation: twinkle 2.8s ease-in-out infinite;
+}
+
+@keyframes panel-in {
+  from {
+    opacity: 0;
+    transform: translateX(-24px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+.panel-in {
+  animation: panel-in 260ms ease-out;
+}
+
+@keyframes slide-in {
+  from {
+    transform: translateX(100%);
+  }
+  to {
+    transform: none;
+  }
+}
+.slide-in {
+  animation: slide-in 280ms cubic-bezier(0.2, 0.8, 0.2, 1);
+}
+
+/* note windows: drag by the top bar, but its buttons stay clickable */
+.drag-region {
+  -webkit-app-region: drag;
+}
+.no-drag {
+  -webkit-app-region: no-drag;
+}
+
+/* sticky-note editor: the caret already shows focus, so no box around the paper */
+.note-editor:focus-visible {
+  outline: none;
+}
+/* give lists back their bullets (Tailwind's reset removes them) */
+.note-editor ul {
+  list-style: disc;
+  padding-left: 1.3em;
+}
+.note-editor ol {
+  list-style: decimal;
+  padding-left: 1.3em;
+}
+
+/* optional heart frame for images in memo detail */
+.heart-frame {
+  clip-path: url(#heart-clip);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .sparkle,
+  .twinkle,
+  .panel-in,
+  .slide-in {
+    animation: none;
+  }
+  .sparkle {
+    display: none;
+  }
+  .hover-pop {
+    transition: none;
+  }
+  .hover-pop:hover {
+    transform: none;
+  }
+}
+
+/* thin, themed scrollbar */
+/* scrolls, but no visible bar – it would look like a strip floating on the desktop */
+.scroll-y {
+  overflow-y: auto;
+  scrollbar-width: none;
+}
+.scroll-y::-webkit-scrollbar {
+  display: none;
+}
