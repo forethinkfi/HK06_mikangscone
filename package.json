@@ -58,10 +58,7 @@
         "LSUIElement": true,
         "NSMicrophoneUsageDescription": "녹음 메모를 받아쓰기 위해 마이크를 사용해요."
       },
-      "entitlementsInherit": "build/entitlements.mac.plist",
-      "entitlements": "build/entitlements.mac.plist",
-      "hardenedRuntime": true,
-      "identity": "-",
+      "identity": null,
       "artifactName": "${productName}-jhj-${version}-mac-${arch}.${ext}"
     },
     "win": {
@@ -80,6 +77,7 @@
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "shortcutName": "Mikang Memo"
-    }
+    },
+    "afterPack": "build/after-pack.js"
   }
 }
