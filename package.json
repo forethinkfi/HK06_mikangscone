@@ -60,7 +60,9 @@
       },
       "entitlementsInherit": "build/entitlements.mac.plist",
       "entitlements": "build/entitlements.mac.plist",
-      "hardenedRuntime": true
+      "hardenedRuntime": true,
+      "identity": "-",
+      "artifactName": "${productName}-jhj-${version}-mac-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -71,7 +73,8 @@
           ]
         }
       ],
-      "icon": "build/icon.png"
+      "icon": "build/icon.png",
+      "artifactName": "${productName}-jhj-${version}-windows-setup.${ext}"
     },
     "nsis": {
       "oneClick": false,

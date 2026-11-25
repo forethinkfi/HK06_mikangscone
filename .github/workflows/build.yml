@@ -23,10 +23,11 @@ jobs:
       - name: Build installer
         run: npx electron-builder --publish never
         env:
-          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+          # 인증서 없이 빌드: Windows는 서명 안 함, macOS는 package.json의 identity "-" 로 임시(ad-hoc) 서명
+          CSC_IDENTITY_AUTO_DISCOVERY: ${{ runner.os == 'Windows' && 'false' || 'true' }}
       - uses: actions/upload-artifact@v4
         with:
-          name: mikang-memo-${{ matrix.os }}
+          name: MikangMemo-jhj-${{ runner.os }}
           path: |
             dist/*.exe
             dist/*.dmg
