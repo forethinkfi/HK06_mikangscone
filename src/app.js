@@ -607,6 +607,13 @@ function renderCard(n) {
   const pal = h('div', { class: 'pal', hidden: true, role: 'menu', 'aria-label': '스티커' }, (tp?.stickers ?? PAL).map((k) =>
     h('button', { type: 'button', role: 'menuitem', 'aria-label': STK[k].n, title: STK[k].n, onclick: () => { pal.hidden = true; addSticker(n, k); }, html: stkSVG(k) })));
   const aiBtn = h('button', { class: 'btn primary', type: 'button', id: 'aiBtn', onclick: () => organizeNote(n, {}) }, iel('sparkle', 16), 'AI 정리');
+  const albumButton = api.notion ? h('button',{class:'btn',type:'button',onclick:async e=>{
+    const button=e.currentTarget; button.disabled=true;
+    try {
+      const r=await api.notion('export',{title:memoTitle(n),text:n.text,section:secOf(n).name,photos:n.photos});
+      toast({title:r.ok?'노션 앨범에 담았어요.':r.error || '노션 저장을 확인하세요.',ttl:4500});
+    } finally {button.disabled=false;}
+  }},'앨범에 담기') : null;
   const delBtn = h('button', { class: 'btn icon del', type: 'button', 'aria-label': '휴지통으로 보내기', title: '휴지통으로 보내기', onclick: () => trashNote(n) }, iel('trash', 16));
   const bar = h('div', { class: 'bar' }, pal,
     h('div', { class: 'row' },
@@ -617,7 +624,7 @@ function renderCard(n) {
     h('div', { class: 'row' },
       h('span', { class: 'lbl' }, '스타일'),
       THEMES.map((x) => h('button', { class: 'sw', type: 'button', 'aria-label': x.name, title: x.name, 'aria-pressed': String(x.id === n.theme), style: `background:${x.clip.c}`, onclick: () => { n.theme = x.id; save(); renderCard(n); renderTabs(); } })),
-      h('span', { style: 'margin-left:auto' }), delBtn));
+      h('span', { style: 'margin-left:auto' }), basic ? null : albumButton, delBtn));
   if (basic) {
     const menu = h('button', { class: 'basic-icon', type: 'button', 'aria-label': '메모 상세', 'aria-expanded': String(basicDetails), title: '메모 상세',
       onclick: () => {
@@ -636,6 +643,7 @@ function renderCard(n) {
         onmousedown: (e) => e.preventDefault(),
         onclick: () => { n.paperColor = c.id; save(); renderCard(n); renderTabs(); } }))));
     if (paperShape) editor.toolbar.append(paperShape);
+    if (albumButton) editor.toolbar.append(albumButton);
     card.append(editor.toolbar);
   }
   for (const key of ['width', 'height']) {
@@ -1478,6 +1486,24 @@ async function openSettings() {
   modalOpen = true; modalKind = 'settings'; updateHit(); api.focus();
   const m = $('#modal'); m.hidden = false;
   const st = S.settings;
+  const notionPanel = h('div',{});
+  if (api.notion) {
+    const state=await api.notion('status');
+    const link=h('input',{type:'url',placeholder:'앨범 페이지 링크','aria-label':'노션 앨범 페이지 링크'});
+    const token=h('input',{type:'password',placeholder:'노션 API 토큰',autocomplete:'off','aria-label':'노션 API 토큰'});
+    const label=h('p',{class:'note',role:'status'},state.connected?'앨범 연결됨':'개인 앨범 페이지에 PeeKit 연결을 추가하세요.');
+    const button=h('button',{class:'btn',type:'button',onclick:async()=>{
+      button.disabled=true;
+      try {
+        const r=await api.notion(state.connected?'clear':'connect',{link:link.value,token:token.value});
+        if (r.ok) {state.connected=r.connected;token.value='';link.hidden=token.hidden=state.connected;}
+        label.textContent=r.ok?(state.connected?'앨범 연결됨':'연결 해제됨'):r.error;
+        button.textContent=state.connected?'연결 해제':'앨범 연결';
+      } finally {button.disabled=false;}
+    }},state.connected?'연결 해제':'앨범 연결');
+    link.hidden=token.hidden=state.connected;
+    notionPanel.append(h('h4',{},'노션 앨범'),link,token,button,label);
+  }
   let calendarState = await api.calendar?.('status');
   let calendarBusy = false;
   const calendarAction = async action => {
@@ -1690,6 +1716,7 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 알림'), settingControl('preNormal', [[0, '없음'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '아침 브리핑'), settingControl('morningBrief', [[true, '켜기'], [false, '끄기']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '펫 일정 안내'), settingControl('petScheduleBrief', [[true, '켜기'], [false, '끄기']])),
+      api.notion ? notionPanel : null,
       h('h4', {}, 'AI 연결'),
       keys.builtin ? builtinAI() : [
         keyRow('openai','OpenAI API 키','OpenAI 키 붙여넣기',keys.direct ? '앱을 종료하면 입력한 키가 지워져요.' : '키를 등록하면 메모 정리와 병합에 우선 사용하며 요금은 본인 OpenAI 계정에 청구돼요.'),

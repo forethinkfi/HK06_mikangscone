@@ -226,6 +226,12 @@ const openAIRequest = (route, payload) => {
   const key = !hostedAI.direct && store.getKey('openai');
   return key ? personalOpenAI.request(key, route, payload) : hostedAI.request(route, store.getKey('hosted'), payload);
 };
+const notion = require('./notion-export').session();
+ipcMain.handle('notion:action', (event, action, data) => {
+  if (!notion || event.senderFrame !== win?.webContents.mainFrame ||
+      event.senderFrame?.url.split('?')[0] !== require('url').pathToFileURL(path.join(__dirname,'../src/index.html')).href) return {ok:false};
+  return notion(action,data);
+});
 const keyStatus = () => ({...store.keyStatus(), ...hostedAI.direct?.status()});
 ipcMain.handle('keys:status', keyStatus);
 ipcMain.handle('keys:set', (_e, name, value) => { if (hostedAI.direct && ['openai','kma'].includes(name)) hostedAI.direct.set(name,value);
