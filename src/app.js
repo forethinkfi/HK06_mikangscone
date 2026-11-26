@@ -383,8 +383,8 @@ function bindTrashDrag(tab, note) {
     const armed = ready(e);
     tab.classList.toggle('trash-ready', armed);
     tab.style.translate = '0 ' + (-Math.min(32, lift(e) * .55)) + 'px';
-    tab.style.opacity = String(1 - Math.min(.55, lift(e) / 80));
-    label.textContent = armed ? '놓아서 버리기' : memoTitle(note) || '새 메모';
+    tab.style.opacity = String(1 - Math.min(.32, lift(e) / 120));
+    label.textContent = armed ? '버리기' : memoTitle(note) || '새 메모';
   });
   const finish = (e) => {
     if (press?.id !== e.pointerId) return;
@@ -2461,6 +2461,64 @@ function petBriefingText(id) {
     return lunch ? `${line}\n${lunch}` : line;
 }
 
+// Each patch includes the painted eye and a small margin of surrounding fur or skin.
+const wallPetFaces = {
+  'mono-cat': [[139,299,46,47],[297,251,47,48]],
+  'pastel-octopus': [[136,301,26,19],[309,254,28,18]],
+  'vintage-teddy': [[139,293,25,31],[290,259,25,31]],
+  'basic-memoring': [[143,238,28,32],[288,206,28,31]],
+  'block-dino': []
+};
+const wallPetImages = new Map();
+function drawWallPet() {
+  const pet = $('#bookmark-pet');
+  if (!pet || pet.hidden) return;
+  const id = pet.dataset.species, face = wallPetFaces[id], canvas = pet.firstElementChild;
+  canvas.hidden = !face;
+  if (!face) return;
+  let img = wallPetImages.get(id);
+  if (!img) {
+    img = new Image();
+    wallPetImages.set(id, img);
+    img.onload = drawWallPet;
+    const portrait = getComputedStyle(pet).getPropertyValue('--wall-portrait').trim();
+    img.src = portrait.slice(4, -1).replace(/^['"]|['"]$/g, '');
+  }
+  if (!img.naturalWidth) { canvas.hidden = true; return; }
+  const width = img.naturalWidth, height = img.naturalHeight;
+  if (canvas.width !== width || canvas.height !== height) {
+    canvas.width = width;
+    canvas.height = height;
+  }
+  const box = pet.getBoundingClientRect(), left = S.settings.side === 'left';
+  const centerX = left ? box.left + box.height * width / height / 2 : box.right - box.height * width / height / 2;
+  const dx = cursor.x < 0 ? 0 : (cursor.x - centerX) * (left ? -1 : 1);
+  const dy = cursor.x < 0 ? 0 : cursor.y - (box.top + box.height * .5);
+  const distance = Math.max(85, Math.hypot(dx, dy));
+  const x = dx / distance, y = dy / distance;
+  const ctx = canvas.getContext('2d');
+  ctx.clearRect(0, 0, width, height);
+  ctx.save();
+  if (id === 'block-dino') {
+    // Pivot at the paw. The fixed canvas clips everything beyond the wall.
+    ctx.translate(width, height * .82);
+    ctx.rotate(.085 * y);
+    ctx.scale(1 - x * .045, 1);
+    ctx.translate(-width, -height * .82);
+  }
+  ctx.drawImage(img, 0, 0);
+  ctx.restore();
+  // Move the painted pupils only a fraction of their width so the gaze stays relaxed.
+  for (const [cx, cy, rx, ry] of face) {
+    const offsetX = x * rx * .13, offsetY = y * ry * .10;
+    ctx.save();
+    ctx.beginPath();
+    ctx.ellipse(cx, cy, rx, ry, 0, 0, 2 * Math.PI);
+    ctx.clip();
+    ctx.drawImage(img, offsetX, offsetY);
+    ctx.restore();
+  }
+}
 let perchFrame = 0, perchedSpecies, perchOrigin;
 function queuePerch() {
   if (!perchFrame) perchFrame = requestAnimationFrame(() => { perchFrame = 0; placeBookmarkPet(); });
@@ -2481,11 +2539,12 @@ function placeBookmarkPet() {
   pet.dataset.species = species || 'custom';
   pet.style.backgroundImage = !['basic-memoring','mono-cat','block-dino','pastel-octopus','vintage-teddy'].includes(species) && S.settings.customChar ? 'url(' + JSON.stringify(S.settings.customChar) + ')' : '';
   const rect = tab.getBoundingClientRect(), stage = $('#stage').getBoundingClientRect();
-  pet.style.left = clamp(rect.right - stage.left - size - 4, 0, W() - size) + 'px';
-  const perchHeight = Math.round(size * .64);
+  pet.style.left = S.settings.side === 'left' ? '0px' : Math.max(0, stage.width - size) + 'px';
+  const perchHeight = size;
   pet.style.height = perchHeight+'px';
   const topClearance = parseFloat(getComputedStyle(pet).getPropertyValue('--bookmark-top-clearance'));
   pet.style.top = Math.max(topClearance, rect.top - stage.top - perchHeight) + 'px';
+  drawWallPet();
   if (perchOrigin && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const dx = perchOrigin.x - pet.offsetLeft, dy = perchOrigin.y - pet.offsetTop;
     const lift = Math.min(64, pet.offsetTop);
@@ -2503,6 +2562,10 @@ function placeBookmarkPet() {
 function bindGlobal() {
   const perch = h('button', { id: 'bookmark-pet', hidden: true, type: 'button',
     'aria-label': '책갈피 닫기 · 오른쪽 버튼을 길게 눌러 브리핑 듣기', onclick: () => togglePetBookmarks() });
+  const wallCanvas = document.createElement('canvas');
+  wallCanvas.hidden = true;
+  wallCanvas.setAttribute('aria-hidden', 'true');
+  perch.append(wallCanvas);
   const expand = h('button', { id: 'bookmark-expand', class: 'tab', type: 'button', 'aria-controls': 'dock', 'aria-expanded': 'false',
     onclick: () => { togglePetBookmarks(); $('.overview-tab')?.focus({ preventScroll: true }); } }, '책갈피 펼치기');
   $('#stage').append(perch, expand);
@@ -2524,8 +2587,8 @@ function bindGlobal() {
   $('#dock').addEventListener('scroll', () => {queuePerch();positionShelfList();});
   addEventListener('resize',positionShelfList);
 
-  api.onCursor((c) => { cursor = c; if (!c.on) cursor.x = -1; updateHit(); handleEdge(c); });
-  document.addEventListener('mousemove', (e) => { cursor = { ...cursor, x: e.clientX, y: e.clientY }; updateHit(); });
+  api.onCursor((c) => { cursor = c; if (!c.on) cursor.x = -1; drawWallPet(); updateHit(); handleEdge(c); });
+  document.addEventListener('mousemove', (e) => { cursor = { ...cursor, x: e.clientX, y: e.clientY }; drawWallPet(); updateHit(); });
   api.onForeground((f) => {
     if (f.kind === 'self') return;
     ctx = f.kind === 'app' ? 'app' : 'desktop';

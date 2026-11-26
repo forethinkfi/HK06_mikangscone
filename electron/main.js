@@ -179,7 +179,7 @@ ipcMain.handle('state:save', (_e, s) => { store.saveState(s); return true; });
 ipcMain.on('win:interactive', (_e, on) => setInteractive(!!on));
 ipcMain.on('win:focus', () => { if (win) { if (IS_MAC) app.focus({ steal: true }); win.focus(); } });
 ipcMain.on('win:release', () => { if (win && IS_WIN) win.blur(); });
-ipcMain.handle('app:info', () => ({ platform: process.platform, version: app.getVersion(), demo: DEMO, args: ARGS, proPreview: !app.isPackaged || DEMO }));
+ipcMain.handle('app:info', () => ({ platform: process.platform, version: app.getVersion().replace(/\+(\d+)$/, '.$1'), demo: DEMO, args: ARGS, proPreview: !app.isPackaged || DEMO }));
 ipcMain.handle('memo-pet:visible', (event, visible) => {
   if (event.sender !== win?.webContents) return false;
   if (visible === true) petControls?.show();

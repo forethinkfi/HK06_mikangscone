@@ -1,7 +1,7 @@
 {
   "name": "mikang-bookmark-memo",
   "productName": "PeeKit",
-  "version": "0.2.5",
+  "version": "0.2.5+1",
   "description": "바탕화면 책갈피 메모 + AI 비서 캐릭터 (Electron, Windows/macOS)",
   "main": "electron/main.js",
   "license": "MIT",
@@ -34,6 +34,8 @@
     "vitest": "^5.1.1"
   },
   "build": {
+    "buildVersion": "0.2.5.1",
+    "buildNumber": "1",
     "appId": "com.mikangscone.bookmarkmemo",
     "productName": "PeeKit",
     "directories": {
@@ -63,6 +65,7 @@
       }
     ],
     "mac": {
+      "bundleShortVersion": "0.2.5",
       "category": "public.app-category.productivity",
       "target": [
         {
@@ -78,7 +81,7 @@
         "LSUIElement": true
       },
       "identity": null,
-      "artifactName": "${productName}-jhj-${version}-mac-${arch}.${ext}"
+      "artifactName": "${productName}-jhj-${buildVersion}-mac-${arch}.${ext}"
     },
     "win": {
       "target": [
@@ -96,7 +99,7 @@
         }
       ],
       "icon": "build/icon.png",
-      "artifactName": "${productName}-jhj-${version}-windows-setup.${ext}"
+      "artifactName": "${productName}-jhj-${buildVersion}-windows-setup.${ext}"
     },
     "nsis": {
       "oneClick": false,

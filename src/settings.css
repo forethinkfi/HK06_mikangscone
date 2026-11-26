@@ -141,4 +141,10 @@
 #stage #dock .tab.secadd { writing-mode:vertical-rl; justify-content:center; align-items:center;
   width:34px; min-width:0; min-height:82px; height:auto; padding:6px 2px; margin:0; transform:none; box-sizing:border-box; }
 #stage #dock .secadd .k { white-space:nowrap; font-size:12px; text-orientation:upright; }
-#stage #bookmark-pet { background-size:var(--bookmark-pet-size) var(--bookmark-pet-size); background-position:center top; }
+#stage #bookmark-pet { background-size:contain; background-position:right center; }
+#stage #bookmark-pet:has(canvas:not([hidden])) { background-image:none; }
+#bookmark-pet canvas:not([hidden]) { position:absolute; right:0; top:0; height:100%; width:auto; pointer-events:none; }
+.side-left #bookmark-pet canvas { right:auto; left:0; transform:scaleX(-1); }
+#stage #bookmark-pet[data-species="basic-memoring"] { background-image:var(--wall-portrait); }
+#stage .trash-ready .k { color:#8e2926; background:#fff0e9; border-radius:3px; font-weight:700; white-space:nowrap; }
+#stage #dock .shelf-group .sub.trash-ready .k { text-overflow:clip; }

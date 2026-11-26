@@ -666,15 +666,16 @@
   background: transparent center bottom / contain no-repeat;
   cursor: pointer;
 }
+#bookmark-pet[data-species="basic-memoring"] { --wall-portrait:url('perched/basic-memoring.png'); }
 #bookmark-pet[hidden] { display: none; }
 #bookmark-expand { display: none; position: absolute; top: 24px; z-index: 30; }
 .stage.pet-hidden.dock-hidden #bookmark-expand { display: flex; }
 .side-right #bookmark-expand { right: 0; }
 .side-left #bookmark-expand { left: 0; }
-#bookmark-pet[data-species="mono-cat"] { background-image: url('perched/mono-cat.png'); }
-#bookmark-pet[data-species="vintage-teddy"] { background-image: url('perched/vintage-teddy.png'); }
-#bookmark-pet[data-species="pastel-octopus"] { background-image: url('perched/pastel-octopus.png'); }
-#bookmark-pet[data-species="block-dino"] { background-image: url('perched/block-dino.png'); }
+#bookmark-pet[data-species="mono-cat"] { --wall-portrait: url('perched/mono-cat.png'); background-image:var(--wall-portrait); }
+#bookmark-pet[data-species="vintage-teddy"] { --wall-portrait: url('perched/vintage-teddy.png'); background-image:var(--wall-portrait); }
+#bookmark-pet[data-species="pastel-octopus"] { --wall-portrait: url('perched/pastel-octopus.png'); background-image:var(--wall-portrait); }
+#bookmark-pet[data-species="block-dino"] { --wall-portrait: url('perched/block-dino.png'); background-image:var(--wall-portrait); }
 
 .note-writing { flex: 1 0 auto; display: flex; flex-direction: column; }
 .note-writing .body { field-sizing: content; overflow: hidden; }
