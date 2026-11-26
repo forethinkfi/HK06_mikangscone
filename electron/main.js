@@ -1,4 +1,4 @@
-// Mikang Memo — 메인 프로세스
+// PeeKit — 메인 프로세스
 // 화면 전체를 덮는 투명한 "오버레이" 창 하나에 책갈피·캐릭터·메모지를 그린다.
 // 오버레이는 평소 클릭이 아래 창으로 통과하고(click-through), 마우스가 책갈피/캐릭터/메모 위에 있을 때만 클릭을 받는다.
 const path = require('path');
@@ -14,7 +14,10 @@ const { getWeather } = require('./weather');
 const { calendar } = require('./google-calendar');
 const { displayEdge } = require('./display-edge');
 
-if (process.env.MIKKANG_USER_DATA) app.setPath('userData', process.env.MIKKANG_USER_DATA);
+// Keep the original Electron profile after the product rename.
+const profile = process.env.MIKKANG_USER_DATA || path.join(app.getPath('appData'), 'Mikang Memo');
+require('node:fs').mkdirSync(profile, { recursive: true });
+app.setPath('userData', profile);
 const pet = require('../dist-pet/main/index.cjs');
 
 const ARGS = process.argv.slice(1);
@@ -53,7 +56,7 @@ function createOverlay() {
     frame: false, resizable: false, movable: false, minimizable: false, maximizable: false,
     fullscreenable: false, skipTaskbar: true, hasShadow: false, alwaysOnTop: true,
     ...(IS_MAC ? { type: 'panel' } : {}),
-    show: false, title: 'Mikang Memo',
+    show: false, title: 'PeeKit', icon: path.join(__dirname, '..', 'build', 'icon.png'),
     webPreferences: { preload: path.join(__dirname, 'preload.js'), contextIsolation: true, nodeIntegration: false, sandbox: true, spellcheck: false },
   });
   if (IS_MAC) {
@@ -155,8 +158,13 @@ async function openDroppedMacPhotos(paths) {
 }
 function createTray() {
   tray = new Tray(trayIcon());
-  tray.setToolTip(IS_MAC ? 'Mikang Memo · 사진을 놓아 메모 만들기' : 'Mikang Memo');
-  if (IS_MAC) tray.on('drop-files', (_event, files) => { void openDroppedMacPhotos(files); });
+  tray.setToolTip(IS_MAC ? 'PeeKit · 사진을 놓아 메모 만들기' : 'PeeKit');
+  if (IS_MAC) {
+    tray.on('drop-files', (_event, files) => { void openDroppedMacPhotos(files); });
+    tray.on('drop-text', (_event, text) => {
+      if (text.trim()) send('pet-content', { text: text.slice(0, 100000), imageUrl: '' });
+    });
+  }
   buildTrayMenu();
   if (IS_WIN) tray.on('click', () => send('cmd', 'summon'));
 }
@@ -235,7 +243,7 @@ ipcMain.handle('notion:action', (event, action, data) => {
 const keyStatus = () => ({...store.keyStatus(), ...hostedAI.direct?.status()});
 ipcMain.handle('keys:status', keyStatus);
 ipcMain.handle('keys:set', (_e, name, value) => { if (hostedAI.direct && ['openai','kma'].includes(name)) hostedAI.direct.set(name,value);
-  else if (['anthropic', 'hosted', 'openai'].includes(name)) store.setKey(name, value);
+  else if (['anthropic', 'hosted', 'openai', 'kma'].includes(name)) store.setKey(name, value);
   return keyStatus(); });
 
 // 아이폰 HEIC 사진 → JPEG (화면 쪽 보안 규칙을 느슨하게 하지 않도록 메인 프로세스에서 변환)
@@ -299,7 +307,7 @@ ipcMain.handle('weather:get', async (_e, city) => {
   try { return await getWeather(city); }
   catch { return { ok: false, error: '날씨를 가져오지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
 });
-ipcMain.handle('keys:test', (_e, name) => hostedAI.direct && name === 'kma' ? getWeather('서울') : name === 'openai' ? openAIRequest('/status') : name === 'hosted' ? hostedAI.request('/status', store.getKey(name)) : ai.testKey(store.getKey('anthropic')));
+ipcMain.handle('keys:test', (_e, name) => name === 'kma' ? getWeather('서울') : name === 'openai' ? openAIRequest('/status') : name === 'hosted' ? hostedAI.request('/status', store.getKey(name)) : ai.testKey(store.getKey('anthropic')));
 ipcMain.handle('ai:merge-candidates', (event, notes) => {
   if (event.sender !== win?.webContents) return { ok: false };
   return openAIRequest('/merge-candidates', { notes });

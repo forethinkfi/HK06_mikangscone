@@ -74,6 +74,6 @@ describe('throwing a pet', () => {
     expect(landingReaction(1054, 250, 490)).toBe('hurt');
     expect(launchVelocity({ x: 100, y: 0 }, 0)).toEqual({ x: 100, y: -205 });
     expect(launchVelocity({ x: -100, y: 0 }, 70)).toEqual({ x: -100, y: 0 });
-    expect(launchVelocity({ x: 850, y: 0 }, 0)).toEqual({ x: 850, y: 0 });
+    expect(launchVelocity({ x: 850, y: 0 }, 0)).toEqual({ x: 850, y: -272 });
   });
 });

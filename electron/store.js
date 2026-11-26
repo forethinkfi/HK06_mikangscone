@@ -36,7 +36,7 @@ function setKey(name, value) {
   fs.writeFileSync(file('keys.bin'), safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(txt) : Buffer.from(txt, 'utf8'));
 }
 const getKey = name => loadKeys()[name] || (name === 'anthropic' ? process.env.ANTHROPIC_API_KEY : '') || '';
-const keyStatus = () => ({ openai: !!getKey('openai'), anthropic: !!getKey('anthropic'), hosted: !!getKey('hosted') });
+const keyStatus = () => ({ kma: !!getKey('kma'), openai: !!getKey('openai'), anthropic: !!getKey('anthropic'), hosted: !!getKey('hosted') });
 
 module.exports = {
   dir, loadState: () => readJSON('data.json', null), saveState: (s) => writeJSON('data.json', s),

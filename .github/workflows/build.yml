@@ -37,7 +37,7 @@ jobs:
           New-Item -ItemType Directory -Path $env:MIKKANG_USER_DATA | Out-Null
           $state = Join-Path $env:MIKKANG_USER_DATA 'data.json'
           '{"notes":[],"settings":{"launchAtLogin":false}}' | Set-Content -LiteralPath $state
-          $exe = (Resolve-Path -LiteralPath 'dist/MikangMemo-Windows.exe').Path
+          $exe = (Resolve-Path -LiteralPath 'dist/PeeKit-Windows.exe').Path
           $env:Path = "$env:SystemRoot\System32;$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:SystemRoot"
           $launcher = Start-Process -FilePath $exe -WorkingDirectory $env:RUNNER_TEMP -WindowStyle Hidden -PassThru
           $repeat = $null
@@ -51,7 +51,7 @@ jobs:
             }
             if (!$started) { throw 'Standalone app did not finish starting' }
             $app = Get-CimInstance Win32_Process -Filter "ParentProcessId=$($launcher.Id)" |
-              Where-Object { $_.Name -eq 'Mikang Memo.exe' } | Select-Object -First 1
+              Where-Object { $_.Name -eq 'PeeKit.exe' } | Select-Object -First 1
             if (!$app.ExecutablePath) { throw 'Cannot locate the running app' }
             $pets = Join-Path (Split-Path -Parent $app.ExecutablePath) 'resources/assets/species'
             $repeat = Start-Process -FilePath $exe -WorkingDirectory $env:RUNNER_TEMP -WindowStyle Hidden -PassThru
@@ -72,7 +72,7 @@ jobs:
           }
       - uses: actions/upload-artifact@v4
         with:
-          name: MikangMemo-jhj-${{ runner.os }}
+          name: PeeKit-jhj-${{ runner.os }}
           path: |
             dist/*.exe
             dist/*.dmg
@@ -96,7 +96,7 @@ jobs:
           fetch-depth: 0
       - uses: actions/download-artifact@v4
         with:
-          pattern: MikangMemo-jhj-*
+          pattern: PeeKit-jhj-*
           path: ${{ runner.temp }}/desktop-artifacts
       - name: Commit and push verified desktop files
         shell: bash
@@ -111,11 +111,11 @@ jobs:
           git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
           git lfs install --local
           artifacts="$RUNNER_TEMP/desktop-artifacts"
-          arm64=("$artifacts"/MikangMemo-jhj-macOS/*-mac-arm64.dmg)
-          intel=("$artifacts"/MikangMemo-jhj-macOS/*-mac-x64.dmg)
+          arm64=("$artifacts"/PeeKit-jhj-macOS/*-mac-arm64.dmg)
+          intel=("$artifacts"/PeeKit-jhj-macOS/*-mac-x64.dmg)
           test "${#arm64[@]}" -eq 1 && test -s "${arm64[0]}"
           test "${#intel[@]}" -eq 1 && test -s "${intel[0]}"
-          cp "$artifacts/MikangMemo-jhj-Windows/MikangMemo-Windows.exe" MikangMemo-Windows.exe
+          cp "$artifacts/PeeKit-jhj-Windows/PeeKit-Windows.exe" MikangMemo-Windows.exe
           cp "${arm64[0]}" MikangMemo-macOS-AppleSilicon.dmg
           cp "${intel[0]}" MikangMemo-macOS-Intel.dmg
           git add -- MikangMemo-Windows.exe MikangMemo-macOS-AppleSilicon.dmg MikangMemo-macOS-Intel.dmg
@@ -142,7 +142,7 @@ jobs:
     steps:
       - uses: actions/download-artifact@v4
         with:
-          pattern: MikangMemo-jhj-*
+          pattern: PeeKit-jhj-*
           path: packages
           merge-multiple: true
       - name: Publish verified installers
@@ -152,13 +152,13 @@ jobs:
         run: |
           set -euo pipefail
           version="${GITHUB_REF_NAME#v}"
-          title="Mikang Memo $GITHUB_REF_NAME"
+          title="PeeKit $GITHUB_REF_NAME"
           if [[ "$GITHUB_REF_NAME" == "v0.2.3_notion" ]]; then
             title="PeeKit 0.2.3_notion"
             version="0.2.3"
           fi
           cd packages
-          assets=("Mikang Memo-jhj-$version-windows-setup.exe" "MikangMemo-Windows.exe"
-                  "Mikang Memo-jhj-$version-mac-arm64.dmg" "Mikang Memo-jhj-$version-mac-x64.dmg")
+          assets=("PeeKit-jhj-$version-windows-setup.exe" "PeeKit-Windows.exe"
+                  "PeeKit-jhj-$version-mac-arm64.dmg" "PeeKit-jhj-$version-mac-x64.dmg")
           for file in "${assets[@]}"; do test -s "$file"; done
           gh release create "$GITHUB_REF_NAME" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag --title "$title" --generate-notes

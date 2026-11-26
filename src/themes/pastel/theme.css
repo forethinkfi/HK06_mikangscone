@@ -71,7 +71,7 @@
 }
 :root[data-theme-pack="pastel"] .basic-note-head { color: var(--pi); background: transparent; padding-top: 10px; }
 :root[data-theme-pack="pastel"] .basic-note-caption { font-size: var(--type-detail); }
-:root[data-theme-pack="pastel"] .basic-note .basic-editor { font: 18px/1.6 var(--f-pastel); color: var(--pi); }
+:root[data-theme-pack="pastel"] .basic-note .basic-editor { font: var(--memo-font-size, 15px)/1.6 var(--f-pastel); color: var(--pi); }
 :root[data-theme-pack="pastel"] .basic-format { border-top-color: #00000010; }
 :root[data-theme-pack="pastel"] :is(.basic-icon, .basic-format button, .basic-format .basic-photo):hover { background: #ffffff70; }
 
@@ -117,8 +117,8 @@
 }
 :root[data-theme-pack="pastel"] .sheet[data-paper="lined"] { filter: drop-shadow(0 10px 14px #6c5f8a2a); }
 :root[data-theme-pack="pastel"] .sheet[data-paper="lined"] .basic-editor {
-  line-height: 26px;
-  background-image: repeating-linear-gradient(to bottom, transparent 0 25px, #7d8fb030 25px 26px);
+  line-height: 1.7;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1lh - 1px), #7d8fb030 calc(1lh - 1px) 1lh);
   background-attachment: local;
 }
 /* 5) 겹친 종이 (뒤에 라벤더 종이 한 장) */

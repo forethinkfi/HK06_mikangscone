@@ -23,6 +23,9 @@ export function launchVelocity(velocity: Vec2, heightAboveFloor: number): Vec2 {
       ? Math.sign(velocity.x) * Math.max(95, Math.abs(velocity.x)) : velocity.x;
     return { x, y: Math.min(velocity.y, -205) };
   }
+  if (heightAboveFloor <= 20 && Math.abs(velocity.x) >= FLOOR_HOP_SPEED_LIMIT && Math.abs(velocity.x) >= Math.abs(velocity.y)) {
+    return { x: velocity.x, y: Math.min(velocity.y, -Math.min(340, Math.abs(velocity.x) * 0.32)) };
+  }
   return velocity;
 }
 

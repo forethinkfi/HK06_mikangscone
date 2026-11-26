@@ -9,7 +9,7 @@ import { PetQuickMenu } from './PetQuickMenu';
 import { EmptyRosterPaper } from './EmptyRosterPaper';
 import { FishingRig, type FishingPose } from './FishingRig';
 import { BehaviorController } from './BehaviorController';
-import { advanceFlight, type Flight } from './throwMotion';
+import { advanceFlight, launchVelocity, releaseVelocity, RELEASE_SAMPLE_WINDOW_MS, type PointerSample, type Flight } from './throwMotion';
 import type { Rect, Vec2 } from './types';
 import { motionCue, personalityOf, poseFor, type MotionCue } from './petMotion';
 import { MAX_DROPPED_PHOTOS, MAX_PHOTO_DROP_BYTES, type DroppedPhoto } from '../shared/ipcContract';
@@ -120,7 +120,7 @@ async function main(): Promise<void> {
   let previous = performance.now();
   let reply: { pet: Companion; text: string; at: number } | null = null;
   let pointer: Vec2 = { x: -1000, y: -1000 };
-  let held: { pet: Companion; pointerId: number; start: Vec2; offset: Vec2; region: ReturnType<typeof faceRegion>; since: number; dragging: boolean } | null = null;
+  let held: { samples: PointerSample[]; pet: Companion; pointerId: number; start: Vec2; offset: Vec2; region: ReturnType<typeof faceRegion>; since: number; dragging: boolean } | null = null;
   let rightPress: { pet: Companion; pointerId: number; timer: number; briefed: boolean } | null = null;
   let activeBriefing: { pet: Companion; until: number } | undefined;
   let perchedId: string | null = null;
@@ -342,7 +342,7 @@ async function main(): Promise<void> {
     const scale = pet.species.behavior.spriteScale;
     const box = pose && frame ? renderer.getPoseBounds(def, frame, pos, scale, pose, petSize) : renderer.getSpriteBounds(def, pos, scale);
     // Keep the current target through small frame-to-frame changes at its edge.
-    const padding = fileDrag ? 20 : pet === hoveredPet ? HOVER_EXIT_PADDING : 0;
+    const padding = fileDrag ? 28 : pet === hoveredPet ? HOVER_EXIT_PADDING : 0;
     return pointer.x >= box.x - padding && pointer.x <= box.x + box.width + padding &&
       pointer.y >= box.y - padding && pointer.y <= box.y + box.height + padding;
   });
@@ -364,13 +364,7 @@ async function main(): Promise<void> {
     const target = hit() || dropTarget;
     fileDrag = false; dropTarget = undefined;
     if (!target || !event.dataTransfer) return;
-    const files = Array.from(event.dataTransfer.files);
-    if (!files.length) {
-      for (const item of Array.from(event.dataTransfer.items)) {
-        const file = item.kind === 'file' && item.getAsFile();
-        if (file) files.push(file);
-      }
-    }
+    const files = window.MemoDrop.files(event.dataTransfer);
     const images = files.filter(file =>
       file.type.startsWith('image/') || /\.(jpe?g|jfif|pjpeg|pjp|png|apng|gif|webp|bmp|dib|svg|avif|heic|heif|ico|cur|tiff?)$/i.test(file.name));
     if (!images.length) {
@@ -417,6 +411,8 @@ async function main(): Promise<void> {
     lastPointerAt = performance.now();
     toyPointer = pointer;
     if (!held) return;
+    held.samples = held.samples.filter(sample => event.timeStamp - sample.time <= RELEASE_SAMPLE_WINDOW_MS);
+    held.samples.push({ ...pointer, time:event.timeStamp });
     const drift = Math.hypot(pointer.x - held.start.x, pointer.y - held.start.y);
     if (!held.dragging && drift >= 5) beginDrag(held);
     if (held.dragging) positionHeld(held);
@@ -456,7 +452,7 @@ async function main(): Promise<void> {
       toyNextPlayAt = performance.now() + 1200;
     }
     const offset = { x: pointer.x - pos.x, y: pointer.y - pos.y };
-    held = { pet, pointerId: event.pointerId, start: { ...pointer }, offset, region: faceRegion(offset),
+    held = { samples: [{ ...pointer, time: event.timeStamp }], pet, pointerId: event.pointerId, start: { ...pointer }, offset, region: faceRegion(offset),
       since: performance.now(), dragging: false };
     if (pet.flight) { beginDrag(held); positionHeld(held); }
     canvas.setPointerCapture(event.pointerId);
@@ -475,9 +471,11 @@ async function main(): Promise<void> {
     }
     if (!held || (event instanceof PointerEvent && event.pointerId !== held.pointerId)) return;
     if (event instanceof PointerEvent && event.type === 'pointerup') moveHeld(event);
-    const { pet, dragging, offset, region } = held;
+    const { pet, dragging, offset, region, samples } = held;
     held = null;
-    if (dragging) {
+    if (dragging && pet.flight) {
+      const velocity = event.type === 'pointerup' ? releaseVelocity(samples) : { x: 0, y: 0 };
+      pet.flight.velocity = launchVelocity(velocity, bounds.height - petSize - pet.flight.position.y);
       cue(pet, 'fly', performance.now(), pet.facing >= 5 ? -1 : 1);
     } else if (event.type === 'pointerup') {
       const now = performance.now();
@@ -770,7 +768,7 @@ async function main(): Promise<void> {
       nextPointerPoll = now + 40;
       void window.petAPI.getCursorPoint().then((point) => {
         if (point.fileDrag !== undefined && !dropTarget) fileDrag = point.fileDrag;
-        if (!pollPointer() || performance.now() - lastPointerAt <= 90) return;
+        if (!pollPointer() || (!point.fileDrag && performance.now() - lastPointerAt <= 90)) return;
         pointer = point;
         updateMouseTarget();
       }).catch(() => {});
@@ -814,6 +812,7 @@ async function main(): Promise<void> {
         if (held?.pet !== pet) {
           const step = advanceFlight(pet.flight, delta / 1000, Math.max(0, bounds.width - petSize), Math.max(0, bounds.height - petSize));
           pet.flight = step;
+          if (step.wall && !step.landed) cue(pet, 'wallImpact', now, step.wall === 'left' ? -1 : 1, Math.min(1, step.wallSpeed / 650));
           if (step.landed) {
             pet.behavior.setPosition({ x: step.position.x, y: 0 });
             pet.flight = undefined;

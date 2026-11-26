@@ -19,7 +19,7 @@ stage = stage.slice(0, stage.indexOf('<div class="demo-bg"')) + stage.slice(stag
 // 테마: src/themes/themes.js 다음에 src/themes/<이름>/theme.js·theme.css 를 모두 넣는다
 const THEME_DIR = path.join(ROOT, 'src', 'themes');
 const themeIds = fs.readdirSync(THEME_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
-const scripts = ['parse.js', 'characters.js', 'themes/themes.js', ...themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.js'))).map((id) => `themes/${id}/theme.js`), 'cutout.js', 'drop-content.js', 'basic-note.js', 'merge-notes.js', 'app.js'];
+const scripts = ['parse.js', 'characters.js', 'themes/themes.js', ...themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.js'))).map((id) => `themes/${id}/theme.js`), 'cutout.js', 'drop-content.js', 'basic-note.js', 'merge-notes.js', 'weekly-letter.js', 'app.js'];
 // 테마의 로컬 글꼴과 이미지를 한 파일짜리 미리보기에 포함한다.
 const themeAssetTypes = { woff2: 'font/woff2', png: 'image/png', webp: 'image/webp', svg: 'image/svg+xml' };
 const themeCss = themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.css'))).map((id) =>
@@ -82,7 +82,7 @@ const DESKTOP = `
     <div class="edgehint l" aria-hidden="true"><span>최근 메모</span></div>
     <div class="edgehint r" aria-hidden="true"><span>최근 메모</span></div>
     <aside class="guide" id="guide" aria-label="체험 안내">
-      <div class="gh2"><b>귤메모 체험하기</b><button type="button" id="gClose" aria-label="안내 접기">접기</button></div>
+      <div class="gh2"><b>PeeKit 체험하기</b><button type="button" id="gClose" aria-label="안내 접기">접기</button></div>
       <ol>
         <li><b>AI 비서</b>: 모아보기의 말풍선 버튼에서 부탁과 날씨을 사용할 수 있어요.</li>
         <li><b>섹션</b>: 책갈피는 업무·생활·아이디어 같은 큰 섹션이에요. 섹션을 누르면 그 안의 메모들이 펼쳐지고, 메모를 누르면 메모지가 열려요.</li>
@@ -100,7 +100,7 @@ const DESKTOP = `
      <div class="tsearch">${ICON.search}<span>검색</span></div>
      <button type="button" class="tbi on" id="tbBrowser" aria-label="웹 브라우저">${ICON.globe}</button>
      <button type="button" class="tbi" aria-label="파일 탐색기">${ICON.files}</button>
-     <button type="button" class="tbi" id="tbMemo" aria-label="귤메모 책갈피 펼치기">${ICON.mikang}</button>
+     <button type="button" class="tbi" id="tbMemo" aria-label="PeeKit 책갈피 펼치기">${ICON.mikang}</button>
    </div>
    <div class="tray"><span class="ime">한</span><span class="ti">${ICON.wifi}</span><span class="ti">${ICON.sound}</span><div class="clock"><span id="tClock">--:--</span><span id="tDate">----</span></div></div>
  </footer>
@@ -267,7 +267,7 @@ body{overflow:hidden}
 #stage .toasts{pointer-events:none}
 #stage.dock-hidden .dock{pointer-events:none}`;
 
-const page = `<title>귤메모 미리보기</title>
+const page = `<title>PeeKit 미리보기</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">

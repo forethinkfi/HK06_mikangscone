@@ -166,3 +166,8 @@
 :root:is([data-theme-pack="mono-sketch"], [data-theme-pack="mono-sketch-dark"]) .stage .tab:is(.sub,.sec) {
   background:var(--tc); color:var(--ti);
 }
+
+.letter-sender[data-author="mono-cat"] .letter-portrait > .mono-cat-avatar {
+  background: url('briefing.webp') center / contain no-repeat;
+}
+.letter-sender[data-author="mono-cat"] .letter-envelope { display:none; }

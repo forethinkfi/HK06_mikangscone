@@ -34,7 +34,9 @@ static napi_value FileDragActive(napi_env env, napi_callback_info info) {
   if ((NSEvent.pressedMouseButtons & 1) == 0) {
     active = NO;
   } else if (change != previousChange) {
-    active = [board availableTypeFromArray:@[NSPasteboardTypeFileURL]] != nil;
+    active = [board availableTypeFromArray:@[NSPasteboardTypeFileURL, NSPasteboardTypeString, NSPasteboardTypeHTML,
+                                             NSPasteboardTypeRTF, NSPasteboardTypeURL, NSPasteboardTypePNG,
+                                             NSPasteboardTypeTIFF, @"NSFilenamesPboardType"]] != nil;
   }
   previousChange = change;
   napi_value result;

@@ -79,8 +79,8 @@
 :root[data-theme-pack="vintage"] .basic-note-head { background: #e9d6b8; }
 :root[data-theme-pack="vintage"] .basic-note .basic-editor {
   color: var(--ink);
-  font: 19px/30px var(--f-hand);
-  background-image: repeating-linear-gradient(to bottom, transparent 0 29px, #7e63452b 29px 30px);
+  font: var(--memo-font-size, 15px)/1.7 var(--f-hand);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1lh - 1px), #7e63452b calc(1lh - 1px) 1lh);
   background-attachment: local;
 }
 :root[data-theme-pack="vintage"] .perch:has(.vintage-bear-avatar) { height: 105px; top: -90px; }

@@ -652,7 +652,9 @@
   .tab, .sheet { transition: none; }
 }
 
-.stage.pet-on-bookmarks .dock { top: max(24px, var(--bookmark-pet-size)); }
+.stage { --bookmark-top-clearance: 48px; }
+.stage.pet-on-bookmarks .dock { top: calc(var(--bookmark-top-clearance) + var(--bookmark-pet-size)); }
+.stage.pet-on-bookmarks .shelf-tools { position:sticky; top:0; z-index:2; flex:none; }
 #bookmark-pet {
   position: absolute;
   z-index: 32;
@@ -702,7 +704,7 @@
 }
 .stage .dock .subs { flex: none; max-width: 100%; }
 .stage .dock .tab { max-width: min(100vw, 180px); }
-.stage .dock .tab.sub { touch-action: pan-y; }
+.stage .dock .tab.sub { touch-action: none; }
 .stage .dock .tab.open { transform: none; }
 .stage .dock .tab .k { max-width: 100%; }
 .stage .dock .tab.sub { transition: opacity 120ms ease-out, translate 120ms ease-out; }

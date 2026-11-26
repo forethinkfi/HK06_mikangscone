@@ -1,7 +1,7 @@
 {
   "name": "mikang-bookmark-memo",
-  "productName": "Mikang Memo",
-  "version": "0.2.3",
+  "productName": "PeeKit",
+  "version": "0.2.4",
   "description": "바탕화면 책갈피 메모 + AI 비서 캐릭터 (Electron, Windows/macOS)",
   "main": "electron/main.js",
   "license": "MIT",
@@ -35,15 +35,18 @@
   },
   "build": {
     "appId": "com.mikangscone.bookmarkmemo",
-    "productName": "Mikang Memo",
+    "productName": "PeeKit",
     "directories": {
       "output": "dist",
       "buildResources": "build"
     },
     "files": [
       "electron/**",
+      "server/kma.js",
       "src/**",
-      "dist-pet/**",
+      "dist-pet/main/**",
+      "dist-pet/preload/**",
+      "dist-pet/renderer/**",
       "pet/LICENSE",
       "pet/LICENSE-ASSETS.md",
       "pet/src/renderer/fonts/OFL-Dongle.txt",
@@ -98,10 +101,10 @@
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
-      "shortcutName": "Mikang Memo"
+      "shortcutName": "PeeKit"
     },
     "portable": {
-      "artifactName": "MikangMemo-Windows.exe",
+      "artifactName": "PeeKit-Windows.exe",
       "unpackDirName": true
     },
     "afterPack": "build/after-pack.js"

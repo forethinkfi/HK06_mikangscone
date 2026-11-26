@@ -1,4 +1,4 @@
-<title>귤메모 미리보기</title>
+<title>PeeKit 미리보기</title>
 <meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Gaegu:wght@400;700&family=Gowun+Dodum&family=Jua&display=swap" rel="stylesheet">
@@ -953,7 +953,9 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
   .tab, .sheet { transition: none; }
 }
 
-.stage.pet-on-bookmarks .dock { top: max(24px, var(--bookmark-pet-size)); }
+.stage { --bookmark-top-clearance: 48px; }
+.stage.pet-on-bookmarks .dock { top: calc(var(--bookmark-top-clearance) + var(--bookmark-pet-size)); }
+.stage.pet-on-bookmarks .shelf-tools { position:sticky; top:0; z-index:2; flex:none; }
 #bookmark-pet {
   position: absolute;
   z-index: 32;
@@ -1003,7 +1005,7 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 }
 .stage .dock .subs { flex: none; max-width: 100%; }
 .stage .dock .tab { max-width: min(100vw, 180px); }
-.stage .dock .tab.sub { touch-action: pan-y; }
+.stage .dock .tab.sub { touch-action: none; }
 .stage .dock .tab.open { transform: none; }
 .stage .dock .tab .k { max-width: 100%; }
 .stage .dock .tab.sub { transition: opacity 120ms ease-out, translate 120ms ease-out; }
@@ -1395,6 +1397,11 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
   background:var(--tc); color:var(--ti);
 }
 
+.letter-sender[data-author="mono-cat"] .letter-portrait > .mono-cat-avatar {
+  background: url('data:image/webp;base64,UklGRlYYAABXRUJQVlA4IEoYAABwYgCdASrwAPAAPjEYikOiIaETOc0gIAMEsrdwt+sgD9AP4BrUxl/sO1s6B6DzrrF/ifw9w7h3ewr+F92/ak8wP9PP9V/cPxp+Jn9gPer5g/5x/jP1o92v0Y/3n1BP5p/futC9Av9rfTO/cP4Rv20/8/+4+BP9d//PrNnkv+59rn92/KfrcvI3sz/WuYV0X5l/yX7N/gP7x+4H5efE/+08GfiT/dflV8BH5B/Kv8B/W/2s/unDzbD/rvQI9p/qP+S/uX7a/4b1GP8L0X+v/+q9wD+c/07/MflZ+//Reei+wF/O/7l/pfuS+mn+e/6v+Y/LP29fnv+S/6/+X+Av+Y/1b/Yf3f91P8////+197HsX/aD//+6j+yX//Ku/8dtzs69jbc7JspWryXpWLz12eFgdBHkt/dbKAobvg7Argfag69jbYw6p7rgPNVUBTHq50dEFRicfLom5zUtL5FqInxv+iC98VGQ032XjWsd1ZUdZJhCndgwDtP7IvGcU2RqmFYOh4g3I6X4KodhE5MtUkS9jbckQDr9LGtukg8XG7QslgzgmbDByDpCkLiKHduQfY5VSMumV2bbnZQHARLtf0z5tB7dePYCApziD4LZbeqweZ2i4ElzQLwF2y8ebTf3f75xoYO3VZgDmphHM1655W8Kw/x97MB4QnkzdA+niBwhDhTdYs11jxs/u+2JrCOezVHWCoG/VwsMEZBily4bQIXEesnpCf8bKKexpceq6imoplO7+wKN4WF+z68a7ug3x0/7jPHTFP6kJc9cscTv+zzmSm8GseNqXjb8ZxYPjxsWNZmRpbrK+WjvSWN/NUOx77Lc++AN5idS1tzGPwWh/47LNN9Y+tDSJwUHA5uukcH7Q11rQwWjE4wy+36B3vS9j5k2n7q2p1pWCvm9/U7m9iLQhqPU624thW4/1NDAnXrHJYrY1LH2aM2yN5zsn3GxpztJMp6vRbJXtHuBbROCJRLV+cX5d47bnZQtd/usS4Duxxv+ZTS9ucAgHSShQERVhrZMM56jESdrHjbIKDpMfTTs1It9dieMy6Fi25ygAP7/szgAA51eYR43vh90EcgddBBb/L1+6ObTkarBd9y85UP/BgU2NwlQ1L2GYV9NTK4IQv2CPhpy2Kr3/5+1pIGejK/EVO/z6HvpWCdiy043/jK38VqZJ4MKxGpzU7IobrMHGHFXSjZtFaylpvN7g+Sb0CTcN0kWcj2gT1lTFaGsxxzMwLIdY7k4VfLjomUlPpBi2/99jKkJzQ0OTGavzIy9/7qOxPpP9sblgseKPKKbwfo3Q+2by3T/ZSow7v2WkPHTiV/3xirT0zW+x/JfuMq6AeqOyK3Gs05fQAFKBvlUqU/wiGSRJyZWmvQaV6k+j33G8CF4GLXxBb9wYnpj5aAFQ1QA+wibaBDk5Nap62O1CrU5MLMOUhDnXTp/Fk/bQMCZAzm04Pdxa84/b4txoVakNwzMT1Sp2JWsyXxXVJH+e/Xs1BGsBnvWoftEu+DqPrCu3pwf72GftzLaHJlkcQOEz8E6/9GDCQY8uh2fvEvTvY2fBX0BSfaM+9v/KTgHBN5+8AYnP3CREnVeW6kdRVco13Lipq6Kd7Fepv/tR+Q4GMWvpVvEsrq/85r0xcXhJ/j5e9KfD2F5HK9MUjYkfbzMYon5vP7DRlIt6EWVtfc7miFZYegWNdWIj8fCkvNaWpJWoJsc5kBYhhQh57w9VPhATLeWdUqazwmRb6D8n3ffg+iR67pKXd5fv/h2m5r1GyF6Sv486fd4FPA2P62YLWMD5oZ1n9v8RkgAe9C+ghEyQACmFdoZWuazyQCBgdbbMxoEAXAcaMQr2t3bmMWMEBSbLiQ3o8dN25ipKpE+1kKIEUi5BzsJHWl2BIn8S+p/yulycN6Cun3Y//z4TRLsbaG6e+vR0fVn9t8wdyGm5b7q2sWux0rg/qPrAkVMXkv7ezJdKuGdnPDIGtw4y5akDIbyqcJmUiH4EUNYYFqb62wSazQ6Shg5LdQ1UcweJUlYIPTWqbhFzMitSsLprERYMkPHEIivH9l1FXA9kLiLc/GlWdSxiomJIgB3UNNGlZWaM3HH0IX5TI0ADYdtcz9/LDHeOAfib0DM0FMcLZimSDhlVCB8Y4XDPJQtT0QFeqfKo+7G0W+0PjIVLl6CdbmTHGfHfvYxawxQAqIR4crwbo5VTpbgDiGwAMzi8FzDrQOiVjnMGp3dzEupo5659QQ4ihPgXAD9JXIXp08n/a5wJBsYvyConHZPT+HeuGNmB//KkPXO6LXZxDy74Yetes2HpowTfG2avzBVEze89vL39h6t5B83SSAIvA4dWgK6bQsQHiGCpSd1OJFEePD9eEbe4Te3DGvhc8nbbbDDiTyjFGDS9DMxXzMgMAGF/whZTCD4d5c1trfQs9/wdYlCwMOKb+/2TselWtPFU4MHtgIHf978Mfo9WrhlwfpVj8BYzjj5CdyNz/fGWK3lqXwbj0wK8dpW9MqV2EifaE8CZvmcIBrqn6axi2M50fzXk1//xi2ST1gyEd3hTJgBOJ4eMwvNoha4dKmuDxU5S1WVbt+GWWsO79yxg1dFkvbxWBvLdvfAgzQoR81wxgQixZGHZ11UNCHwHjPv1+DxxcpIhlfTaQx60b7Pb0QFfAYU0pHY4baumXrp91tJzkugCa3Wr3wencDKz3P8n3L8CXk4Mp6dffCJlP5C9UPHpZs80UTvk3ZM657rf3lxdV2YxBS087JZIdzzfIPskMUao8Uy+1TjUOG2tUpA8OMJxk7WXgShPQo3mztGsNrvr3w2Zl7RTbQx1qwA6qEqSwKXVxBNJgsDszPJRGOvpFpYe1z/OE2jsyl7/Qyd2V/sH8iFKePP4LKlwD5+DzBWqMNhGHP7KRnV7hC3fc2FseNZCKk1i/pjlcDMbrvmX/r972pCEN5QU295HZP35NT8TLhNE24wFRNantwO5wUUWhtmSH3zIOVbfNJiDewLisWTCleTWgvaOJCriTig8/d3G53IrWAYLWV2Fe4+NUrZqt0aPvKIsnV89WIL3fXIkE8jnVu72ETNAhL+7CMTqFjZH2/3l1I9JzF0SpuJ6+PO5nhR2gCCrvIaC80Or///iuF6xP3gw+WmxRsHBLOoMbwLEHfXUk0HtmBIwMmS/bHezZUhWum6w+iHnjRxLav48UEh/xugzj3+e1yCbKtkevfSGn7gKzcKypzP/O7XXPdkx/ZNl6Cz4MLWd3O6g4Gda4WaI10Of4McpAaBqQWwxhFfAqGzj6YYVM5KVFON6Qx3alqMa//DZYRejsCv8dWCzzLHGFVskaYup/BAN8QJzb+FFukApeNKhxCNZin1VUAlHqR2ymEBzlTw5OETQ2DUb4PGE9/GElcd47KdbHug3B+W8z1oKb0mQCDOH+dNPgMkMOoZn33E2f+hnZoPrui1R2mWgpp3n6SME91IlJVVfwSu9nHrGi5wfrFyDAWvhMyKEhwOeKK5PZXdX/YD3+ldLPF4xUhmeN82m0cZWPJ1lhQAQxa1XKfjmqmiwIYsYDClEOAGmlHV7B+0DT4zIu5QuDY62IeIquK7luAsko1Miqd99vg93FgSGvs5hqORCjwIxrSG36zivr9xh47SJq6Gu4UKR0mOxorOGbHRfmqzdf//gTsHuPBLOZtZS0J4UqTZJWfXxyDYDd9Mo0qLpv6f0TAdQpE+9ij82t+PCf+isyahgcnLnXQdaTQoDCoqT9hhxXOx5R52qDl7189y9iHwpdRiVh/UO8N+FuyWkelxi7ult7M5t8kYWLS+Q+M9j43D3E7OcolJg3ztiTdL9MyTWdWptdiU9/9fyWDYeyxvH+Jast863dCn+d64NikpzgfjaPfclT6rvo6nOJJlFTl+Z8/oMiUrg7q0oX56RQQQ41HMV9g8OLQB8+V65dhWevkUf62JqmeUWzVBJIxdn4k2zPoMFdmyYIHOyRg8lg+0gjF6upMd3o05niHGRPa+DO1Xhg2TEBtkuU4D0g6T5V88AMwIEUnAIetogIYWjlSuB4G+fiLn9hHeRTVcDLPL9VSeY9MBqYJjTqO9h8ur1lYt5ocA7BU2F4jxVaj1dfcg6Gfb4anD5X/jqZ/mhLogRx/K/lffHdOOieODYvXXIDmpEkePFK44FpbbJW4/9lc8XUj53KflhqacMoSDU2jG3NC08xsoPQrngG3DbARru6R2/9Aspy33sKjj7w9dN5M/633TU7UmgE0h7UB43glszkEjSMD2nWLhgUBWNzwGsYhZ4e7D7BMtkF/db+UkUiAho6gX8zQPFT191xUtjmB3L2m7vXpwqeUbjXdfeOfWQ0jFwDLW5UlsNzDX/YrxKt6kNMUfe58WJ4iqH/Yy66xxUbWCIetsGn/8mx0/aS9zOfXI9eMjzrjcSYwWW9uM8UtbjQYXyu5cZ6rX7a5uUUK7iHc25vLTDW8Ck90OcGkUqoBE6tEilQjoaISHg2SlZyuZjTQwzJRlArjQY+vhun+sNnkXiaZOrXrgG/80bfmCoBS1DpHCN3hVI2wraKK5l0A9VrNzoBjBkcwuYxHzCjO10xX4mgPgPCid7e5gakWMpup5F05YqSxsyTULGh5BGrlJJWfZe8ADkWh+lIiB1VwQdzjXr+RgiUsGMmLxds0EBKKsirKOEItPChmPxDqAjyBiz38q7JCYKZ0pWv6RULtBQFizXBfOvmlG63pwZA6Jn9glqjzLFrj+zvH8OwK9avVZR5S30L3qTINm8cvpUb39ujPCuL3eMPfIMjVeAfSgnfvdmuM0mtaQD+r0WEYUiQOSXEx3npojb1CEVSzcU2tLYJMK+4nX0dA6/kfshq3IfUvH26evvXtYMCKPjwHwQTU0hPfBUan6r6q4J/XDxtPCJJ8JGsfz4zgnywCAG/tzhUr4skgGTXQ/nZD43jhEEyM/sA5yylNjxNp2IjiEv6L0Z7a5OjUAysTSX3nopYU/rel/+8XreVYLC92SV3EJbza8tMDeeUh3jPfP5dPx6PwCz8oHVy6RnQRzFnzr85gbwW7O7cxKt8vMB9WsuACkBa1dU/RuwjNuDsw/9uAnwk+3cYcpYW04+ifE7ROoNYb1TCiuQzyB682OuY9MaS0Yn/TtJ1Xnh3QnZ+b6AB4vywTjU4KluDPQloR/J/77uiarHlYwQtcoY5jfA8CnGgxNwD7kjJQ7yY09Py77iVXHXtqVe73xeFBwtos1Qyj9tywHmENuEcrW0Cgx+Q+e2neVC3kjMWACs9LiKtxuswgiTjR2u+oso+zit+CU7WTcHFUsZDFp6gQXuJtt0FkKKwE4AlFRURsaAhsfGGOTr9yHX9G9sh6gAtYVUXvlLcCkia2u1ZdZFJ7/vSaYowR7kG6AKv5iQjPD+ilndzP1SX03l1Lvsvdb0huXF3+PQFf43hwEJlSImKe1fm1IcBEXCL5zD/DK6du1RT4mwvR0uNel4x2TN6Vu4EiVAE9Ho3LGGnMAEtAeIrTo4CE4PPKcKQN4rNmWwQd+t7jWAeMMXvoPwx4K1X8qWKerU1Vd+h53IK8Tit0QjUcfREighcijAyDtFNqbTemN/5BUY5sMIBP5sx+zMURFT/vV/9po7fiyLYQ9/KOSmOgqs6fEuHKeQRaV2NlltPzB9r7kpvs0VVO9VYh8LCCDqkOhLKNzHh0VVNveGmH4j13O49Bc2VaXSHBBtzjOHjMGmRjjwSUI42cB74B/PityaTQfSTOH9Xm5Z+Qz6AwaTQ6vrmLDdxroIZtzv2WepkoXoq//C3bj5j1GYOFjK2w/7ly34+J0mp6z4L3/SSKSdpn+eSWXZ7/OtewxK8klDGxw/SFdduKZIyewR7N8VufGG18VPt12qeqqThPGh8BM1R3HRGEQXhnPgwB4uimpRrnw/xGEE3rQroZkMQjnBot7xMtPrkvVZsVnGy3RwwDlDR5qSETjYPOGTkesvekCd5KnHJmYqiGDQs3lQ7m/bCbIGZqn3cSL/kF8iPhMufzJC4PkX9hdRnOQ2By/YC4Ou/+AHKRtlMK5BrVcm3aLPNoJsLyKGmHvJmaXSZzgJCEQ5rEiaaWOoZnWhBBkouXlK1wrhFBbFMp7Wtidx0rJ1ezCCIPX9DraTBuwKQQJ3qstecH8hHOO+/bN2inVx+6zxxKI29dqbpjt1KYl2NvYuWw2iksGPLudtcQtMfAXJPsY7eP5nFyfVxsznHJKYjVdZ6Pf6SuyI7mqGTvCeh2dluJNqZUcYYfxpN2PIdrkUiMJ3rFdhXjHsSXXOJYP/FVAv4g+r9vl0CJ+7ur3/vRQ5WR2z337aFn5Xmnz273tG2H9uo7C6jOjW449SFSVYcNLwbPzrkHekz/DzQOqfB+LcVKCaltpVMQ98w1EjsudGEM3+xp3Vcg0A09Z9uuLr5hLDejQKsF/idciaB852fFZ2YCFHXRHDrpoBnWBTB4hRiTx1V5Q84glNdfdaa1R8mwclxZtrC6MhV8wZG9YbAmWBaCZGU22UxHzQszzq02pEV7CfY73oBVqpHElIISBVulXd1wbWG1UassxdDW2Bcu4ksckaibraq9jchErVKShu3N6CTKnU/hXwPMQhiuSpNlT3lL/AOeBMe5Bk7IbdhHe6WRe12pY6ofyVjJQ+tmWSc8qQ+FEomfYzVxTAFwEI+g9au/mLwU51DvIRt3elSUNT/mwaf+baWTL2FZxmKR00RmnA2GP2VzrfAJackGkTWOtTfLNj2OqBGiDuZYRY3PC6DvUmXPYPgcazwPVIFvsFUbc7XNZP8av/ju9fABU49/uJIQKE7T1tKswlWbYUlnLMNEin3rJPwLrBPx9tlZ9LyRDuUhkBjn6FRHZHPbQfroKquh7SKvJ/FeKaACsxuNmFiTbWpVhZAvxmEOE7ZBAE+AGEZ0z7MptbpXk40nkesizgXJJ+ueOK97mX/TlP+uAKABQwKiqZPrA1Tl3h8XOnYOfbKtyeO0PkRP0IMAOV9HntXk3cQ/0UG8uD5/i9tq2P9ygVTauTDzSqgZtQN9u11jtoZlkJuntIQVWOVhE9kHoWgDKyW27yIK1hf5PGXEsCUxAWIzeTe9CJLaQ2e5V8AOCADLTVPmtrKPTkhtCARUVfvK9yKTOmArylFv+RRFmTgk7PmpczvOrR8Zfni5SdrJYpXjSlg09lJdLgU8X28n6+3gyrza9kkiBkh5kxgHjm0A0/aZ4osVP/r+wRKrFPs/DkLMFuBeKEE1NA0oRTif+WvmhEp4380y1TjRQjFZzvuuYL5GlWA1//A0IlYVDBF29irHyKrpoqJqeGtZY+fBE3d60yzR8YZ4RtsAGa13xLVeQws+cjcT8PqiFndoAVdm80FWtW+QgOJNBi3umLdQgEVXxmFcDInkzZOM4sw2FgIG9hKSf3nYf+wc6YqT5UXixxHPv8gLcZ0EJ6Ib3MPg3c1MksABfNs0jPTQO1OQKr8RzSw9qhxQbKDhgn7W5reFJxzD6V77dZEew6IDDUFhWt1/G1149DQLTjv2Bl/hdSCZFxyNGYFdUvuvL++scUic2AGEU3dZxcgRb5toLenBU014eswR2BGaG+lmSlSGfuaNt7gLjLxUUcDdr0vnQ1aO7kPBUhunuN9rj0q2vSVVyPX05FSsmsS+eZdG+CbBKdVe1/mAwkzEH4uVIDQy4eilbHVd5kkccRMuQCHfmjseXJnXaodLwTV98mwCIV/b3lR6/7sInxtnOTa1/QCNGi7IqQKIbC1PIA/mqFQkI2E/iGH98RjXV001wbq/FEQervxqIsea/u0Z+0xO11eYQ2vi5bcgKsHt11AR4+22h5WQPSJhqkFRUwD6Ar2fqDN2sAC85RiaJ+tKNRyrZOnAMAk3v2Kg2MD67arFKZj9leDOxLinpWSzwu2pDSUtYdebnt5fpHEW5gudUnhxVKVzSZ88mQd3AXFF4xV26OiSB+CJxLBsUxGBMHI65CO+vptKflPJgDybONsi3oJRGNLQeuJTiOsHWRCnkxyPZmSRBv1PpsGOydvqLf4KJZYtembJaMgwJGmDD0/sqh64S5ZmlxtEsABBELxa3auz5fWegGqgMGnqURK7VCgTz4SD3pxDnh5jf/Uawlx2txbB/vP4Od9zNOZppwWCpBF8l6CUe+WfPfOM7HNKNYMkiBVxuCXdt2Vi3zvZfVH9AjN/lHJaLbqyZn3CaogoQMiSPbkG386bFPKmF5+pNiYn0u9kdc7hYr1nDaTPHYk8KoU57X7ozV+bGshXd9rOobpSzpUcFzEZxugl5/U2N8ssEzEMBA/JLUTb/Fwc0+ToQAAAAAA==') center / contain no-repeat;
+}
+.letter-sender[data-author="mono-cat"] .letter-envelope { display:none; }
+
 /* 메모먼트 꾹꾹체는 설치된 사본을 사용한다. */
 @font-face {
   font-family: 'Pastel Memoment';
@@ -1476,7 +1483,7 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 }
 :root[data-theme-pack="pastel"] .basic-note-head { color: var(--pi); background: transparent; padding-top: 10px; }
 :root[data-theme-pack="pastel"] .basic-note-caption { font-size: var(--type-detail); }
-:root[data-theme-pack="pastel"] .basic-note .basic-editor { font: 18px/1.6 var(--f-pastel); color: var(--pi); }
+:root[data-theme-pack="pastel"] .basic-note .basic-editor { font: var(--memo-font-size, 15px)/1.6 var(--f-pastel); color: var(--pi); }
 :root[data-theme-pack="pastel"] .basic-format { border-top-color: #00000010; }
 :root[data-theme-pack="pastel"] :is(.basic-icon, .basic-format button, .basic-format .basic-photo):hover { background: #ffffff70; }
 
@@ -1522,8 +1529,8 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 }
 :root[data-theme-pack="pastel"] .sheet[data-paper="lined"] { filter: drop-shadow(0 10px 14px #6c5f8a2a); }
 :root[data-theme-pack="pastel"] .sheet[data-paper="lined"] .basic-editor {
-  line-height: 26px;
-  background-image: repeating-linear-gradient(to bottom, transparent 0 25px, #7d8fb030 25px 26px);
+  line-height: 1.7;
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1lh - 1px), #7d8fb030 calc(1lh - 1px) 1lh);
   background-attachment: local;
 }
 /* 5) 겹친 종이 (뒤에 라벤더 종이 한 장) */
@@ -1665,8 +1672,8 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 :root[data-theme-pack="vintage"] .basic-note-head { background: #e9d6b8; }
 :root[data-theme-pack="vintage"] .basic-note .basic-editor {
   color: var(--ink);
-  font: 19px/30px var(--f-hand);
-  background-image: repeating-linear-gradient(to bottom, transparent 0 29px, #7e63452b 29px 30px);
+  font: var(--memo-font-size, 15px)/1.7 var(--f-hand);
+  background-image: repeating-linear-gradient(to bottom, transparent 0 calc(1lh - 1px), #7e63452b calc(1lh - 1px) 1lh);
   background-attachment: local;
 }
 :root[data-theme-pack="vintage"] .perch:has(.vintage-bear-avatar) { height: 105px; top: -90px; }
@@ -1780,6 +1787,65 @@ input.secsel{width:120px;background:#fff;border:1.5px solid var(--ink);font:13px
 .sheet .note-writing .body { font-size:var(--memo-font-size,15px); line-height:1.7; }
 .basic-format .paper-shape { margin-inline-start:auto; max-width:100%; }
 
+/* A section sits against the screen edge; its two recent notes face inward. */
+#stage #dock { width:148px; gap:9px; align-items:flex-end; padding:6px 8px 12px; box-sizing:border-box; }
+#stage.side-left #dock { align-items:flex-start; }
+.shelf-tools,.shelf-group,.shelf-list header { display:flex; align-items:center; gap:5px; }
+#dock .shelf-tools .tab { position:static; flex:none; width:28px; min-width:0; height:28px; min-height:0; padding:0; margin:0; transform:none; border-radius:7px; display:grid; place-items:center; font-size:0; }
+#dock .shelf-tools .tab :is(.overview-tab-label,.k) { display:grid!important; place-items:center; gap:0!important; font-size:0; line-height:0; }
+#dock .shelf-tools .tab::before,#dock .shelf-tools .tab::after { display:none; }
+.shelf-group { position:relative; flex:none; align-items:stretch; justify-content:flex-end; flex-direction:row-reverse; }
+.side-left .shelf-group { flex-direction:row; }
+#stage .shelf-group .subs { display:flex; flex-direction:row; align-items:stretch; gap:3px; padding:3px 0; margin:0; }
+#stage #dock .shelf-group .tab { display:flex; align-items:center; justify-content:center; flex:none; min-width:0; width:34px; height:96px; min-height:0; padding:8px 3px; margin:0; border-radius:8px 4px 4px 8px; transform:none; clip-path:none; box-sizing:border-box; }
+#stage #dock .shelf-group .sub { width:28px; height:90px; }
+#stage #dock .shelf-group .tab .k { display:flex; flex-direction:column; align-items:center; justify-content:space-between; max-width:100%; min-width:0; height:100%; overflow:hidden; }
+#stage #dock .shelf-group :is(.sname,.sub .k) { writing-mode:vertical-rl; text-orientation:upright; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; font-size:12px; line-height:1.2; }
+#stage #dock .shelf-group .sub .k { display:block; }
+#stage #dock .shelf-group .cnt { display:block; font-size:10px; line-height:1; padding:2px; }
+.shelf-group:has(.shelf-more) { padding-bottom:22px; }
+.shelf-more { position:absolute; left:0; bottom:0; font:11px var(--f-ui); color:var(--mikkang-ink); background:var(--mikkang-surface); border:1px solid var(--mikkang-line); border-radius:5px; padding:2px 6px; cursor:pointer; }
+.side-left .shelf-more { left:auto; right:0; }
+.shelf-list { position:absolute; z-index:34; right:144px; width:min(300px,calc(100% - 152px)); max-height:calc(100% - 16px); display:flex; flex-direction:column; gap:8px; padding:14px; box-sizing:border-box; border:1px solid var(--mikkang-line); border-radius:12px; background:var(--mikkang-surface); color:var(--mikkang-ink); box-shadow:var(--floating-shadow); pointer-events:auto; }
+.side-left .shelf-list { left:144px; right:auto; }
+.stage:is(.dock-hidden,.overview-open) .shelf-list {display:none;}
+.shelf-list header button {margin-left:auto;}
+.shelf-list button {background:transparent;color:inherit;border:0;cursor:pointer;}
+.shelf-list input {width:100%;box-sizing:border-box;font:inherit;padding:6px;border:1px solid var(--mikkang-line);border-radius:5px;}
+.shelf-list small {font-size:11px;color:var(--mikkang-muted);}
+.shelf-results {overflow:auto;max-height:38vh;}
+.shelf-result {display:flex;width:100%;gap:6px;align-items:center;justify-content:space-between;text-align:start;padding:7px 0;border-bottom:1px solid var(--mikkang-line)!important;}
+.shelf-result small {flex:none;}
+.shelf-result.trash-ready {opacity:.55;}
+
+.letter-desk { color:#453526; background:#f2e6ce; }
+.letter-desk .overview-toolbar {flex-wrap:wrap;}
+.letter-layout {display:grid;grid-template-columns:minmax(100px,1fr) minmax(160px,2fr);gap:18px;overflow:auto;padding:18px;min-height:0;}
+.letter-sender,.letter-paper {border:1px solid #c8b28c;border-radius:8px;padding:clamp(12px,2vw,24px);}
+.letter-sender {display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;background:#e9dbbf;}
+.letter-portrait {width:min(120px,100%);aspect-ratio:1;display:grid;place-items:center;}
+.letter-portrait > * {width:100%;height:100%;}
+.letter-envelope {position:relative;display:grid;place-items:center;width:52px;height:36px;border-radius:5px;background:#fff2cf;color:#925735;font:34px/1 Georgia,serif;box-shadow:0 3px 7px #67402324;}
+.letter-envelope[data-unread="true"]::after {content:'';position:absolute;right:-3px;top:-3px;width:9px;height:9px;border:2px solid white;border-radius:50%;background:#ac4737;}
+.letter-sender[data-author="block-dino"] .letter-envelope {border-radius:1px;background:#f9dc80;color:#39742c;}
+.letter-sender[data-author="pastel-octopus"] .letter-envelope {background:#ffe1e7;color:#b64b6a;border:1px dashed #c898a7;}
+.letter-sender[data-author="basic-memoring"] .letter-envelope {background:#fff1af;color:#855931;}
+.letter-sender select {max-width:100%;}
+.letter-paper {background:#fff7e6;color:#403427;box-shadow:3px 3px #e8d7ba,4px 4px #c8b28c,6px 6px 12px #74572c22;line-height:1.6;}
+.letter-paper h2 {font-size:20px;margin:5px 0 12px;}
+.letter-paper section {border-top:1px dashed #d9c8ad;padding-top:8px;}
+.letter-paper p {margin:3px 0 10px;overflow-wrap:anywhere;}
+.letter-paper footer {text-align:end;}
+@media(max-width:520px){.letter-layout{grid-template-columns:1fr;}.letter-sender{flex-direction:row;}.letter-portrait{width:48px;}}
+
+.sheet .note-album {
+  box-sizing:border-box; flex:0 0 auto; align-self:center; width:max-content; max-width:100%;
+  min-height:24px; padding:2px 7px; white-space:nowrap; font:500 11px/1.35 var(--f-ui);
+  color:inherit; border:1px solid currentColor; border-radius:6px; background:transparent; cursor:pointer;
+}
+.sheet .content > .note-album { align-self:flex-end; }
+.basic-note-head .basic-note-caption { min-width:0; }
+
 
 html,body{height:100%;background:#1f2a36}
 body{overflow:hidden}
@@ -1881,7 +1947,7 @@ body{overflow:hidden}
     <div class="edgehint l" aria-hidden="true"><span>최근 메모</span></div>
     <div class="edgehint r" aria-hidden="true"><span>최근 메모</span></div>
     <aside class="guide" id="guide" aria-label="체험 안내">
-      <div class="gh2"><b>귤메모 체험하기</b><button type="button" id="gClose" aria-label="안내 접기">접기</button></div>
+      <div class="gh2"><b>PeeKit 체험하기</b><button type="button" id="gClose" aria-label="안내 접기">접기</button></div>
       <ol>
         <li><b>AI 비서</b>: 모아보기의 말풍선 버튼에서 부탁과 날씨을 사용할 수 있어요.</li>
         <li><b>섹션</b>: 책갈피는 업무·생활·아이디어 같은 큰 섹션이에요. 섹션을 누르면 그 안의 메모들이 펼쳐지고, 메모를 누르면 메모지가 열려요.</li>
@@ -1908,7 +1974,7 @@ body{overflow:hidden}
      <div class="tsearch"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></svg><span>검색</span></div>
      <button type="button" class="tbi on" id="tbBrowser" aria-label="웹 브라우저"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c3 3.2 3 14.8 0 18M12 3c-3 3.2-3 14.8 0 18"/></svg></button>
      <button type="button" class="tbi" aria-label="파일 탐색기"><svg viewBox="0 0 24 24"><path d="M2.5 6.5a2 2 0 0 1 2-2h5l2 2h8a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2z" fill="#f2b636"/><path d="M2.5 9.5h19v8a2 2 0 0 1-2 2h-15a2 2 0 0 1-2-2z" fill="#ffd25c"/></svg></button>
-     <button type="button" class="tbi" id="tbMemo" aria-label="귤메모 책갈피 펼치기"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="8.5" fill="#f7a23f"/><path d="M13 5.5c1.5-2.5 5-2.6 6-1.4-1.4 2-4.3 2.6-6 1.4z" fill="#86b04a"/><circle cx="9.3" cy="14" r="1.1" fill="#5a2e0e"/><circle cx="14.7" cy="14" r="1.1" fill="#5a2e0e"/></svg></button>
+     <button type="button" class="tbi" id="tbMemo" aria-label="PeeKit 책갈피 펼치기"><svg viewBox="0 0 24 24"><circle cx="12" cy="14" r="8.5" fill="#f7a23f"/><path d="M13 5.5c1.5-2.5 5-2.6 6-1.4-1.4 2-4.3 2.6-6 1.4z" fill="#86b04a"/><circle cx="9.3" cy="14" r="1.1" fill="#5a2e0e"/><circle cx="14.7" cy="14" r="1.1" fill="#5a2e0e"/></svg></button>
    </div>
    <div class="tray"><span class="ime">한</span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M2.5 9a14 14 0 0 1 19 0M5.5 12.5a9.5 9.5 0 0 1 13 0M8.7 16a5 5 0 0 1 6.6 0"/><circle cx="12" cy="19.2" r="1.1" fill="currentColor"/></svg></span><span class="ti"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 9.5h3.5L12 5.5v13l-4.5-4H4z"/><path d="M16 9a4.5 4.5 0 0 1 0 6M18.5 6.5a8 8 0 0 1 0 11"/></svg></span><div class="clock"><span id="tClock">--:--</span><span id="tDate">----</span></div></div>
  </footer>
@@ -2570,15 +2636,21 @@ body{overflow:hidden}
 </script>
 <script>/* Read drag data synchronously, before the browser clears DataTransfer. */
 globalThis.MemoDrop = {
+  files(transfer) {
+    if (!transfer) return [];
+    const files = Array.from(transfer.files || []);
+    if (files.length) return files;
+    return Array.from(transfer.items || []).filter(item => item.kind === 'file').map(item => item.getAsFile()).filter(Boolean);
+  },
   accepts(transfer) {
-    return !!transfer && Array.from(transfer.types).some((type) =>
-      ['Files', 'text/plain', 'text/html', 'text/uri-list'].includes(type));
+    return !!transfer && (Array.from(transfer.items || []).some(item => item.kind === 'file') || Array.from(transfer.types).some((type) =>
+      ['files', 'text/plain', 'text/html', 'text/uri-list', 'text', 'url', 'public.utf8-plain-text'].includes(type.toLowerCase())));
   },
   content(transfer) {
     const template = document.createElement('template');
     template.innerHTML = transfer.getData('text/html');
     const fragment = template.content;
-    const text = transfer.getData('text/plain').trim();
+    const text = (transfer.getData('text/plain') || transfer.getData('public.utf8-plain-text') || transfer.getData('text')).trim();
     const uri = transfer.getData('text/uri-list').split(/\r?\n/).find((line) => line && !line.startsWith('#')) || '';
     const image = fragment.querySelector('img');
     const src = image?.getAttribute('src') || '';
@@ -2785,6 +2857,37 @@ globalThis.MemoDrop = {
 })();
 </script>
 <script>(() => {
+  const dayKey = d => [d.getFullYear(), String(d.getMonth() + 1).padStart(2, '0'), String(d.getDate()).padStart(2, '0')].join('-');
+  function due(now, settings, since, letters) {
+    const slot = new Date(now);
+    const [hour, minute] = settings.letterTime.split(':').map(Number);
+    slot.setDate(slot.getDate() - (slot.getDay() - settings.letterDay + 7) % 7);
+    slot.setHours(hour, minute, 0, 0);
+    if (+slot > now) slot.setDate(slot.getDate() - 7);
+    if (+slot < since) return null;
+    const monday = new Date(slot);
+    monday.setDate(monday.getDate() - (monday.getDay() + 6) % 7);
+    monday.setHours(0, 0, 0, 0);
+    const week = dayKey(monday);
+    return letters.some(letter => letter.week === week) ? null : { at: +slot, week };
+  }
+  function summary(notes, at) {
+    const start = new Date(at); start.setDate(start.getDate() - 7);
+    const nextWeek = new Date(at); nextWeek.setDate(nextWeek.getDate() + 7 - (nextWeek.getDay() + 6) % 7);
+    nextWeek.setHours(0, 0, 0, 0);
+    const end = new Date(nextWeek); end.setDate(end.getDate() + 7);
+    const events = notes.flatMap(note => note.events || []).sort((a,b) => a.at-b.at);
+    const done = events.filter(e => e.done && (e.doneAt ?? e.at) > +start && (e.doneAt ?? e.at) <= at);
+    const pending = events.filter(e => !e.done && e.at < +nextWeek);
+    const next = events.find(e => !e.done && e.at >= +nextWeek && e.at < +end);
+    const titles = list => list.slice(0,3).map(e => e.title).join(' · ') + (list.length > 3 ? ` 외 ${list.length-3}건` : '');
+    return { done: titles(done), pending: titles(pending), next: next && { title: next.title, at: next.at, allDay: next.allDay },
+      notes: notes.filter(n => n.createdAt > +start && n.createdAt <= at && (n.text || n.title || n.photos?.length)).length };
+  }
+  globalThis.WeeklyLetter = {due, summary};
+})();
+</script>
+<script>(() => {
 'use strict';
 const P = window.MemoParse, C = window.Chars, api = window.api;
 const { DAYMS, WD, startOfDay, addDays, fmtTime, fmtWhen, fmtIn, fmtDate } = P;
@@ -2947,7 +3050,7 @@ const DEFAULTS = {
   modeOverride: 'auto', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true, petScheduleBrief: true,
   launchAtLogin: true, weatherCity: '서울', themePack: window.__defaultThemePack || 'basic',
-  petSize: 72, noteFontSize: 15, proPreview: false,
+  letterDay: 5, letterTime: '17:00', petSize: 72, noteFontSize: 15, proPreview: false,
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -2998,7 +3101,7 @@ function addSection(name) {
   S.sections.push(x); save(); return x;
 }
 let openSec = null, addingSec = false, dockFolded = false, modalKind = '';
-function toggleSection(id) { openSec = openSec === id ? null : id; renderTabs(); }
+function toggleSection(id) { shelfListId = null; openSec = openSec === id ? null : id; renderTabs(); }
 
 let ctx = 'desktop', forcedMode = null;
 let summoned = false, openId = null, selStk = null, modalOpen = false;
@@ -3028,7 +3131,7 @@ function applyMode() {
 }
 
 /* ─────────── 클릭 통과 판정 ─────────── */
-const HIT = '#bookmark-pet,.tab,.subs,.sheet.open,.bubble,.peek.open,.toast,.modal';
+const HIT = '.shelf-list,.shelf-more,#bookmark-pet,.tab,.subs,.sheet.open,.bubble,.peek.open,.toast,.modal';
 function setInter(on) { if (on !== interactive) { interactive = on; api.setInteractive(on); } }
 function updateHit() {
   if ((modalOpen && modalKind !== 'board') || dragging) { setInter(true); return; }
@@ -3041,25 +3144,60 @@ function updateHit() {
 /* ─────────── 책갈피 ─────────── */
 
 
+let shelfListId = null;
+let shelfQuery = '';
+const editedAt = n => n.updatedAt || n.createdAt || 0;
+function positionShelfList() {
+  const panel = $('.shelf-list'), tab = $('.shelf-group .sec.exp');
+  if (!panel || !tab) return;
+  const stage = $('#stage').getBoundingClientRect();
+  const rect = tab.getBoundingClientRect();
+  panel.style.top = clamp(rect.top-stage.top,8,Math.max(8,stage.height-panel.offsetHeight-8))+'px';
+}
+function renderShelfList(section, notes) {
+  const panel = h('section',{class:'shelf-list','aria-label':section.name+' 메모 목록'});
+  const results = h('div',{class:'shelf-results'});
+  const search = h('input',{type:'search',placeholder:section.name+' 메모 검색','aria-label':section.name+' 메모 검색',value:shelfQuery,
+    oninput:e=>{shelfQuery=e.target.value; populate();positionShelfList();}});
+  function populate() {
+    const query=shelfQuery.trim().toLocaleLowerCase();
+    const matches=notes.filter(n=>(memoTitle(n)+' '+n.text).toLocaleLowerCase().includes(query));
+    results.replaceChildren(...matches.map(n=>{
+      const row=h('button',{class:'shelf-result',type:'button',onclick:()=>{shelfListId=null;openNote(n.id);}},
+        h('span',{class:'k'},memoTitle(n)||'새 메모'),h('small',{},new Date(editedAt(n)).toLocaleDateString('ko-KR',{month:'numeric',day:'numeric'})));
+      bindTrashDrag(row,n);bindImageDrop(row,()=>n);return row;
+    }));
+    if(!matches.length) results.append(h('p',{},'검색 결과가 없어요.'));
+  }
+  const close = () => {shelfListId=null;renderTabs();$('.shelf-more')?.focus();};
+  panel.append(h('header',{},h('strong',{},section.name+' 메모'),h('small',{},notes.length+'개'),
+    h('button',{type:'button','aria-label':'메모 목록 닫기',onclick:close},iel('x',15))),search,h('small',{},'최근 수정순'),results);
+  panel.onkeydown=e=>{if(e.key==='Escape'){e.stopPropagation();close();}};
+  $('#stage').append(panel);populate();positionShelfList();
+}
 function renderTabs() {
+  $('.shelf-list')?.remove();
   queuePerch();
   const dock = $('#dock'); dock.replaceChildren();
   const secs = [...S.sections]; if (notesIn('').length) secs.push(INBOX);
-  dock.append(h('button', {
-    class: 'tab overview-tab', type: 'button', 'aria-expanded': String(modalKind === 'board'),
+  const tools = h('div',{class:'shelf-tools'});
+  dock.append(tools);
+  tools.append(h('button', {
+    title:'전체보기', 'aria-label':'전체보기', class: 'tab overview-tab', type: 'button', 'aria-expanded': String(modalKind === 'board'),
     'aria-controls': 'modal', onclick: () => modalKind === 'board' ? closeBoard() : openBoard(),
   }, h('span', { class: 'overview-tab-label' }, iel('board', 16),
     h('span', {}, modalKind === 'board' ? '간단히 보기' : '전체보기'))));
-  dock.append(h('button', { class: 'tab add', type: 'button', onclick: () => newNote(true, openSec ?? undefined), 'aria-label': '새 메모 만들기' }, h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('plus', 15), '새 메모')));
+  tools.append(h('button', { class: 'tab add', title:'새 메모', type: 'button', onclick: () => newNote(true, openSec ?? undefined), 'aria-label': '새 메모 만들기' }, h('span', { class: 'k', style: 'display:flex;align-items:center;gap:5px' }, iel('plus', 15), '새 메모')));
   for (const x of secs) {
-    const list = notesIn(x.id), c = secColor(x), exp = openSec === x.id;
+    const list = notesIn(x.id).sort((a,b)=>editedAt(b)-editedAt(a)), c = secColor(x), exp = openSec === x.id;
     const tab = h('button', { class: 'tab sec' + (exp ? ' exp' : '') + (list.some((n) => n.ring) ? ' ring' : ''), type: 'button', 'data-sec': x.id, 'aria-expanded': String(exp), title: `${x.name} · 메모 ${list.length}개 (눌러서 ${exp ? '접기' : '펼치기'})`, style: `--tc:${c.bg};--ti:${c.ink}`, onclick: () => toggleSection(x.id) },
       h('span', { class: 'k' }, h('span', { class: 'sname' }, x.name), h('span', { class: 'cnt' }, String(list.length))));
     bindImageDrop(tab, () => null, () => newNote(false, x.id));
-    dock.append(tab);
+    const group = h('div',{class:'shelf-group'});
+    dock.append(group); group.append(tab);
     if (exp) {
       const wrap = h('div', { class: 'subs', role: 'group', 'aria-label': `${x.name} 메모` });
-      list.forEach((n) => {
+      list.slice(0,2).forEach((n) => {
         const t = TH(n.theme);
         const tabPaper = themePack()?.id.startsWith('mono-sketch') ? secColor(secOf(n)) : paperOf(n) || t.tab;
         const st = h('button', { class: 'tab sub' + ((openId === n.id || parkedSheets.has(n.id)) ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, title: memoTitle(n), style: `--tc:${tabPaper.tab || tabPaper.bg};--ti:${tabPaper.ink || t.tab.ink}`, onclick: () => toggleNote(n.id) },
@@ -3068,7 +3206,12 @@ function renderTabs() {
         bindImageDrop(st, () => byId(n.id));
         wrap.append(st);
       });
-      dock.append(wrap);
+      group.append(wrap);
+      if (list.length > 2) {
+        group.append(h('button',{class:'shelf-more',type:'button','aria-expanded':String(shelfListId===x.id),
+          onclick:()=>{shelfQuery='';shelfListId=shelfListId===x.id?null:x.id;renderTabs();$('.shelf-list input')?.focus();}},'다른 메모 '+(list.length-2)+'개'));
+        if(shelfListId===x.id) renderShelfList(x,list);
+      }
     }
   }
   if (addingSec) {
@@ -3114,26 +3257,22 @@ function restoreNote(id) {
 function bindTrashDrag(tab, note) {
   let press, moved = false;
   const label = $('.k', tab);
-  const distance = (e) => (e.clientX - press.x) * (S.settings.side === 'left' ? -1 : 1);
-  const ready = (e) => {
-    const r = $('#stage').getBoundingClientRect();
-    const edge = S.settings.side === 'left' ? e.clientX - r.left : r.right - e.clientX;
-    const outward = distance(e);
-    return outward >= 7 && (outward >= 32 || edge <= 24) && e.clientY >= r.top && e.clientY <= r.bottom;
-  };
+  const lift = e => Math.max(0, press.y - e.clientY);
+  const upward = e => lift(e) > Math.abs(e.clientX - press.x);
+  const ready = e => upward(e) && lift(e) >= 36;
   tab.addEventListener('pointerdown', (e) => {
     if (e.button !== 0 || !e.isPrimary) return;
-    press = { id: e.pointerId, x: e.clientX }; moved = false;
+    press = { id: e.pointerId, x: e.clientX, y: e.clientY }; moved = false;
     tab.setPointerCapture(e.pointerId);
   });
   tab.addEventListener('pointermove', (e) => {
     if (press?.id !== e.pointerId) return;
-    const outward = distance(e);
-    if (!moved && outward < 7) return;
+    if (!moved && (lift(e) < 7 || !upward(e))) return;
     moved = true; dragging = true; setInter(true);
     const armed = ready(e);
     tab.classList.toggle('trash-ready', armed);
-    tab.style.translate = (Math.min(18, Math.max(0, outward) / 2) * (S.settings.side === 'left' ? -1 : 1)) + 'px 0';
+    tab.style.translate = '0 ' + (-Math.min(32, lift(e) * .55)) + 'px';
+    tab.style.opacity = String(1 - Math.min(.55, lift(e) / 80));
     label.textContent = armed ? '놓아서 버리기' : memoTitle(note) || '새 메모';
   });
   const finish = (e) => {
@@ -3141,11 +3280,31 @@ function bindTrashDrag(tab, note) {
     const drop = moved && e.type === 'pointerup' && ready(e);
     press = null;
     if (!moved) return;
+    dragging = false; updateHit();
+    if (drop) {
+      if (!matchMedia('(prefers-reduced-motion: reduce)').matches && !document.hidden) {
+        const rect = tab.getBoundingClientRect();
+        const ghost = tab.cloneNode(true);
+        const style = getComputedStyle(tab);
+        Object.assign(ghost.style, {position:'fixed', pointerEvents:'none', margin:'0',
+          left:rect.left+'px', top:rect.top+'px', width:rect.width+'px', height:rect.height+'px',
+          minWidth:'0', minHeight:'0', transform:'none', translate:'none', zIndex:'100',
+          background:style.background, color:style.color, borderRadius:style.borderRadius, font:style.font});
+        ghost.inert = true;
+        ghost.setAttribute('aria-hidden','true');
+        ghost.style.writingMode = getComputedStyle(label).writingMode;
+        document.body.append(ghost);
+        const exit = ghost.animate([{transform:'translateY(0)',opacity:tab.style.opacity},
+          {transform:'translateY(-24px)',opacity:0}], {duration:140,easing:'ease-out'});
+        exit.finished.then(() => ghost.remove(), () => ghost.remove());
+      }
+      trashNote(note);
+      return;
+    }
     tab.classList.remove('trash-ready');
     tab.style.translate = '';
+    tab.style.opacity = '';
     label.textContent = memoTitle(note) || '새 메모';
-    dragging = false; updateHit();
-    if (drop) trashNote(note);
   };
   tab.addEventListener('pointerup', finish);
   tab.addEventListener('pointercancel', finish);
@@ -3153,7 +3312,7 @@ function bindTrashDrag(tab, note) {
   tab.addEventListener('click', (e) => {
     if (moved) { e.preventDefault(); e.stopImmediatePropagation(); moved = false; }
   }, true);
-  tab.title = (tab.title || '메모') + ' · 화면 가장자리로 끌어 휴지통에 보내기';
+  tab.title = (tab.title || '메모') + ' · 위로 끌어올려 휴지통에 보내기';
 }
 
 function setTabText(n) { const b = $(`.tab[data-id="${n.id}"] .k`); if (b) b.textContent = memoTitle(n) || '새 메모'; }
@@ -3215,6 +3374,7 @@ function refreshOpenCards() {
   }
 }
 function closeAll({ keepDock = false } = {}) {
+  shelfListId=null;
   for (const [id, { sheet }] of parkedSheets) {
     commitCurrent(byId(id));
     sheet.remove();
@@ -3239,6 +3399,7 @@ function toggleNote(id) {
 }
 function openNote(id) {
   const n = byId(id); if (!n) return;
+  shelfListId=null;
   const weeks = Math.floor((Date.now() - (n.viewedAt || n.createdAt)) / (7 * DAYMS));
   if (modalKind === 'board') closeBoard();
   const mounted = parkedSheets.has(id) || openId === id;
@@ -3351,7 +3512,7 @@ function renderCard(n) {
   const titleInput = h('input', {
     class: basic ? 'basic-note-caption' : 'kw', type: 'text', maxlength: '40',
     placeholder: '제목', 'aria-label': '메모 제목', value: memoTitle(n),
-    oninput: (e) => { n.title = e.target.value; n.keyword = ''; n.kwManual = true; setTabText(n); save(); },
+    oninput: (e) => { n.updatedAt = Date.now(); n.title = e.target.value; n.keyword = ''; n.kwManual = true; setTabText(n); save(); },
   });
   const onBlur = () => {
     if (!memoTitle(n).trim() && n.text.trim()) {
@@ -3368,7 +3529,7 @@ function renderCard(n) {
     void addPhotos(n, images);
     return true;
   };
-  const editor = window.BasicNote.editor(n, h, { onChange: save, onBlur, onImages, onView: (i) => openViewer(n, i) });
+  const editor = window.BasicNote.editor(n, h, { onChange: () => { n.updatedAt=Date.now(); save(); }, onBlur, onImages, onView: (i) => openViewer(n, i) });
   activeNoteEditor = editor;
   const body = editor.el;
   const paperShape = pp && tp.paperShapes?.length > 1 && h('select', { class: 'paper-shape secsel', title: '메모지 모양', 'aria-label': '메모지 모양',
@@ -3387,12 +3548,19 @@ function renderCard(n) {
 
   card.addEventListener('dragover', (e) => { if ([...(e.dataTransfer?.types || [])].includes('Files')) { e.preventDefault(); card.classList.add('drop'); } });
   card.addEventListener('dragleave', (e) => { if (!card.contains(e.relatedTarget)) card.classList.remove('drop'); });
-  card.addEventListener('drop', (e) => { card.classList.remove('drop'); const fs = imageFiles(e.dataTransfer?.files); if (fs.length) { e.preventDefault(); const point = document.caretRangeFromPoint(e.clientX, e.clientY); addPhotos(n, fs, point && body.contains(point.commonAncestorContainer) ? point : undefined); } });
+  card.addEventListener('drop', (e) => { card.classList.remove('drop'); const fs = imageFiles(window.MemoDrop.files(e.dataTransfer)); if (fs.length) { e.preventDefault(); const point = document.caretRangeFromPoint(e.clientX, e.clientY); addPhotos(n, fs, point && body.contains(point.commonAncestorContainer) ? point : undefined); } });
   card.addEventListener('pointerdown', (e) => { if (!e.target.closest('.stk,.sbar') && selStk) { selStk = null; renderStickers(n); } });
 
   const pal = h('div', { class: 'pal', hidden: true, role: 'menu', 'aria-label': '스티커' }, (tp?.stickers ?? PAL).map((k) =>
     h('button', { type: 'button', role: 'menuitem', 'aria-label': STK[k].n, title: STK[k].n, onclick: () => { pal.hidden = true; addSticker(n, k); }, html: stkSVG(k) })));
   const aiBtn = h('button', { class: 'btn primary', type: 'button', id: 'aiBtn', onclick: () => organizeNote(n, {}) }, iel('sparkle', 16), 'AI 정리');
+  const albumButton = api.notion ? h('button',{class:'note-album',type:'button',onclick:async e=>{
+    const button=e.currentTarget; button.disabled=true;
+    try {
+      const r=await api.notion('export',{title:memoTitle(n),text:n.text,section:secOf(n).name,photos:n.photos});
+      toast({title:r.ok?'노션 앨범에 담았어요.':r.error || '노션 저장을 확인하세요.',ttl:4500});
+    } finally {button.disabled=false;}
+  }},'앨범에 담기') : null;
   const delBtn = h('button', { class: 'btn icon del', type: 'button', 'aria-label': '휴지통으로 보내기', title: '휴지통으로 보내기', onclick: () => trashNote(n) }, iel('trash', 16));
   const bar = h('div', { class: 'bar' }, pal,
     h('div', { class: 'row' },
@@ -3414,7 +3582,7 @@ function renderCard(n) {
       } }, '⋯');
     card.prepend(h('header', { class: 'basic-note-head' },
       h('button', { class: 'basic-icon', type: 'button', 'aria-label': '새 메모', title: '새 메모', onclick: () => newNote(), html: ico('plus', 16) }),
-      titleInput, menu,
+      titleInput, albumButton, menu,
       h('button', { class: 'basic-icon', type: 'button', 'aria-label': '메모 닫기', title: '메모 닫기', onclick: closeNote, html: ico('x', 16) })));
     editor.toolbar.append(filePicker({ cls: 'basic-photo', title: '사진 첨부', label: '사진 첨부', onFiles: onImages }, iel('image', 16)));
     if (pp && tp.noteColors.length > 1) editor.toolbar.append(h('span', { class: 'paper-colors', role: 'group', 'aria-label': '메모지 색' },
@@ -3423,6 +3591,8 @@ function renderCard(n) {
         onclick: () => { n.paperColor = c.id; save(); renderCard(n); renderTabs(); } }))));
     if (paperShape) editor.toolbar.append(paperShape);
     card.append(editor.toolbar);
+  } else if (albumButton) {
+    content.append(albumButton);
   }
   for (const key of ['width', 'height']) {
     const value = n.size?.[key];
@@ -3626,7 +3796,7 @@ async function addPhotos(n, files, dropRange) {
     n.photos.push(...sources);
     if (openId === n.id) renderCard(n);
   }
-  n.viewedAt = Date.now(); save(); renderTabs();
+  n.updatedAt = n.viewedAt = Date.now(); save(); renderTabs();
   const message = '사진 ' + sources.length + '장 넣었어요.';
   if (openId === n.id) perchSay(message, 3500);
   else say(message, { ttl: 5000, actions: [{ label: '메모 보기', run: () => openNote(n.id) }] });
@@ -3634,7 +3804,13 @@ async function addPhotos(n, files, dropRange) {
 }
 async function openPhotoNote(files) {
   const existing = openId && byId(openId);
-  if (existing) { await addPhotos(existing, files); return; }
+  if (existing) {
+    if (viewerKeys) closeViewer();
+    else if (modalKind === 'settings') closeSettings();
+    await addPhotos(existing, files);
+    if (byId(existing.id)) openNote(existing.id);
+    return;
+  }
   const note = blankNote();
   for (const file of files.slice(0, MAX_PHOTOS)) {
     try { note.photos.push(await readPhoto(file)); }
@@ -3680,7 +3856,7 @@ function bindImageDrop(el, target, makeNew) {
   el.addEventListener('dragleave', () => el.classList.remove('dropping'));
   el.addEventListener('drop', async (e) => {
     el.classList.remove('dropping');
-    const fs = imageFiles(e.dataTransfer?.files); if (!fs.length) return;
+    const fs = imageFiles(window.MemoDrop.files(e.dataTransfer)); if (!fs.length) return;
     e.preventDefault(); e.stopPropagation();
     if (modalKind === 'board') closeBoard();
     let n = target();
@@ -3849,6 +4025,7 @@ function tick() {
     if (now - e.at > 6 * 3600000) { e.fired = true; e.missed = true; dirty = true; continue; }
     fire(n, e); dirty = true;
   }
+  deliverWeeklyLetter(now);
   void announcePetSchedule(now);
   if (dirty) { save(); renderTabs(); refreshAgenda(); }
 }
@@ -4227,7 +4404,7 @@ function scheduleRow(n, e) {
   const t = TH(n.theme).tab;
   return h('div', { class: 'arow' + (e.done ? ' done' : '') },
     h('button', { class: 'ck', type: 'button', 'aria-label': e.done ? '완료 취소' : '완료', onclick: () => {
-      e.done = !e.done; save(); refreshAgenda(); renderTabs();
+      e.done = !e.done; e.doneAt = e.done ? Date.now() : null; save(); refreshAgenda(); renderTabs();
       const line = e.done && voiceLine('completed', { count: todayEvents().length }, '');
       if (line) toast({ title: line, theme: n.theme, ttl: 4500 });
     }, html: ico('check', 14) }),
@@ -4264,6 +4441,24 @@ async function openSettings() {
   modalOpen = true; modalKind = 'settings'; updateHit(); api.focus();
   const m = $('#modal'); m.hidden = false;
   const st = S.settings;
+  const notionPanel = h('div',{});
+  if (api.notion) {
+    const state=await api.notion('status');
+    const link=h('input',{type:'url',placeholder:'앨범 페이지 링크','aria-label':'노션 앨범 페이지 링크'});
+    const token=h('input',{type:'password',placeholder:'노션 API 토큰',autocomplete:'off','aria-label':'노션 API 토큰'});
+    const label=h('p',{class:'note',role:'status'},state.connected?'앨범 연결됨':'개인 앨범 페이지에 PeeKit 연결을 추가하세요.');
+    const button=h('button',{class:'btn',type:'button',onclick:async()=>{
+      button.disabled=true;
+      try {
+        const r=await api.notion(state.connected?'clear':'connect',{link:link.value,token:token.value});
+        if (r.ok) {state.connected=r.connected;token.value='';link.hidden=token.hidden=state.connected;}
+        label.textContent=r.ok?(state.connected?'앨범 연결됨':'연결 해제됨'):r.error;
+        button.textContent=state.connected?'연결 해제':'앨범 연결';
+      } finally {button.disabled=false;}
+    }},state.connected?'연결 해제':'앨범 연결');
+    link.hidden=token.hidden=state.connected;
+    notionPanel.append(h('h4',{},'노션 앨범'),link,token,button,label);
+  }
   let calendarState = await api.calendar?.('status');
   let calendarBusy = false;
   const calendarAction = async action => {
@@ -4328,7 +4523,7 @@ async function openSettings() {
   };
   async function resetSettings() {
     if (characterBusy) return;
-    for (const key of [...Object.keys(settingLabels), 'petName', 'weatherCity']) st[key] = DEFAULTS[key];
+    for (const key of [...Object.keys(settingLabels), 'petName', 'weatherCity', 'letterDay', 'letterTime']) st[key] = DEFAULTS[key];
     dockFolded = false;
     applyNoteFont(); api.applySettings({ petSize: st.petSize, launchAtLogin: st.launchAtLogin, modeOverride: st.modeOverride, proPreview: st.proPreview });
     applySide(); applyMode(); queuePerch();
@@ -4464,8 +4659,17 @@ async function openSettings() {
           h('li',{},(e.allDay ? '종일' : new Date(e.start).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}))+' · '+e.title))) :
           h('p',{class:'note'},'오늘은 등록된 일정이 없어요.')) : null,
       ] : null,
+      h('h4', {}, '주간 편지'),
+      h('div', { class:'row' }, h('label', { for:'letter-day' }, '받는 요일'),
+        h('select', { id:'letter-day', onchange:e => { st.letterDay = Number(e.target.value); S.lettersSince = Date.now(); save(); } },
+          Array.from('일월화수목금토', (day, i) => h('option', {value:i, selected:i === st.letterDay}, day+'요일')))),
+      h('div', { class:'row' }, h('label', { for:'letter-time' }, '받는 시간'),
+        h('input', { id:'letter-time', type:'time', value:st.letterTime, onchange:e => {
+          if (!e.target.value) { e.target.value = st.letterTime; return; }
+          st.letterTime = e.target.value; S.lettersSince = Date.now(); save();
+        } })),
       h('h4', {}, '날씨'),
-      keys.direct ? keyRow('kma','기상청 인증키','공공데이터포털 인증키','앱을 종료하면 입력한 키가 지워져요.') : null,
+      keyRow('kma','기상청 인증키','공공데이터포털 단기예보 인증키',keys.direct ? '앱을 종료하면 입력한 키가 지워져요.' : '이 컴퓨터에서 사용할 기상청 단기예보 인증키를 입력하세요.'),
       h('p', {class:'note'}, '자료 제공: 기상청 단기예보 · 지역의 도시 이름을 입력하세요.'),
       h('div', { class: 'row' }, h('label', { for: 'wcity', style: 'min-width:96px' }, '지역'),
         h('input', { type: 'text', id: 'wcity', maxlength: '20', value: st.weatherCity, placeholder: '예: 서울, 부산, 제주', onchange: (e) => { st.weatherCity = e.target.value.trim() || '서울'; save(); } }),
@@ -4476,6 +4680,7 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 알림'), settingControl('preNormal', [[0, '없음'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '아침 브리핑'), settingControl('morningBrief', [[true, '켜기'], [false, '끄기']])),
       h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '펫 일정 안내'), settingControl('petScheduleBrief', [[true, '켜기'], [false, '끄기']])),
+      api.notion ? notionPanel : null,
       h('h4', {}, 'AI 연결'),
       keys.builtin ? builtinAI() : [
         keyRow('openai','OpenAI API 키','OpenAI 키 붙여넣기',keys.direct ? '앱을 종료하면 입력한 키가 지워져요.' : '키를 등록하면 메모 정리와 병합에 우선 사용하며 요금은 본인 OpenAI 계정에 청구돼요.'),
@@ -4615,6 +4820,7 @@ function mergeControls(total) {
 }
 let viewingTrash = false;
 function openBoard(filter) {
+  letterView = false;
   viewingTrash = false;
   overviewDay = startOfDay(new Date());
   if (openId) closeAll();
@@ -4909,7 +5115,59 @@ function renderTrashBoard() {
       h('button', { class: 'overview-icon', type: 'button', 'aria-label': '닫기', onclick: closeBoard }, iel('x', 16))), list));
   updateHit();
 }
+let letterView = false;
+let letterIndex = 0;
+const letterGreetings = {
+  'mono-cat':'이번 주도 잘 버텼네. 네가 해낸 일, 내가 기억해 뒀어.',
+  'vintage-teddy':'주인님께, 한 주 동안 애쓰셨습니다. 이번 주 기록을 살펴보았습니다.',
+  'block-dino':'이번 주도 제법이구먼. 자네가 남긴 기록을 같이 보세.',
+  'pastel-octopus':'이번 주도 수고 많았어요. 여덟 팔로 소중히 모은 소식을 전해요!',
+  'basic-memoring':'한 주 동안 차곡차곡 남긴 기록을 편지에 담았어요!',
+};
+function deliverWeeklyLetter(now) {
+  const delivery = WeeklyLetter.due(now, S.settings, S.lettersSince, S.letters);
+  if (!delivery) return;
+  const id = S.settings.character;
+  S.letters.unshift({ ...delivery, ...WeeklyLetter.summary(S.notes, delivery.at), id, name:C.charName(S), read:false });
+  save();
+  if (modalKind === 'board') { if (letterView) letterIndex = Math.min(letterIndex + 1, S.letters.length - 1); renderBoard(); }
+  toast({title:C.charName(S)+'의 주간 편지가 도착했어요', actions:[{label:'편지 열기',run:openLetters}], ttl:10000});
+}
+function openLetters() {
+  openBoard(); letterView = true; letterIndex = 0; renderBoard();
+}
+function renderLetters() {
+  const letter = S.letters[letterIndex];
+  const name = letter?.name || C.charName(S);
+  const id = letter?.id || S.settings.character;
+  const weekday = '일월화수목금토'[S.settings.letterDay];
+  const date = at => new Date(at).toLocaleDateString('ko-KR',{month:'long',day:'numeric',weekday:'long'});
+  const sign = id === 'mono-cat' ? '까망이가' : name+' 올림';
+  const article = letter && h('article',{class:'letter-paper'},
+    h('small',{},date(letter.at)),h('h2',{},'이번 주를 마치며'),
+    h('p',{},letterGreetings[id] || '이번 주의 소식을 전해요!'),
+    h('p',{},`이번 주 새로 남긴 메모는 ${letter.notes}개예요.`),
+    [['이번 주에 마친 일',letter.done || '완료로 표시한 일이 없어요.'],
+     ['아직 챙기실 일',letter.pending || '남아 있는 일정이 없어요.'],
+     ['다음 주 첫 일정',letter.next ? date(letter.next.at)+' '+(letter.next.allDay ? '종일' : upcomingTime.format(letter.next.at))+' · '+letter.next.title : '등록된 일정이 없어요.']
+    ].map(([heading,body]) => h('section',{},h('strong',{},heading),h('p',{},body))),
+    h('footer',{},sign));
+  const justOpened = letter && !letter.read;
+  if (justOpened) { letter.read=true; save(); }
+  const portrait = h('div',{class:'letter-portrait', 'aria-hidden':'true', html:C.charHTML(id,S.settings.customChar)});
+  $('#modal').replaceChildren(h('section',{class:'mikkang-overview letter-desk','aria-label':'주간 편지'},
+    h('header',{class:'overview-toolbar'},h('h1',{},name+'의 주간 편지'),h('small',{},weekday+'요일 '+S.settings.letterTime),
+      h('button',{class:'overview-icon',type:'button','aria-label':'편지 닫기',onclick:() => {letterView=false;renderBoard();}},iel('x',18))),
+    h('div',{class:'letter-layout'},h('aside',{class:'letter-sender','data-author':id},
+      h('span',{class:'letter-envelope','aria-hidden':'true','data-unread':String(!!justOpened)},'✉'),
+      h('small',{},letter ? (justOpened ? '새 편지' : '받은 편지') : '편지함'),portrait,
+      S.letters.length > 1 && h('select',{'aria-label':'지난 편지',onchange:e=>{letterIndex=Number(e.target.value);renderLetters();}},
+        S.letters.map((l,i)=>h('option',{value:i,selected:i===letterIndex},date(l.at))))),
+      article || h('article',{class:'letter-paper'},h('h2',{},'첫 편지를 기다리는 중이에요'),h('p',{},`매주 ${weekday}요일 ${S.settings.letterTime}에 편지가 도착해요.`)))));
+  updateHit();
+}
 function renderBoard() {
+  if (letterView) { renderLetters(); return; }
   if (viewingTrash) { renderTrashBoard(); return; }
   const m = $('#modal'), ov = boardOverview();
   const previousScroll = $('.overview-grid')?.scrollTop || 0;
@@ -5004,7 +5262,7 @@ function renderBoard() {
     !visible.length && !overviewEditing ? h('p', { class: 'overview-card overview-muted' }, '위젯 편집에서 표시할 항목을 고를 수 있어요.') : null);
   const panel = h('div', { class: 'mikkang-overview', role: 'region', 'aria-label': '전체보기' },
     h('header', { class: 'overview-toolbar' },
-      h('h1', {}, '전체보기'), h('time', { datetime: P.isoLocal(today).slice(0, 10) }, fmtDate(today)),
+      h('h1', {}, '전체보기'), h('button',{class:'btn weekly-inbox',type:'button',onclick:openLetters}, S.letters.some(l=>!l.read) ? '✉ 새 편지' : '✉ 편지함'), h('time', { datetime: P.isoLocal(today).slice(0, 10) }, fmtDate(today)),
       total && visible.some(({ id }) => id === 'memos') ? search : null,
       h('button', { class: 'btn overview-edit', type: 'button', 'aria-expanded': String(overviewEditing), onclick: () => {
         overviewEditing = !overviewEditing;
@@ -5059,6 +5317,10 @@ function normalize(s) {
   if (s.settings.character !== 'custom' && !Object.hasOwn(C.CHARS, s.settings.character)) {
     s.settings.character = DEFAULTS.character;
   }
+  if (!Array.isArray(s.letters)) s.letters = [];
+  if (!Number.isFinite(s.lettersSince)) s.lettersSince = Date.now();
+  if (!Number.isInteger(s.settings.letterDay) || s.settings.letterDay < 0 || s.settings.letterDay > 6) s.settings.letterDay = 5;
+  if (!/^([01]\d|2[0-3]):[0-5]\d$/.test(s.settings.letterTime)) s.settings.letterTime = '17:00';
   s.settings.overviewLayout = normalizeOverviewLayout(s.settings.overviewLayout);
   if (s.settings.modeOverride === 'pet') s.settings.modeOverride = 'auto';
   // 이전 웹 버전(chaekgalpi-memo-v1) 데이터의 side 값을 이어받는다
@@ -5107,7 +5369,8 @@ function placeBookmarkPet() {
   pet.style.left = clamp(rect.right - stage.left - size - 4, 0, W() - size) + 'px';
   const seatLevel = { 'mono-cat': .96, 'block-dino': .76 };
   const perchHeight = size * (seatLevel[species] ?? .88);
-  pet.style.top = Math.max(0, rect.top - stage.top - perchHeight) + 'px';
+  const topClearance = parseFloat(getComputedStyle(pet).getPropertyValue('--bookmark-top-clearance'));
+  pet.style.top = Math.max(topClearance, rect.top - stage.top - perchHeight) + 'px';
   if (perchOrigin && !matchMedia('(prefers-reduced-motion: reduce)').matches) {
     const dx = perchOrigin.x - pet.offsetLeft, dy = perchOrigin.y - pet.offsetTop;
     const lift = Math.min(64, pet.offsetTop);
@@ -5115,7 +5378,7 @@ function placeBookmarkPet() {
     const frames = Array.from({ length: 17 }, (_, i) => {
       const t = i / 16;
       const x = dx * (1 - t) + arcX * Math.sin(Math.PI * t);
-      const y = dy * (1 - t) ** 2 - lift * Math.sin(Math.PI * t);
+      const y = Math.max(topClearance - pet.offsetTop, dy * (1 - t) ** 2 - lift * Math.sin(Math.PI * t));
       return { transform: `translate(${x}px, ${y}px)` };
     });
     pet.animate(frames, { duration: 520, easing: 'ease-in-out' });
@@ -5143,7 +5406,8 @@ function bindGlobal() {
   perch.onpointerup = (e) => { if (e.button === 2 && pressTimer) { cancel(); if (!briefed) togglePetBookmarks(); } };
   perch.onpointercancel = perch.onlostpointercapture = cancel;
   window.addEventListener('blur', cancel);
-  $('#dock').addEventListener('scroll', queuePerch);
+  $('#dock').addEventListener('scroll', () => {queuePerch();positionShelfList();});
+  addEventListener('resize',positionShelfList);
 
   api.onCursor((c) => { cursor = c; if (!c.on) cursor.x = -1; updateHit(); handleEdge(c); });
   document.addEventListener('mousemove', (e) => { cursor = { ...cursor, x: e.clientX, y: e.clientY }; updateHit(); });
@@ -5170,7 +5434,7 @@ function bindGlobal() {
     $('#stage').classList.remove('filedrag');
     e.preventDefault();
     e.stopPropagation();
-    const files = imageFiles(e.dataTransfer.files);
+    const files = imageFiles(window.MemoDrop.files(e.dataTransfer));
     if (files.length) void openPhotoNote(files);
     else void feedContent(window.MemoDrop.content(e.dataTransfer));
   }, true);
@@ -5186,7 +5450,7 @@ function bindGlobal() {
     e.preventDefault();
     if (e.defaultPrevented && e._handled) return;
     if ([...document.querySelectorAll('.dropping')].length) return;
-    const all = e.dataTransfer?.files || [], fs = imageFiles(all);
+    const all = window.MemoDrop.files(e.dataTransfer), fs = imageFiles(all);
     if (!fs.length) { if (all.length) toast({ title: '사진 파일만 넣을 수 있어요', ttl: 3000 }); return; }
     if (e.target.closest && e.target.closest('.card,.tab,.overview-item,.bgroup')) return; // 각자 처리
     if (modalKind === 'board') closeBoard();

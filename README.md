@@ -1,10 +1,10 @@
-# 귤메모 (Mikang Memo)
+# PeeKit
 
 바탕화면 가장자리에 책갈피처럼 붙어 있는 메모지 + AI 비서 캐릭터. Windows와 macOS에서 동작하는 Electron 앱입니다.
 
 **[Windows 실행파일 바로 받기](https://github.com/forethinkfi/HK06_mikangscone/raw/refs/heads/main/MikangMemo-Windows.exe)** · Windows 64비트. 다운로드 폴더에서 약 196MB인 `MikangMemo-Windows.exe`를 더블클릭하면 설치 없이 실행돼요.
 
-**macOS 다운로드** · [Apple Silicon (M 시리즈)](https://github.com/forethinkfi/HK06_mikangscone/raw/refs/heads/main/MikangMemo-macOS-AppleSilicon.dmg) · [Intel Mac](https://github.com/forethinkfi/HK06_mikangscone/raw/refs/heads/main/MikangMemo-macOS-Intel.dmg). `.dmg`를 열고 **Mikang Memo**를 응용 프로그램 폴더에 옮긴 뒤 실행하세요.
+**macOS 다운로드** · [Apple Silicon (M 시리즈)](https://github.com/forethinkfi/HK06_mikangscone/raw/refs/heads/main/MikangMemo-macOS-AppleSilicon.dmg) · [Intel Mac](https://github.com/forethinkfi/HK06_mikangscone/raw/refs/heads/main/MikangMemo-macOS-Intel.dmg). `.dmg`를 열고 **PeeKit**를 응용 프로그램 폴더에 옮긴 뒤 실행하세요.
 
 `main`의 앱 코드가 바뀌면 GitHub Actions가 세 파일을 다시 빌드하고 검증한 뒤 저장소 최상위 파일을 Git LFS로 갱신해요.
 
@@ -96,7 +96,7 @@ npm run dist:win
 npm run dist:mac
 ```
 
-결과물은 `dist/` 폴더에 생겨요. Windows는 단독 실행 파일 `MikangMemo-Windows.exe`와 `.exe` 설치 파일, macOS는 `.dmg`가 만들어져요.
+결과물은 `dist/` 폴더에 생겨요. Windows는 단독 실행 파일 `PeeKit-Windows.exe`와 `.exe` 설치 파일, macOS는 `.dmg`가 만들어져요.
 
 GitHub에서 자동으로 만들 수도 있어요: 저장소의 **Actions → Build desktop app → Run workflow**를 누르면 Windows·macOS 설치 파일이 아티팩트로 올라와요. `v0.2.0`처럼 `v`로 시작하는 태그를 올려도 실행돼요.
 
@@ -118,7 +118,7 @@ GitHub에서 자동으로 만들 수도 있어요: 저장소의 **Actions → Bu
   - Windows: 맨 앞 창이 바탕화면(Progman/WorkerW)이면 책갈피 모드예요. 작업표시줄이나 시작 메뉴를 누를 때는 상태를 유지해요.
   - macOS: Finder가 맨 앞에 있으면 바탕화면으로 봐요. (Finder 창을 열어 둔 상태도 바탕화면으로 취급돼요.)
   - 원하는 대로 안 되면 트레이 메뉴 → **화면 모드**에서 `항상 책갈피` / `항상 캐릭터만`을 고를 수 있어요. 설정에서 “웹 브라우저를 쓸 때만 캐릭터” 모드도 고를 수 있어요.
-- **macOS 권한**: 알림이 안 보이면 시스템 설정 → 알림에서 Mikang Memo를 허용하세요.
+- **macOS 권한**: 알림이 안 보이면 시스템 설정 → 알림에서 PeeKit를 허용하세요.
 - **여러 모니터**: 주 모니터에 붙어요.
 - **단축키**: `Ctrl/⌘+Shift+M` 책갈피 펼치기.
 - **데이터 위치**: 설정 → 데이터 폴더 열기 (메모는 `data.json`).
