@@ -39,7 +39,7 @@ interface Companion {
   toyPlay?: { origin: Vec2; position: Vec2; strike: Vec2; aim: Vec2; side: -1 | 1; hit: boolean };
 }
 
-let petSize = 80;
+let petSize = 72;
 const BRIEFING_HOLD_MS = 1200;
 
 function sizeSpecies(species: SpeciesConfig): SpeciesConfig {
@@ -292,7 +292,8 @@ async function main(): Promise<void> {
       const state = new PetStateMachine();
       const animation = new AnimationController();
       const size = petSize;
-      const x = floorX(bounds.width * 0.25 + index * 160, size);
+      const startX = species.id === 'basic-memoring' ? bounds.width - size - 24 : bounds.width * 0.25 + index * 160;
+      const x = floorX(startX, size);
       const patrolDirection = species.motions?.frontWalk && species.motions.backWalk ?
         (x > (bounds.width - size) / 2 ? 1 : -1) : undefined;
       const behavior = new BehaviorController(state, species.behavior, { x, y: 0 }, () => ['idle', 'sit', 'sleep'], patrolDirection);

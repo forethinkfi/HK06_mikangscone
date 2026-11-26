@@ -29,13 +29,14 @@ function loadKeys() {
 }
 function setKey(name, value) {
   loadKeys();
-  if (value) keys[name] = String(value).trim(); else delete keys[name];
+  const slot = name;
+  if (value) keys[slot] = String(value).trim(); else delete keys[slot];
   const txt = JSON.stringify(keys);
   fs.mkdirSync(dir(), { recursive: true });
   fs.writeFileSync(file('keys.bin'), safeStorage.isEncryptionAvailable() ? safeStorage.encryptString(txt) : Buffer.from(txt, 'utf8'));
 }
-const getKey = (name) => loadKeys()[name] || process.env.ANTHROPIC_API_KEY || '';
-const keyStatus = () => ({ anthropic: !!getKey('anthropic') });
+const getKey = name => loadKeys()[name] || (name === 'anthropic' ? process.env.ANTHROPIC_API_KEY : '') || '';
+const keyStatus = () => ({ openai: !!getKey('openai'), anthropic: !!getKey('anthropic'), hosted: !!getKey('hosted') });
 
 module.exports = {
   dir, loadState: () => readJSON('data.json', null), saveState: (s) => writeJSON('data.json', s),

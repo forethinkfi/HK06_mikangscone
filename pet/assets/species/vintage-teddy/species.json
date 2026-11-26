@@ -22,7 +22,6 @@
     },
     "sleep": {
       "sheet": "sprites/sleep.png",
-      "mirrorWhen": "always",
       "frameWidth": 192,
       "frameHeight": 192,
       "frameCount": 8,

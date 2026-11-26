@@ -58,3 +58,9 @@ body {
 :is(.speech, .pet-briefing)[data-below]::after { top: -6px; bottom: auto; transform: translateX(-50%) rotate(225deg); }
 .pet-briefing strong { font-size: 11px; }
 .pet-briefing span { margin-top: 4px; display: block; white-space: pre-line; }
+
+.pet-briefing[data-speaker="mono-cat"]::before {
+  content:""; display:block; width:52px; height:52px; margin:0 auto 4px;
+  background:url("../../../src/themes/mono-sketch/briefing.webp") center/contain no-repeat;
+}
+:is(.speech,.pet-briefing)[data-speaker="basic-memoring"] { background:#fff3c6; color:#3b2a22; border:2px solid #3b2a22; }

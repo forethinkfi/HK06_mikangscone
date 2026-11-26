@@ -1,0 +1,22 @@
+[data-theme-pack="basic"] {
+  --mikkang-ink:#18181b; --mikkang-muted:#71717a; --mikkang-surface:#fff;
+  --mikkang-paper:#fafafa; --mikkang-sage-light:#f4f4f5; --mikkang-yellow:#fef3c7;
+  --mikkang-shadow:0 1px 2px #0000000f; --floating-shadow:0 8px 20px #0000001a;
+  --mikkang-line:#e4e4e7; --mikkang-action:#18181b; --mikkang-bg:#fafafa;
+}
+.memoring-avatar { display:inline-block; width:100%; height:100%; background:url('memoring.png') center/contain no-repeat; }
+[data-theme-pack="basic"] #bookmark-pet[data-species="basic-memoring"] { background-image:url('memoring.png'); }
+[data-theme-pack="basic"] .basic-note .card { background:var(--pc); color:var(--pi); border-radius:10px; box-shadow:0 8px 20px #0001; }
+[data-theme-pack="basic"] .basic-note-head { min-height:40px; background:var(--pt); }
+[data-theme-pack="basic"] .stage .tab.sec { width:140px; min-height:32px; background:white; border-left:4px solid var(--tc); color:#18181b; font-size:13px; font-weight:700; }
+[data-theme-pack="basic"] .stage .tab.sub { width:128px; min-height:28px; background:var(--tc); font-size:12px; }
+[data-theme-pack="basic"] .stage .tab.sub.open { border:1.5px solid #18181b; }
+[data-theme-pack="basic"] .bubble { background:#fff3c6; border:2px solid #3b2a22; }
+[data-theme-pack="basic"] .overview-avatar { width:56px; height:56px; }
+
+[data-theme-pack="basic"].memoring-holiday .memoring-avatar { background-image:url('christmas.png'); }
+[data-theme-pack="basic"].memoring-rain .memoring-avatar { background-image:url('rain.png'); }
+[data-theme-pack="basic"] .mikkang-overview { background:#fafafa radial-gradient(#e4e4e7 1px, transparent 1px) 0 0/16px 16px; }
+[data-theme-pack="basic"] .basic-note .card .basic-note-head { color:var(--pi); }
+[data-theme-pack="basic"] .stage .tab:is(.sec,.sub) { transform:none; border-radius:8px; }
+[data-theme-pack="basic"] .basic-note .card { box-shadow:var(--floating-shadow); }

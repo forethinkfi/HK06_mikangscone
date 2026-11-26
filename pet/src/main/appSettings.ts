@@ -7,7 +7,7 @@ interface PersistedSettings {
   dismissedSpeciesIds?: string[];
 }
 
-export const DEFAULT_SPECIES_ID = 'mono-cat';
+export const DEFAULT_SPECIES_ID = 'basic-memoring';
 
 /**
  * Small, generalized settings store — starts with just the selected

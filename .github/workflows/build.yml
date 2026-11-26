@@ -46,7 +46,7 @@ jobs:
             for ($attempt = 0; $attempt -lt 45; $attempt++) {
               if ($launcher.HasExited) { throw "Standalone app exited with code $($launcher.ExitCode)" }
               $saved = Get-Content -Raw -LiteralPath $state -ErrorAction SilentlyContinue | ConvertFrom-Json
-              if ($saved.settings.character -eq 'mono-cat' -and $saved.settings.themePack -eq 'mono-sketch') { $started = $true; break }
+              if ($saved.settings.character -eq 'basic-memoring' -and $saved.settings.themePack -eq 'basic') { $started = $true; break }
               Start-Sleep -Seconds 1
             }
             if (!$started) { throw 'Standalone app did not finish starting' }
@@ -57,7 +57,7 @@ jobs:
             $repeat = Start-Process -FilePath $exe -WorkingDirectory $env:RUNNER_TEMP -WindowStyle Hidden -PassThru
             if (!$repeat.WaitForExit(45000)) { throw 'Second launch did not return to the running app' }
             if ($launcher.HasExited) { throw 'Second launch closed the running app' }
-            foreach ($id in @('mono-cat', 'pastel-octopus', 'vintage-teddy', 'block-dino')) {
+            foreach ($id in @('basic-memoring', 'mono-cat', 'pastel-octopus', 'vintage-teddy', 'block-dino')) {
               $folder = Join-Path $pets $id
               $species = Get-Content -Raw -LiteralPath (Join-Path $folder 'species.json') | ConvertFrom-Json
               if ($species.id -ne $id -or !(Test-Path -LiteralPath (Join-Path $folder $species.animations.idle.sheet))) {
@@ -132,3 +132,28 @@ jobs:
             if git push origin HEAD:main; then exit 0; fi
           done
           exit 1
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: MikangMemo-jhj-*
+          path: packages
+          merge-multiple: true
+      - name: Publish verified installers
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          set -euo pipefail
+          version="${GITHUB_REF_NAME#v}"
+          cd packages
+          assets=("Mikang Memo-jhj-$version-windows-setup.exe" "MikangMemo-Windows.exe"
+                  "Mikang Memo-jhj-$version-mac-arm64.dmg" "Mikang Memo-jhj-$version-mac-x64.dmg")
+          for file in "${assets[@]}"; do test -s "$file"; done
+          gh release create "$GITHUB_REF_NAME" "${assets[@]}" --repo "$GITHUB_REPOSITORY" --verify-tag --title "Mikang Memo $GITHUB_REF_NAME" --generate-notes

@@ -80,7 +80,7 @@ function selectCharacter(id) {
   S.settings.character = id;
   S.settings.themePack = theme.id;
   document.documentElement.dataset.themePack = theme.id;
-  if (openId && byId(openId)) renderCard(byId(openId));
+  refreshOpenCards();
   if (peek.open) renderPeek();
   renderTabs();
   if (modalKind === 'board') renderBoard();
@@ -160,8 +160,8 @@ const DEFAULTS = {
   character: C.defaultId, petName: '', customChar: '', side: 'right',
   modeOverride: 'auto', peek: true, peekDelay: 350,
   autoOrganize: true, preDeadline: 60, preNormal: 10, morningBrief: true, petScheduleBrief: true,
-  launchAtLogin: true, weatherCity: '서울', themePack: window.__defaultThemePack || 'default',
-  petSize: 80, proPreview: false,
+  launchAtLogin: true, weatherCity: '서울', themePack: window.__defaultThemePack || 'basic',
+  petSize: 72, noteFontSize: 15, proPreview: false,
 };
 let S = null, saveT = 0;
 let saveWarned = false;
@@ -190,7 +190,10 @@ const DEFAULT_SECTIONS = () => [{ id: 's-work', name: '업무', color: 0 }, { id
 const secById = (id) => S.sections.find((x) => x.id === id);
 const secIdOf = (n) => (n.sectionId && secById(n.sectionId) ? n.sectionId : '');
 const secOf = (n) => secById(secIdOf(n)) || INBOX;
-const secColor = (x) => SEC_COLORS[(x.color || 0) % SEC_COLORS.length];
+const monoSectionColors = ['#ffffff', '#ededed', '#dadada', '#bdbdbd', '#999999', '#707070', '#484848', '#202020']
+  .map((bg, i) => ({ bg, ink: i >= 5 ? '#ffffff' : '#181818' }));
+const sectionPalette = () => themePack()?.id.startsWith('mono-sketch') ? monoSectionColors : SEC_COLORS;
+const secColor = (x) => sectionPalette()[(x.color || 0) % SEC_COLORS.length];
 const notesIn = (id) => S.notes.filter((n) => secIdOf(n) === id);
 const SEC_HINTS = [
   [/업무|회사|일|프로젝트|직장|학교|공부/, /회의|미팅|발표|제출|마감|보고|기획|업무|자료|출장|메일|프로젝트|고객|계약|과제|시험|수업/],
@@ -220,7 +223,8 @@ const petIdFor = (id) => id === 'custom' ? S.settings.customPetId : C.CHARS[id]?
 let bubble = { open: false, menu: false, t: 0 };
 let peek = { open: false, side: null, idx: 0, list: [] };
 let cursor = { x: -1, y: -1, edge: null }, interactive = false, dragging = false;
-let keys = { anthropic: false }, info = { platform: '', demo: false };
+const canOrganize = () => keys.openai || keys.hosted || keys.anthropic;
+let keys = { anthropic: false, hosted: false }, info = { platform: '', demo: false };
 let mood = 'idle', moodT = 0;
 
 /* ─────────── 책갈피와 전체보기 표시 ─────────── */
@@ -271,7 +275,8 @@ function renderTabs() {
       const wrap = h('div', { class: 'subs', role: 'group', 'aria-label': `${x.name} 메모` });
       list.forEach((n) => {
         const t = TH(n.theme);
-        const st = h('button', { class: 'tab sub' + (openId === n.id ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, title: memoTitle(n), style: `--tc:${(paperOf(n) || t.tab).tab || t.tab.bg};--ti:${(paperOf(n) || t.tab).ink || t.tab.ink}`, onclick: () => toggleNote(n.id) },
+        const tabPaper = themePack()?.id.startsWith('mono-sketch') ? secColor(secOf(n)) : paperOf(n) || t.tab;
+        const st = h('button', { class: 'tab sub' + ((openId === n.id || parkedSheets.has(n.id)) ? ' open' : '') + (n.ring ? ' ring' : ''), type: 'button', 'data-id': n.id, title: memoTitle(n), style: `--tc:${tabPaper.tab || tabPaper.bg};--ti:${tabPaper.ink || t.tab.ink}`, onclick: () => toggleNote(n.id) },
           h('span', { class: 'k' }, memoTitle(n) || '새 메모'));
         bindTrashDrag(st, n);
         bindImageDrop(st, () => byId(n.id));
@@ -294,6 +299,8 @@ function renderTabs() {
     onclick: () => { togglePetBookmarks(); $('#bookmark-expand').focus({ preventScroll: true }); } }, '책갈피 접기'));
 }
 function trashNote(note) {
+  parkedSheets.get(note.id)?.sheet.remove();
+  parkedSheets.delete(note.id);
   const i = S.notes.indexOf(note);
   if (i < 0) return;
   S.notes.splice(i, 1);
@@ -367,16 +374,66 @@ function setTabText(n) { const b = $(`.tab[data-id="${n.id}"] .k`); if (b) b.tex
 
 /* ─────────── 열기 · 닫기 ─────────── */
 const noteHash = (n) => n.title + '\u0001' + n.text + '\u0001' + n.photos.length;
-function commitCurrent() {
-  const n = openId && byId(openId); if (!n) return;
+function commitCurrent(n = openId && byId(openId)) {
+  if (!n) return;
   if (isEmpty(n)) { S.notes = S.notes.filter((x) => x !== n); return; }
   if (!memoTitle(n).trim() && n.text.trim()) n.keyword = P.guessKeyword(n.text, '');
   if (!n.summary.length && n.text.trim()) n.summary = P.summarize(n.text);
   if (!n.secManual && !secIdOf(n)) { const g = guessSection(n); if (g) n.sectionId = g; }
   // 자동화: 내용이 바뀐 채로 접으면 비서가 알아서 정리하고 알람까지 맞춘다
-  if (S.settings.autoOrganize && (n.text.trim() || (keys.anthropic && n.photos.length)) && n.orgHash !== noteHash(n)) organizeNote(n, { auto: true });
+  if (S.settings.autoOrganize && (n.text.trim() || (canOrganize() && n.photos.length)) && n.orgHash !== noteHash(n)) organizeNote(n, { auto: true });
+}
+// Keep each open editor mounted so switching notes preserves selection and undo history.
+const parkedSheets = new Map();
+function parkSheet() {
+  const sheet = $('#sheet');
+  const note = byId(openId);
+  if (!note) return;
+  for (const el of sheet.querySelectorAll('[id]')) {
+    el.dataset.editorId = el.id;
+    el.removeAttribute('id');
+  }
+  sheet.removeAttribute('id');
+  sheet.style.zIndex = '24';
+  parkedSheets.set(note.id, { sheet, editor: activeNoteEditor, details: basicDetails });
+}
+function activateSheet(id) {
+  if (openId === id) return;
+  const saved = parkedSheets.get(id);
+  if (openId) parkSheet();
+  const empty = $('#sheet');
+  if (saved) {
+    if (empty && empty !== saved.sheet) empty.remove();
+    parkedSheets.delete(id);
+    saved.sheet.id = 'sheet';
+    saved.sheet.style.removeProperty('z-index');
+    for (const el of saved.sheet.querySelectorAll('[data-editor-id]')) {
+      el.id = el.dataset.editorId;
+      delete el.dataset.editorId;
+    }
+    activeNoteEditor = saved.editor;
+    basicDetails = saved.details;
+  } else if (!empty) {
+    const sheet = h('section', { class:'sheet', id:'sheet', role:'dialog', 'aria-label':'메모지' });
+    $('#dock').after(sheet);
+  }
+  if (!saved) basicDetails = false;
+  openId = id;
+}
+function refreshOpenCards() {
+  const selected = openId;
+  if (!selected) return;
+  for (const id of [...parkedSheets.keys(), selected]) {
+    activateSheet(id);
+    renderCard(byId(id));
+  }
 }
 function closeAll({ keepDock = false } = {}) {
+  for (const [id, { sheet }] of parkedSheets) {
+    commitCurrent(byId(id));
+    sheet.remove();
+  }
+  parkedSheets.clear();
   commitCurrent();
   openId = null; selStk = null; summoned = keepDock;
   $('#sheet').classList.remove('open');
@@ -384,17 +441,30 @@ function closeAll({ keepDock = false } = {}) {
   renderTabs(); applyMode(); save();
   api.release();
 }
-function closeNote() { closeAll({ keepDock: true }); }
-function toggleNote(id) { if (openId === id) closeNote(); else openNote(id); }
+function closeNote() {
+  if (!parkedSheets.size) { closeAll({ keepDock: true }); return; }
+  commitCurrent();
+  openId = null;
+  activateSheet(Array.from(parkedSheets.keys()).pop());
+  renderTabs(); applyMode(); save();
+}
+function toggleNote(id) {
+  if (openId === id) closeNote(); else openNote(id);
+}
 function openNote(id) {
   const n = byId(id); if (!n) return;
   const weeks = Math.floor((Date.now() - (n.viewedAt || n.createdAt)) / (7 * DAYMS));
   if (modalKind === 'board') closeBoard();
-  if (openId && openId !== id) commitCurrent();
-  if (openId !== id) basicDetails = false;
+  const mounted = parkedSheets.has(id) || openId === id;
+  const previousSheet = openId && $('#sheet');
+
   closePeek(); closeBubble();
-  openId = n.id; n.ring = false; n.viewedAt = Date.now(); selStk = null; openSec = secIdOf(n);
-  renderCard(n);
+  activateSheet(n.id);
+  if (!mounted && previousSheet && !n.position) {
+    n.position = { x: previousSheet.offsetLeft + (S.settings.side === 'right' ? -28 : 28), y: previousSheet.offsetTop + 28 };
+  }
+  n.ring = false; n.viewedAt = Date.now(); selStk = null; openSec = secIdOf(n);
+  if (!mounted) renderCard(n);
   $('#sheet').classList.add('open');
   renderTabs(); applyMode(); save();
   api.focus();
@@ -412,7 +482,6 @@ function blankNote(sectionId) {
   return { id: uid(), theme: THEMES[idx].id, sectionId: sec, secManual: !!sec, title: '', text: '', keyword: '', kwManual: false, summary: [], events: [], photos: [], stickers: [], aiSource: '', createdAt: Date.now(), viewedAt: Date.now(), orgHash: '' };
 }
 function newNote(focus = true, sectionId) {
-  if (openId) commitCurrent();
   const n = blankNote(sectionId);
   S.notes.unshift(n); save(); openNote(n.id);
   if (focus) setTimeout(() => { const t = $('#sheet .body'); t && t.focus(); }, 80);
@@ -443,8 +512,10 @@ function togglePetBookmarks(anchor) {
 /* ─────────── 메모지 카드 ─────────── */
 function perchHTML() { return C.charHTML(S.settings.character, S.settings.customChar); }
 function charColor() { return C.character(S.settings.character).color; }
-function placeNote(note) {
-  const sheet = $('#sheet');
+function applyNoteFont() {
+  document.documentElement.style.setProperty('--memo-font-size', (S.settings.noteFontSize || 15) + 'px');
+}
+function placeNote(note, sheet = $('#sheet')) {
   const pos = note?.position;
   if (!Number.isFinite(pos?.x) || !Number.isFinite(pos?.y)) {
     for (const key of ['left', 'right', 'top']) sheet.style.removeProperty(key);
@@ -454,9 +525,22 @@ function placeNote(note) {
   sheet.style.left = clamp(pos.x, 0, Math.max(0, W() - sheet.offsetWidth)) + 'px';
   sheet.style.top = clamp(pos.y, 0, Math.max(0, H() - sheet.offsetHeight)) + 'px';
 }
+const sheetListeners = new WeakMap();
+function resetSheetListeners(sheet) {
+  sheetListeners.get(sheet)?.abort();
+  const controller = new AbortController();
+  sheetListeners.set(sheet, controller);
+  return controller.signal;
+}
 let activeNoteEditor;
 function renderCard(n) {
   const t = TH(n.theme), sheet = $('#sheet');
+  const activate = () => {
+    if (openId !== n.id) { activateSheet(n.id); renderTabs(); }
+  };
+  const listenerOptions = { capture: true, signal: resetSheetListeners(sheet) };
+  sheet.addEventListener('pointerdown', activate, listenerOptions);
+  sheet.addEventListener('focusin', activate, listenerOptions);
   const basic = !hasPremiumMemo();
   sheet.classList.toggle('basic-note', basic);
   sheet.classList.toggle('basic-details', basic && basicDetails);
@@ -507,7 +591,7 @@ function renderCard(n) {
       sheet.dataset.paper = n.paperShape;
       save();
     } }, tp.paperShapes.map((shape) => h('option', { value: shape, selected: shape === pp.shape }, tp.paperLabels?.[shape] ?? shape)));
-  const content = h('div', { class: 'content' }, basic ? null : titleInput, h('div', { class: 'ttlrow' }, sectionPicker(n), paperShape));
+  const content = h('div', { class: 'content' }, basic ? null : titleInput, h('div', { class: 'ttlrow' }, sectionPicker(n), basic ? null : paperShape));
   const writing = h('div', { class: 'note-writing' }, body);
   content.append(writing);
   content.append(h('div', { class: 'chips', id: 'chips' }));
@@ -551,6 +635,7 @@ function renderCard(n) {
       tp.noteColors.map((c) => h('button', { type: 'button', 'aria-label': `${c.name} 메모지`, title: c.name, 'aria-pressed': String(c.id === pp.id), style: `--sw:${c.bg}`,
         onmousedown: (e) => e.preventDefault(),
         onclick: () => { n.paperColor = c.id; save(); renderCard(n); renderTabs(); } }))));
+    if (paperShape) editor.toolbar.append(paperShape);
     card.append(editor.toolbar);
   }
   for (const key of ['width', 'height']) {
@@ -640,7 +725,7 @@ function perchSay(text, ttl = 3500) {
 }
 
 function renderChips(n) {
-  const box = $('#chips'); if (!box) return; box.replaceChildren();
+  const box = parkedSheets.get(n.id)?.sheet.querySelector('[data-editor-id=chips]') || $('#chips'); if (!box) return; box.replaceChildren();
   for (const e of n.events) {
     box.append(h('span', { class: 'chip' + (e.alarm && !e.done ? '' : ' off') },
       e.deadline ? h('span', { class: 'dl' }, '마감') : null,
@@ -738,7 +823,7 @@ async function readPhoto(file, max = 1024) {
   return c.toDataURL('image/jpeg', 0.82);
 }
 async function addPhotos(n, files, dropRange) {
-  const editor = openId === n.id ? activeNoteEditor : null;
+  const editor = openId === n.id ? activeNoteEditor : parkedSheets.get(n.id)?.editor;
   const range = dropRange || editor?.insertionRange();
   const sources = [];
   for (const file of files) {
@@ -750,7 +835,7 @@ async function addPhotos(n, files, dropRange) {
   if (files.length > available) toast({ title: '사진은 메모 하나에 ' + MAX_PHOTOS + '장까지 넣을 수 있어요', ttl: 2600 });
   sources.splice(available);
   if (!sources.length) return 0;
-  if (editor?.el.isConnected && openId === n.id) editor.insertPhotos(sources, range);
+  if (editor?.el.isConnected) editor.insertPhotos(sources, range);
   else {
     n.photos.push(...sources);
     if (openId === n.id) renderCard(n);
@@ -1074,7 +1159,7 @@ function normalizeAI(j, text) {
   return {
     keyword: keyword || P.guessKeyword(text, ''), title: String(j.title || '').slice(0, 40), body: String(j.body || '').trim() || text,
     summary: (Array.isArray(j.summary) ? j.summary : []).map((s) => String(s).trim().slice(0, 40)).filter(Boolean).slice(0, 3),
-    events, reply: String(j.reply || '').trim(), section: String(j.section || '').trim(), src: 'claude',
+    events, reply: String(j.reply || '').trim(), section: String(j.section || '').trim(), src: j.src === 'openai' ? 'openai' : 'claude',
   };
 }
 function localResult(text, title) {
@@ -1082,7 +1167,7 @@ function localResult(text, title) {
   return { keyword: a.keyword, title: '', body: text, summary: a.summary, events: a.events, reply: '', section: '', src: 'local' };
 }
 async function aiOrganize(text, title, kind, images = []) {
-  if (keys.anthropic) {
+  if (canOrganize()) {
     const r = await api.organize({ text, title, kind, sections: S.sections.map((x) => x.name), images: images.filter((d) => /^data:image\/(jpeg|png|gif|webp);base64,/.test(d)).slice(0, 4) });
     if (r.ok) { try { return normalizeAI(r.result, text); } catch {} }
     else if (r.reason === 'error') toast({ title: 'AI 정리 대신 기본 규칙으로 정리했어요', body: r.error, ttl: 4500 });
@@ -1110,17 +1195,23 @@ function applyResult(n, r) {
   if (!n.kwManual && !n.title.trim() && r.title) n.title = r.title;
   if (r.summary.length) n.summary = r.summary;
   n.aiSource = r.src;
-  if (!n.secManual && !secIdOf(n)) { const x = S.sections.find((y) => y.name === r.section); n.sectionId = x ? x.id : guessSection(n); }
+  if (!n.secManual) {
+    if (r.section && r.src !== 'local') {
+      const normalize = name => name.normalize('NFKC').replace(/\s+/g, '').toLowerCase();
+      const match = S.sections.find(s => normalize(s.name) === normalize(r.section));
+      n.sectionId = (match || addSection(r.section)).id;
+    } else if (!secIdOf(n)) n.sectionId = guessSection(n);
+  }
   const added = []; for (const ev of r.events) { const e = addEvent(n, ev); if (e) added.push(e); }
   return added;
 }
 let organizing = new Set();
 async function organizeNote(n, { auto }) {
   const text = n.text.trim();
-  const usePhotos = keys.anthropic && n.photos.length > 0;
+  const usePhotos = canOrganize() && n.photos.length > 0;
   if (!text && !usePhotos) {
     if (!auto) {
-      const message = n.photos.length ? '사진 속 글은 AI 연결(Claude 키)이 있어야 읽을 수 있어요.' : '메모를 먼저 적어주세요!';
+      const message = n.photos.length ? '사진 속 글은 AI 연결이 있어야 읽을 수 있어요.' : '메모를 먼저 적어주세요!';
       if (openId === n.id && hasPremiumMemo()) perchSay(message, 4500);
       else toast({ title: message, ttl: 4500 });
     }
@@ -1130,10 +1221,15 @@ async function organizeNote(n, { auto }) {
   organizing.add(n.id); setMood('think');
   const btn = !auto && $('#aiBtn'); if (btn) { btn.disabled = true; btn.replaceChildren(iel('sparkle', 16), '정리하는 중…'); }
   try {
+    const requestedHash = noteHash(n);
     const r = await aiOrganize(text || '(글 없이 사진만 있는 메모)', n.title, 'memo', usePhotos ? n.photos : []);
     if (!byId(n.id)) return;
+    if (requestedHash !== noteHash(n)) {
+      if (S.settings.autoOrganize && openId !== n.id) queueMicrotask(() => organizeNote(n, { auto: true }));
+      return;
+    }
     const added = applyResult(n, r);
-    n.orgHash = noteHash(n);
+    n.orgHash = r.src === 'local' && canOrganize() ? '' : noteHash(n);
     save();
     if (openId === n.id) renderCard(n);
     renderTabs(); refreshAgenda();
@@ -1159,6 +1255,9 @@ async function weatherReply(text = '') {
   const tm = /내일/.test(text), d = tm ? r.tomorrow : r.today, rd = (v) => Math.round(v);
   if (voiceFor()?.weather) {
     const snow = (code) => (code >= 71 && code <= 77) || code === 85 || code === 86;
+    if (S.settings.character === 'basic-memoring' && !tm) {
+      document.documentElement.classList.toggle('memoring-rain', /비|소나기/.test(WMO(r.now.code)));
+    }
     return voiceLine('weather', {
       place: r.place, tomorrow: tm, temperature: `${rd(r.now.temp)}°C`, current: WMO(r.now.code),
       forecast: WMO(d.code), range: `${rd(d.min)}~${rd(d.max)}°C`, probability: d.pop,
@@ -1180,7 +1279,7 @@ async function askWeather(text) {
 async function askAssistant(text) {
   text = text.trim(); if (!text) return;
   if (/^(?:(?:오늘|AI)\s*)?(?:일정\s*)?브리핑(?:\s*(?:해\s*줘|해\s*주세요|부탁해))?[.!?]?$/i.test(text)) {
-    say(briefing(), { ttl: 12000, menu: false });
+    say(briefing(), { briefingArt:true, ttl: 12000, menu: false });
     return;
   }
   if (isWeatherAsk(text)) return askWeather(text);
@@ -1230,12 +1329,13 @@ function placeBubble() {
   b.style.setProperty('--tail-x', clamp(center - x, 8, bw - 8) + 'px');
   b.style.left = x + 'px'; b.style.top = clamp(y, 12, H() - bh - 12) + 'px';
 }
-function say(msg, { ttl = 6000, menu, actions = [], anchor } = {}) {
+function say(msg, { ttl = 6000, menu, actions = [], anchor, briefingArt = false } = {}) {
   const b = $('#bubble');
   const keepMenu = menu ?? (bubble.open && bubble.menu);
   bubble = { open: true, menu: keepMenu, t: bubble.t, anchor: anchor || (keepMenu ? bubble.anchor : null) };
   b.dataset.speaker = petIdFor(S.settings.character) || "";
   b.dataset.menu = String(keepMenu);
+  b.classList.toggle('briefing-art', briefingArt || keepMenu);
   b.replaceChildren(h('div', { class: 'who' }, C.charName(S)), h('div', { class: 'msg' }, msg));
   if (actions.length) b.append(h('div', { class: 'ask' }, actions.slice(0, 2).map((a) => h('button', { class: 'btn primary', type: 'button', onclick: () => { closeBubble(); a.run(); } }, a.label))));
   if (keepMenu) appendMenu(b);
@@ -1378,6 +1478,14 @@ async function openSettings() {
   modalOpen = true; modalKind = 'settings'; updateHit(); api.focus();
   const m = $('#modal'); m.hidden = false;
   const st = S.settings;
+  let calendarState = await api.calendar?.('status');
+  let calendarBusy = false;
+  const calendarAction = async action => {
+    calendarBusy = true; render();
+    try { calendarState = await api.calendar(action); }
+    catch { calendarState = { ...calendarState, error:'캘린더에 연결할 수 없어요.' }; }
+    finally { calendarBusy = false; if (modalKind === 'settings') render(); }
+  };
   let petVisible = await api.petVisible?.();
   let characterBusy = false;
   const chooseCharacter = async (id, image) => {
@@ -1410,19 +1518,50 @@ async function openSettings() {
       render();
     }
   };
-  const seg = (key, opts, after) => h('div', { class: 'seg', role: 'group' }, opts.map(([v, l]) => h('button', { type: 'button', 'aria-pressed': String(String(st[key]) === String(v)), onclick: () => { st[key] = v; save(); after && after(); render(); } }, l)));
+  const settingLabels = { side: '책갈피 위치', modeOverride: '표시 방식', peek: '가장자리 미리보기', peekDelay: '미리보기 속도', petSize: '펫 크기', noteFontSize: '메모 글자 크기', proPreview: 'Pro 미리보기', autoOrganize: '메모를 접으면 자동 정리', preDeadline: '마감 미리 알림', preNormal: '일정 미리 알림', morningBrief: '아침 브리핑', petScheduleBrief: '펫 일정 안내', launchAtLogin: '컴퓨터 켤 때 실행' };
+  const settingControl = (key, opts, after) => {
+    const label = settingLabels[key];
+    const update = value => { st[key] = value; save(); after?.(); };
+    if (typeof opts[0][0] === 'boolean') {
+      return h('button', { class: 'setting-switch', type: 'button', role: 'switch', 'aria-label': label,
+        'aria-checked': String(st[key]), onclick: e => {
+          update(!st[key]); e.currentTarget.setAttribute('aria-checked', String(st[key]));
+        } });
+    }
+    if (typeof opts[0][0] === 'number') {
+      const index = Math.max(0, opts.findIndex(([value]) => value === st[key]));
+      const output = h('span', { class: 'range-value' }, opts[index][1]);
+      return h('div', { class: 'setting-range' }, h('input', { type: 'range', min: 0, max: opts.length - 1,
+        value: index, 'aria-label': label, 'aria-valuetext': opts[index][1], oninput: e => {
+          const [value, text] = opts[Number(e.target.value)];
+          output.textContent = text; e.target.setAttribute('aria-valuetext', text); update(value);
+        } }), output);
+    }
+    return h('select', { 'aria-label': label, onchange: e => update(e.target.value) },
+      opts.map(([value, text]) => h('option', { value, selected: value === st[key] }, text)));
+  };
+  async function resetSettings() {
+    if (characterBusy) return;
+    for (const key of [...Object.keys(settingLabels), 'petName', 'weatherCity']) st[key] = DEFAULTS[key];
+    dockFolded = false;
+    applyNoteFont(); api.applySettings({ petSize: st.petSize, launchAtLogin: st.launchAtLogin, modeOverride: st.modeOverride, proPreview: st.proPreview });
+    applySide(); applyMode(); queuePerch();
+    await chooseCharacter(DEFAULTS.character);
+    refreshOpenCards();
+    save(); render();
+  }
   const keyMsg = {};
   const testKey = async (name) => {
     keyMsg[name] = { t: '연결 확인 중…', ok: null }; render();
     const r = api.testKey ? await api.testKey(name) : { ok: keys[name] };
-    keyMsg[name] = r.ok ? { t: '연결됐어요. 이제 AI가 이 키로 동작해요.', ok: true } : { t: r.error || '키를 확인하지 못했어요', ok: false };
+    keyMsg[name] = r.ok ? { t: '연결을 확인했어요.', ok: true } : { t: r.error || '키를 확인하지 못했어요', ok: false };
     render();
   };
   const keyRow = (name, label, ph, help) => {
-    const inp = h('input', { type: 'password', id: 'key-' + name, autocomplete: 'off', spellcheck: 'false', placeholder: keys[name] ? '저장됨 · 바꾸려면 새 키를 붙여넣기' : ph, 'aria-label': label + ' API 키' });
+    const inp = h('input', { type: 'password', id: 'key-' + name, autocomplete: 'off', spellcheck: 'false', placeholder: keys[name] ? '저장됨 · 바꾸려면 새 키를 붙여넣기' : ph, 'aria-label': label });
     const saveKey = async () => {
       const v = inp.value.trim();
-      if (!v) { keyMsg[name] = { t: '키를 붙여넣은 뒤 저장을 눌러주세요.', ok: false }; render(); return; }
+      if (!v) { keyMsg[name] = { t: '값을 입력한 뒤 저장을 눌러주세요.', ok: false }; render(); return; }
       keys = await api.setKey(name, v); await testKey(name);
     };
     inp.addEventListener('keydown', (e) => { if (e.key === 'Enter') saveKey(); });
@@ -1431,7 +1570,7 @@ async function openSettings() {
       h('div', { class: 'row' }, h('label', { for: 'key-' + name, style: 'min-width:120px' }, label), inp,
         h('button', { class: 'btn primary', type: 'button', onclick: saveKey }, '저장'),
         keys[name] ? h('button', { class: 'btn', type: 'button', onclick: () => testKey(name) }, '연결 확인') : null,
-        keys[name] ? h('button', { class: 'btn', type: 'button', onclick: async () => { keys = await api.setKey(name, ''); keyMsg[name] = { t: '키를 지웠어요.', ok: null }; render(); } }, '지우기') : null),
+        keys[name] ? h('button', { class: 'btn', type: 'button', onclick: async () => { keys = await api.setKey(name, ''); keyMsg[name] = { t: '연결 정보를 지웠어요.', ok: null }; render(); } }, '지우기') : null),
       h('div', { class: 'keystate ' + (msg ? (msg.ok ? 'good' : msg.ok === false ? 'bad' : '') : keys[name] ? 'good' : '') },
         msg ? msg.t : keys[name] ? '저장된 키가 있어요.' : help));
   };
@@ -1471,7 +1610,7 @@ async function openSettings() {
   const secManager = () => h('div', { class: 'secman' },
     S.sections.map((x) => h('div', { class: 'row' },
       h('input', { type: 'text', value: x.name, maxlength: '10', 'aria-label': '섹션 이름', style: 'flex:0 1 150px;min-width:90px', onchange: (e) => { x.name = e.target.value.trim() || x.name; save(); renderTabs(); } }),
-      h('span', { class: 'secsw' }, SEC_COLORS.map((c, i) => h('button', { type: 'button', class: 'sw', 'aria-label': `색 ${i + 1}`, 'aria-pressed': String((x.color || 0) % SEC_COLORS.length === i), style: `background:${c.bg}`, onclick: () => { x.color = i; save(); renderTabs(); render(); } }))),
+      h('span', { class: 'secsw' }, sectionPalette().map((c, i) => h('button', { type: 'button', class: 'sw', 'aria-label': `색 ${i + 1}`, 'aria-pressed': String((x.color || 0) % SEC_COLORS.length === i), style: `background:${c.bg}`, onclick: () => { x.color = i; save(); renderTabs(); render(); } }))),
       h('span', { class: 'lbl' }, `메모 ${notesIn(x.id).length}개`),
       h('button', { class: 'btn' + (armedDel[x.id] ? ' del armed' : ''), type: 'button', onclick: () => {
         if (!armedDel[x.id]) { armedDel[x.id] = 1; render(); setTimeout(() => { if (armedDel[x.id]) { delete armedDel[x.id]; render(); } }, 3000); return; }
@@ -1486,8 +1625,9 @@ async function openSettings() {
   function render() {
     if (m.hidden || modalKind !== 'settings') return;
     const panelScroll = m.querySelector('.panel')?.scrollTop || 0;
-    const panel = h('div', { class: 'panel', role: 'dialog', 'aria-label': '설정' },
-      h('div', { style: 'display:flex;justify-content:space-between;align-items:center' }, h('h3', {}, '설정'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
+    const panel = h('div', { class: 'panel settings-panel', role: 'dialog', 'aria-label': '설정' },
+      h('header', { class: 'settings-head' }, h('h3', {}, '설정'), h('button', { class: 'btn', type: 'button', disabled: characterBusy, onclick: resetSettings }, '기본값으로'), h('button', { class: 'btn icon', type: 'button', 'aria-label': '닫기', onclick: closeSettings, html: ico('x', 16) })),
+      h('p', { class: 'note settings-intro' }, '추천 기본값이 맞춰져 있어요. 필요한 것만 바꾸세요.'),
       h('h4', {}, 'AI 비서 · 데스크톱 펫'),
       h('div', { class: 'chars' },
         C.ORDER.map((id) => h('button', { type: 'button', disabled: characterBusy, 'aria-pressed': String(st.character === id), onclick: () => chooseCharacter(id) },
@@ -1499,15 +1639,17 @@ async function openSettings() {
       voiceFor()?.description ? h('p', { class: 'note' }, voiceFor().description) : null,
       h('div', { class: 'row' }, h('label', {}, '이름'), h('input', { type: 'text', maxlength: '8', value: st.petName, placeholder: C.character(st.character).name, oninput: (e) => { st.petName = e.target.value; save(); } })),
       h('h4', {}, '화면'),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '책갈피 위치'), seg('side', [['left', '왼쪽'], ['right', '오른쪽']], applySide)),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '표시 방식'), seg('modeOverride', [['auto', '펫에서 열기'], ['desktop', '책갈피 표시']], () => {
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '책갈피 위치'), settingControl('side', [['left', '왼쪽'], ['right', '오른쪽']], applySide)),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '표시 방식'), settingControl('modeOverride', [['auto', '펫에서 열기'], ['desktop', '책갈피 표시']], () => {
         dockFolded = false; api.applySettings({ modeOverride: st.modeOverride }); applyMode();
       })),
       h('p', { class: 'note' }, '우클릭하면 책갈피가 열리고 닫혀요. 오른쪽 버튼을 1.2초 누르면 오늘 브리핑을 볼 수 있어요.'),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '가장자리 미리보기'), seg('peek', [[true, '켜기'], [false, '끄기']]), seg('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
-      h('div', { class: 'row' }, h('label', {}, '펫 크기'), seg('petSize', [64, 80, 96, 112, 128].map((size) => [size, size + 'px']), () => { api.applySettings({ petSize: st.petSize }); queuePerch(); })),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '가장자리 미리보기'), settingControl('peek', [[true, '켜기'], [false, '끄기']])),
+      h('div', { class: 'row' }, h('label', {}, '미리보기 속도'), settingControl('peekDelay', [[200, '빠르게'], [350, '보통'], [600, '천천히']])),
+      h('div', { class: 'row' }, h('label', {}, '펫 크기'), settingControl('petSize', [56, 64, 72, 80, 88, 96, 112, 128].map((size) => [size, size + 'px']), () => { applyNoteFont(); api.applySettings({ petSize: st.petSize }); queuePerch(); })),
+      h('div', { class: 'row' }, h('label', {}, '메모 글자 크기'), settingControl('noteFontSize', [12, 14, 15, 16, 18, 20, 24].map(size => [size, size + 'px']), applyNoteFont)),
       api.petVisible ? h('div', { class: 'row' }, h('label', {}, '움직이는 데스크톱 펫'),
-        h('button', { type: 'button', class: 'btn', role: 'switch', 'aria-label': '움직이는 데스크톱 펫', 'aria-checked': String(petVisible === true), onclick: async () => {
+        h('button', { type: 'button', class: 'setting-switch', role: 'switch', 'aria-label': '움직이는 데스크톱 펫', 'aria-checked': String(petVisible === true), onclick: async () => {
           if (await api.petVisible()) {
             petVisible = await api.petVisible(false);
           } else {
@@ -1515,30 +1657,47 @@ async function openSettings() {
             petVisible = state?.present ?? false;
           }
           render();
-        } }, petVisible ? '펫 숨기기' : '펫 소환하기')) : null,
+        } })) : null,
       info.proPreview ? h('div', { class: 'row' }, h('label', {}, 'Pro 미리보기'),
-        seg('proPreview', [[false, '기본 메모'], [true, 'Pro']], () => {
+        settingControl('proPreview', [[false, '기본 메모'], [true, 'Pro']], () => {
           api.applySettings({ proPreview: st.proPreview });
-          if (openId) renderCard(byId(openId));
+          refreshOpenCards();
         })) : null,
       h('h4', {}, '섹션 (큰 책갈피)'),
       secManager(),
+      api.calendar ? [
+        h('h4', {}, 'Google 캘린더'),
+        h('div', { class:'row' },
+          h('button', {class:'btn',type:'button',disabled:calendarBusy,
+            onclick:() => calendarAction(calendarState?.connected ? 'today' : 'connect')},
+            calendarBusy ? '연결 확인 중…' : calendarState?.connected ? '오늘 일정 보기' : 'Google 캘린더 연결'),
+          calendarState?.connected ? h('button',{class:'btn',type:'button',disabled:calendarBusy,
+            onclick:() => calendarAction('disconnect')},'연결 해제') : null),
+        calendarState?.error ? h('p',{class:'note',role:'status'},calendarState.error) : null,
+        calendarState?.events ? (calendarState.events.length ? h('ul',{},calendarState.events.map(e =>
+          h('li',{},(e.allDay ? '종일' : new Date(e.start).toLocaleTimeString('ko-KR',{hour:'2-digit',minute:'2-digit'}))+' · '+e.title))) :
+          h('p',{class:'note'},'오늘은 등록된 일정이 없어요.')) : null,
+      ] : null,
       h('h4', {}, '날씨'),
+      keys.direct ? keyRow('kma','기상청 인증키','공공데이터포털 인증키','앱을 종료하면 입력한 키가 지워져요.') : null,
+      h('p', {class:'note'}, '자료 제공: 기상청 단기예보 · 지역의 도시 이름을 입력하세요.'),
       h('div', { class: 'row' }, h('label', { for: 'wcity', style: 'min-width:96px' }, '지역'),
         h('input', { type: 'text', id: 'wcity', maxlength: '20', value: st.weatherCity, placeholder: '예: 서울, 부산, 제주', onchange: (e) => { st.weatherCity = e.target.value.trim() || '서울'; save(); } }),
         h('button', { class: 'btn', type: 'button', onclick: () => { closeSettings(); askWeather('오늘 날씨'); } }, '지금 날씨 묻기')),
       h('h4', {}, '자동 정리 · 알람'),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '자동 정리'), seg('autoOrganize', [[true, '메모를 접으면 자동으로'], [false, '버튼 누를 때만']])),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '마감 미리 알림'), seg('preDeadline', [[0, '없음'], [30, '30분 전'], [60, '1시간 전'], [180, '3시간 전'], [1440, '하루 전']])),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 알림'), seg('preNormal', [[0, '없음'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전']])),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '아침 브리핑'), seg('morningBrief', [[true, '켜기'], [false, '끄기']])),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '펫 일정 안내'), seg('petScheduleBrief', [[true, '켜기'], [false, '끄기']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '메모를 접으면 자동 정리'), settingControl('autoOrganize', [[true, '메모를 접으면 자동으로'], [false, '버튼 누를 때만']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '마감 미리 알림'), settingControl('preDeadline', [[0, '없음'], [30, '30분 전'], [60, '1시간 전'], [180, '3시간 전'], [1440, '하루 전']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '일정 미리 알림'), settingControl('preNormal', [[0, '없음'], [10, '10분 전'], [30, '30분 전'], [60, '1시간 전']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '아침 브리핑'), settingControl('morningBrief', [[true, '켜기'], [false, '끄기']])),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '펫 일정 안내'), settingControl('petScheduleBrief', [[true, '켜기'], [false, '끄기']])),
       h('h4', {}, 'AI 연결'),
       keys.builtin ? builtinAI() : [
+        keyRow('openai','OpenAI API 키','OpenAI 키 붙여넣기',keys.direct ? '앱을 종료하면 입력한 키가 지워져요.' : '키를 등록하면 메모 정리와 병합에 우선 사용하며 요금은 본인 OpenAI 계정에 청구돼요.'),
+        !keys.direct && keyRow('hosted', 'AI 이용 코드', '발급받은 이용 코드', '메모와 첨부 사진을 운영 서버를 통해 OpenAI로 보내 정리해요. 사용자당 매월 1달러까지 이용할 수 있어요.'),
         keyRow('anthropic', 'Claude API 키', 'sk-ant-로 시작하는 키 붙여넣기', '메모 정리·사진 속 일정 읽기·부탁하기에 써요. 없으면 기본 규칙으로 정리해요.'),
-        h('p', { class: 'note' }, '키는 이 컴퓨터에만 암호화해서 저장되고, 저장하면 바로 연결을 확인해요. 환경변수 ANTHROPIC_API_KEY로도 넣을 수 있어요.')],
+        h('p', { class: 'note' }, keys.direct ? '직접 테스트에서는 운영 서버의 사용자별 월 한도가 적용되지 않아요.' : '키를 저장하면 연결을 확인해요.')],
       h('h4', {}, '기타'),
-      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '컴퓨터 켤 때 실행'), seg('launchAtLogin', [[true, '켜기'], [false, '끄기']], () => api.applySettings({ launchAtLogin: st.launchAtLogin }))),
+      h('div', { class: 'row' }, h('label', { style: 'min-width:96px' }, '컴퓨터 켤 때 실행'), settingControl('launchAtLogin', [[true, '켜기'], [false, '끄기']], () => api.applySettings({ launchAtLogin: st.launchAtLogin }))),
       h('div', { class: 'row' },
         h('button', { class: 'btn', type: 'button', onclick: () => api.openData() }, '데이터 폴더 열기'),
         h('button', { class: 'btn', type: 'button', onclick: () => api.quit() }, '앱 종료')),
@@ -1583,6 +1742,91 @@ function normalizeOverviewLayout(saved) {
   return layout;
 }
 
+const mergeReview = { busy: false, message: '', pairs: [], run: 0 };
+function mergeSource(note) { return [memoTitle(note), note.text]; }
+async function findMergeCandidates() {
+  if (mergeReview.busy) return;
+  const chosen = overviewSelected.size > 0;
+  const notes = S.notes.filter(n => (!chosen || overviewSelected.has(n.id)) && (n.text.trim() || n.title.trim()));
+  if (notes.length < 2) { toast({ title: '본문이나 제목이 있는 메모를 두 개 이상 골라 주세요.' }); return; }
+  const rows = notes.map(n => ({ id: n.id, section: n.sectionId || '', source: mergeSource(n) }));
+  rows.sort((a,b) => a.section.localeCompare(b.section) || a.source[0].localeCompare(b.source[0], 'ko'));
+  const run = ++mergeReview.run;
+  Object.assign(mergeReview, { busy: true, message: '비슷한 메모를 찾고 있어요…', pairs: [] });
+  renderBoard();
+  const seen = new Set();
+  try {
+    // Overlap adjacent windows so a boundary does not split neighboring notes.
+    for (let start = 0; start < rows.length - 1; start += 28) {
+      const batch = rows.slice(start, start + 32);
+      const r = await api.mergeCandidates(batch.map(({ source: [title, text] }) => ({
+        title: title.slice(0, 100), text: text.slice(0, 600),
+      })));
+      if (mergeReview.run !== run) return;
+      if (!r.ok) throw Error(r.error || '병합 후보를 확인하지 못했어요.');
+      for (const p of window.MemoMerge.pairs(r.result.pairs, batch.length)) {
+        const items = [batch[p.first], batch[p.second]];
+        if (items.some(item => seen.has(item.id))) continue;
+        items.forEach(item => seen.add(item.id));
+        mergeReview.pairs.push({ title: p.title.trim().slice(0, 80), items });
+      }
+      if (start + batch.length === rows.length) break;
+    }
+    mergeReview.message = mergeReview.pairs.length ? '내용을 확인하고 합칠 메모를 선택하세요.' : '합칠 만한 중복 메모를 찾지 못했어요.';
+  } catch (e) { if (mergeReview.run === run) mergeReview.message = e.message; }
+  finally {
+    if (mergeReview.run === run) {
+      mergeReview.busy = false;
+      if (modalKind === 'board') renderBoard();
+    }
+  }
+}
+function currentMergeNotes(pair) {
+  const notes = pair.items.map(item => byId(item.id));
+  return notes.every((n,i) => n && !organizing.has(n.id) &&
+    mergeSource(n).every((value,k) => value === pair.items[i].source[k])) ? notes : null;
+}
+function applyMerge(pair) {
+  const notes = currentMergeNotes(pair);
+  if (!notes || notes.some(n => n.id === openId || parkedSheets.has(n.id))) {
+    toast({ title: '메모가 바뀌었어요. 다시 찾아 주세요.' }); return;
+  }
+  const draft = window.MemoMerge.draft(notes, pair.title);
+  if (draft.photos.length > MAX_PHOTOS) return;
+  const merged = Object.assign(blankNote(draft.sectionId), draft);
+  merged.keyword = merged.title;
+  merged.summary = P.summarize(merged.text);
+  merged.orgHash = noteHash(merged);
+  const removedAt = Date.now();
+  S.notes = [merged, ...S.notes.filter(n => !notes.includes(n))];
+  for (const note of notes) {
+    S.trash.unshift({ note, removedAt });
+    overviewSelected.delete(note.id);
+  }
+  mergeReview.pairs = mergeReview.pairs.filter(p => p !== pair);
+  mergeReview.message = '합친 원본 메모는 휴지통에서 복원할 수 있어요.';
+  save(); renderTabs(); renderBoard(); refreshAgenda();
+}
+function mergeControls(total) {
+  if (!api.mergeCandidates || total < 2) return null;
+  return h('div', { class: 'overview-merge' },
+    total >= 20 && !mergeReview.message ? h('p', {}, '메모가 20개 이상 쌓였어요. 중복된 내용을 정리할까요?') : null,
+    h('button', { class: 'btn', id: 'overview-merge-find', type: 'button', disabled: mergeReview.busy,
+      onclick: () => (keys.hosted || keys.openai) ? findMergeCandidates() : toast({ title: '설정 → AI 연결에서 AI 이용 코드를 등록해 주세요.' }) },
+      overviewSelected.size ? '선택한 메모에서 병합 후보 찾기' : '비슷한 메모 찾기'),
+    h('p', { role: 'status', class: 'overview-muted' }, mergeReview.message),
+    mergeReview.pairs.map(pair => {
+      const notes = currentMergeNotes(pair);
+      if (!notes) return h('p', {}, '변경된 메모가 있어요. 다시 찾아 주세요.');
+      const draft = window.MemoMerge.draft(notes, pair.title);
+      return h('details', {}, h('summary', {}, pair.title),
+        h('ul', {}, notes.map(n => h('li', {}, memoTitle(n) || n.text.slice(0, 40)))),
+        h('p', { style: 'white-space:pre-wrap' }, draft.text),
+        h('p', {}, '사진 ' + draft.photos.length + '장 · 일정 ' + draft.events.length + '개 · ' + secOf(notes[0]).name),
+        draft.photos.length > MAX_PHOTOS ? h('p', {}, '사진이 너무 많아 하나로 합칠 수 없어요.') :
+          h('button', { class: 'btn', type: 'button', onclick: () => applyMerge(pair) }, '합치고 원본 2개 휴지통으로'));
+    }));
+}
 let viewingTrash = false;
 function openBoard(filter) {
   viewingTrash = false;
@@ -1602,6 +1846,8 @@ function openBoard(filter) {
   $('.overview-close')?.focus({ preventScroll: true });
 }
 function closeBoard() {
+  ++mergeReview.run;
+  Object.assign(mergeReview, { busy: false, message: '', pairs: [] });
   overviewEditing = false;
   overviewAiSearch = null;
   modalOpen = false; modalKind = '';
@@ -1774,6 +2020,8 @@ function renderOverviewNotes() {
 }
 
 function refreshOverviewAction() {
+  const find = $('#overview-merge-find');
+  if (find) find.textContent = overviewSelected.size ? '선택한 메모에서 병합 후보 찾기' : '비슷한 메모 찾기';
   const button = $('#overview-organize');
   if (!button) return;
   const selected = [...overviewSelected].map(byId).filter(Boolean);
@@ -1955,6 +2203,7 @@ function renderBoard() {
           catch { toast({ title: '메모를 정리하지 못했어요', ttl: 3500 }); }
           if (modalKind === 'board') renderBoard();
         } }, '정리하기')),
+      mergeControls(total),
       h('p', { id: 'overview-selection', class: 'overview-muted', role: 'status' }),
       h('details', { class: 'overview-summary', open: $('.overview-summary')?.open || false },
         h('summary', {}, '전체 요약'),
@@ -1984,7 +2233,7 @@ function renderBoard() {
     const city = (S.settings.weatherCity || '서울').trim();
     void api.weather(city).then((result) => {
       if (!weatherValue.isConnected || !result?.ok || !Number.isFinite(result.now?.temp)) return;
-      weatherValue.textContent = `${Math.round(result.now.temp)}°`;
+      weatherValue.textContent = `${Math.round(result.now.temp)}° · 기상청`;
       weatherLabel.textContent = result.today?.pop == null ? WMO(result.now.code) : `비 ${result.today.pop}%`;
     }).catch(() => {});
   }
@@ -2067,7 +2316,7 @@ function placeBookmarkPet() {
   if (next !== perchedSpecies) { api.perchPet?.(next || null); perchedSpecies = next; }
   if (!show) { perchOrigin = null; return; }
   pet.dataset.species = species || 'custom';
-  pet.style.backgroundImage = !['mono-cat','block-dino','pastel-octopus','vintage-teddy'].includes(species) && S.settings.customChar ? 'url(' + JSON.stringify(S.settings.customChar) + ')' : '';
+  pet.style.backgroundImage = !['basic-memoring','mono-cat','block-dino','pastel-octopus','vintage-teddy'].includes(species) && S.settings.customChar ? 'url(' + JSON.stringify(S.settings.customChar) + ')' : '';
   const rect = tab.getBoundingClientRect(), stage = $('#stage').getBoundingClientRect();
   pet.style.left = clamp(rect.right - stage.left - size - 4, 0, W() - size) + 'px';
   const seatLevel = { 'mono-cat': .96, 'block-dino': .76 };
@@ -2102,7 +2351,7 @@ function bindGlobal() {
     pressTimer = setTimeout(() => {
       briefed = true;
       const p = perch.getBoundingClientRect(), stage = $('#stage').getBoundingClientRect();
-      say(petBriefingText(perchedSpecies), { ttl: 8000, menu: false, anchor: { x: p.x-stage.x, y: p.y-stage.y, width: p.width, height: p.height }, actions: [{ label: '전체보기', run: openBoard }] });
+      say(petBriefingText(perchedSpecies), { briefingArt:true, ttl: 8000, menu: false, anchor: { x: p.x-stage.x, y: p.y-stage.y, width: p.width, height: p.height }, actions: [{ label: '전체보기', run: openBoard }] });
     }, 1200);
   };
   perch.onpointerup = (e) => { if (e.button === 2 && pressTimer) { cancel(); if (!briefed) togglePetBookmarks(); } };
@@ -2190,7 +2439,7 @@ function bindGlobal() {
     if (toolbar && editor) toolbar.toggleAttribute('data-selection',
       !!selection?.rangeCount && !selection.isCollapsed && editor.contains(selection.getRangeAt(0).commonAncestorContainer));
   });
-  addEventListener('resize', () => { queuePerch(); if (openId) placeNote(byId(openId)); if (bubble.open) placeBubble(); });
+  addEventListener('resize', () => { queuePerch(); if (openId) placeNote(byId(openId)); for (const [id, { sheet }] of parkedSheets) placeNote(byId(id), sheet); if (bubble.open) placeBubble(); });
 }
 
 async function boot() {
@@ -2202,8 +2451,11 @@ async function boot() {
   S = normalize(loaded && Array.isArray(loaded.notes) ? loaded : seed());
   for (const n of S.notes) if (n.sectionId === undefined) { n.sectionId = guessSection(n); n.secManual = false; } // 섹션이 생기기 전 메모
   keys = await api.keyStatus().catch(() => keys);
-  if (![64, 80, 96, 112, 128].includes(S.settings.petSize)) S.settings.petSize = 80;
+  if (![56, 64, 72, 80, 88, 96, 112, 128].includes(S.settings.petSize)) S.settings.petSize = 72;
   api.applySettings({ petSize: S.settings.petSize, launchAtLogin: S.settings.launchAtLogin, modeOverride: S.settings.modeOverride, proPreview: S.settings.proPreview });
+  applyNoteFont();
+  const today = new Date();
+  document.documentElement.classList.toggle('memoring-holiday', today.getMonth() === 11 && [24, 25].includes(today.getDate()));
   bindGlobal();
   selectCharacter(loaded ? S.settings.character : themePack().character);
   applySide(); renderTabs(); applyMode();

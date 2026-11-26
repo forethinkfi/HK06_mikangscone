@@ -93,7 +93,7 @@ export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anc
   const dismissed = new Set(appSettings.getDismissedSpeciesIds());
   let visibleSpecies = new Set<string>();
   let rendererReady = false;
-  let petSize = 80;
+  let petSize = 72;
   let perchedId: string | null = null;
   const publish = (scene: SpeciesConfig) => {
     visibleSpecies = new Set([scene, ...(scene.companions ?? [])].map(({ id }) => id).filter((id) => !dismissed.has(id)));
@@ -196,7 +196,7 @@ export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anc
       if (rendererReady && !window.isDestroyed()) window.webContents.send(IPC.PERCHED, id);
     },
     setSize(size: number) {
-      if (![64, 80, 96, 112, 128].includes(size) || petSize === size) return;
+      if (![56, 64, 72, 80, 88, 96, 112, 128].includes(size) || petSize === size) return;
       petSize = size;
       if (rendererReady && !window.isDestroyed()) window.webContents.send(IPC.SIZE_CHANGED, size);
     },

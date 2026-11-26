@@ -1,0 +1,71 @@
+{
+  "id": "basic-memoring",
+  "displayName": "메모링",
+  "version": "1.0.0",
+  "animations": {
+    "idle": {
+      "sheet": "idle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 5,
+      "loop": true
+    },
+    "sleep": {
+      "sheet": "sleep.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 5,
+      "loop": true
+    },
+    "walk": {
+      "sheet": "walk.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 5,
+      "loop": true,
+      "mirrorWhen": "left"
+    },
+    "dragged": {
+      "sheet": "dragged.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 5,
+      "loop": true
+    },
+    "react": {
+      "sheet": "react.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 5,
+      "loop": true
+    },
+    "sit": {
+      "sheet": "sit.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 5,
+      "loop": true
+    }
+  },
+  "behavior": {
+    "doubleClick": "hearts",
+    "sideWalkInsets": {
+      "left": 43,
+      "right": 43
+    },
+    "sideWalkDepth": 0.16,
+    "walkSpeedPxPerSec": 47,
+    "idleMinMs": 1800,
+    "idleMaxMs": 4100,
+    "walkMinMs": 4100,
+    "walkMaxMs": 7600,
+    "spriteScale": 0.583,
+    "personality": "relaxed"
+  }
+}

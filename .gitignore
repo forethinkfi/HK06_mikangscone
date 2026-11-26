@@ -4,3 +4,9 @@ dist-pet/
 *.tsbuildinfo
 *.log
 .DS_Store
+client_secret*.json
+.env
+.env.local
+*.sqlite
+*.sqlite-shm
+*.sqlite-wal

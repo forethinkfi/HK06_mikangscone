@@ -1,12 +1,14 @@
 {
   "name": "mikang-bookmark-memo",
   "productName": "Mikang Memo",
-  "version": "0.2.2",
+  "version": "0.2.3",
   "description": "바탕화면 책갈피 메모 + AI 비서 캐릭터 (Electron, Windows/macOS)",
   "main": "electron/main.js",
   "license": "MIT",
   "author": "mikangscone",
   "scripts": {
+    "start:direct": "npm run build:pet && electron . --direct-api",
+    "start:integrations": "powershell.exe -NoProfile -ExecutionPolicy RemoteSigned -File server/start-local.ps1",
     "start": "npm run build:pet && electron .",
     "build:pet": "tsc -p pet/tsconfig.json && node pet/build.mjs",
     "test": "node --test test/*.test.js && vitest run pet",

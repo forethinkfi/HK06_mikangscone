@@ -7,9 +7,11 @@ const {
   nativeImage, session, shell,
 } = require('electron');
 const store = require('./store');
+const hostedAI = require('./hosted-ai');
 const ai = require('./ai');
 const { watchForeground } = require('./foreground');
 const { getWeather } = require('./weather');
+const { calendar } = require('./google-calendar');
 const { displayEdge } = require('./display-edge');
 
 if (process.env.MIKKANG_USER_DATA) app.setPath('userData', process.env.MIKKANG_USER_DATA);
@@ -219,8 +221,16 @@ ipcMain.on('notify', (_e, { title, body, noteId }) => {
   n.show();
 });
 
-ipcMain.handle('keys:status', () => store.keyStatus());
-ipcMain.handle('keys:set', (_e, name, value) => { if (name === 'anthropic') store.setKey(name, value); return store.keyStatus(); });
+const personalOpenAI = require('./personal-openai');
+const openAIRequest = (route, payload) => {
+  const key = !hostedAI.direct && store.getKey('openai');
+  return key ? personalOpenAI.request(key, route, payload) : hostedAI.request(route, store.getKey('hosted'), payload);
+};
+const keyStatus = () => ({...store.keyStatus(), ...hostedAI.direct?.status()});
+ipcMain.handle('keys:status', keyStatus);
+ipcMain.handle('keys:set', (_e, name, value) => { if (hostedAI.direct && ['openai','kma'].includes(name)) hostedAI.direct.set(name,value);
+  else if (['anthropic', 'hosted', 'openai'].includes(name)) store.setKey(name, value);
+  return keyStatus(); });
 
 // 아이폰 HEIC 사진 → JPEG (화면 쪽 보안 규칙을 느슨하게 하지 않도록 메인 프로세스에서 변환)
 ipcMain.handle('image:dropped-url', async (event, source) => {
@@ -266,12 +276,31 @@ ipcMain.handle('ai:search-notes', async (event, payload) => {
   try { return { ok: true, indexes: await ai.searchNotes(key, { query, notes }) }; }
   catch (e) { return { ok: false, reason: 'error', error: ai.describeError(e) }; }
 });
+ipcMain.handle('calendar:action', async (event, action) => {
+  if (event.senderFrame !== win?.webContents.mainFrame ||
+      event.senderFrame?.url.split('?')[0] !== require('url').pathToFileURL(path.join(__dirname,'../src/index.html')).href ||
+      !['status','connect','today','disconnect'].includes(action)) return {ok:false};
+  if (hostedAI.direct && ['today','connect'].includes(action) && !(await hostedAI.request('/calendar/client')).ok) {
+    const selection = await require('electron').dialog.showOpenDialog(win,{title:'Google 데스크톱 OAuth JSON 선택',properties:['openFile'],filters:[{name:'JSON',extensions:['json']}]});
+    const state = await calendar('status');
+    if (selection.canceled) return state;
+    try { hostedAI.direct.useGoogle(JSON.parse(require('fs').readFileSync(selection.filePaths[0],'utf8').replace(/^\uFEFF/,''))); }
+    catch { return {...state,ok:false,error:'Google 데스크톱 앱용 OAuth JSON을 선택해 주세요.'}; }
+  }
+  return calendar(action);
+});
 ipcMain.handle('weather:get', async (_e, city) => {
   try { return await getWeather(city); }
   catch { return { ok: false, error: '날씨를 가져오지 못했어요. 인터넷 연결을 확인해 주세요.' }; }
 });
-ipcMain.handle('keys:test', () => ai.testKey(store.getKey('anthropic')));
+ipcMain.handle('keys:test', (_e, name) => hostedAI.direct && name === 'kma' ? getWeather('서울') : name === 'openai' ? openAIRequest('/status') : name === 'hosted' ? hostedAI.request('/status', store.getKey(name)) : ai.testKey(store.getKey('anthropic')));
+ipcMain.handle('ai:merge-candidates', (event, notes) => {
+  if (event.sender !== win?.webContents) return { ok: false };
+  return openAIRequest('/merge-candidates', { notes });
+});
 ipcMain.handle('ai:organize', async (_e, payload) => {
+  const code = store.getKey('hosted');
+  if (hostedAI.direct ? hostedAI.direct.status().openai : store.getKey('openai') || code) return openAIRequest('/organize', payload);
   const key = store.getKey('anthropic');
   if (!key) return { ok: false, reason: 'nokey' };
   try { return { ok: true, result: await ai.organize(key, payload) }; }

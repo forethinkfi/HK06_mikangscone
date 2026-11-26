@@ -1,0 +1,7 @@
+/* 메모먼트 꾹꾹체는 설치된 사본을 사용한다. */
+@font-face {
+  font-family: 'Pastel Memoment';
+  src: local('메모먼트꾹꾹체 Regular'), local('Memoment Kkukkkuk'), local('MemomentKkukkukk'), local('MemomentKkukkukk Regular'), local('메모먼트꾹꾹체'), local('메모먼트 꾹꾹체');
+  font-display: swap;
+}
+

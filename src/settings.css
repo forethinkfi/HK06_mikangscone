@@ -1,0 +1,58 @@
+/* Section tabs share an edge while the individual memo titles stay separate. */
+.stage .dock > .sec + .sec { margin-top: calc(-7px - var(--space-1)); }
+.stage .dock > .sec:focus-visible { z-index: 1; }
+.overview-trash, .overview-trash strong, .mikkang-overview[aria-label="휴지통"] h1 {
+  font-family: var(--f-display);
+}
+
+#modal .settings-panel {
+  width: min(610px, 95vw);
+  max-height: 94vh;
+  padding: clamp(16px, 3vw, 30px);
+  color: #222226;
+  background: #fff;
+  border: 1px solid #deddd9;
+  border-radius: 18px;
+  box-shadow: 0 8px 30px #211e1826;
+  font: 14px/1.5 'Pretendard', sans-serif;
+  color-scheme: light;
+}
+.settings-panel .settings-head { display: flex; align-items: center; gap: 8px; }
+.settings-panel h3 { margin: 0 auto 0 0; font-family: inherit; font-weight: 700; font-size: 23px; line-height: 1.25; }
+.settings-panel .note { color: #66666e; }
+.settings-panel .settings-intro { margin: 0 0 18px; }
+.settings-panel h4 { color: #585862; margin: 20px 0 8px; font-family: inherit; font-weight: 500; font-size: 13px; line-height: 1.4; }
+.settings-panel .chars { gap: 4px; }
+.settings-panel .chars :is(button,.charpick) { color: #252528; font-family: inherit; }
+.settings-panel .chars .cv { width: min(52px, 11vw); height: min(52px, 11vw); }
+.settings-panel .chars button[aria-pressed=true] { border-color: #222; }
+.settings-panel > .row, .settings-panel .secman .row, .settings-panel .keybox .row {
+  min-height: 42px;
+  margin: 5px 0;
+  padding: 6px 12px;
+  background: #f2f2f4;
+  border-radius: 9px;
+}
+.settings-panel .row > label:first-child { flex: 1 1 auto; color: #27272b; }
+.settings-panel .row input:is([type=text],[type=password]) {
+  flex: 0 1 45%; min-width: 0; border: 1px solid #e0e0e4; background: #fff; color: #222;
+}
+.settings-panel select { border: 0; background: transparent; color: inherit; font: inherit; }
+.settings-panel .setting-range { flex: 0 1 57%; display: flex; align-items: center; gap: 10px; }
+.setting-range input { flex: 1; min-width: 0; accent-color: #45454b; }
+.setting-range .range-value { min-width: 54px; text-align: right; font-variant-numeric: tabular-nums; }
+.setting-switch { position: relative; width: 39px; height: 22px; border: 0; border-radius: 999px; background: #b6b6bc; cursor: pointer; }
+.setting-switch::after { content: ''; position: absolute; left: 3px; top: 3px; width: 16px; height: 16px; border-radius: 50%; background: white; }
+.setting-switch[aria-checked=true] { background: #202024; }
+.setting-switch[aria-checked=true]::after { left: 20px; }
+#modal .settings-panel .btn { background: white; color: #333; border: 1px solid #dadade; border-radius: 7px; font: inherit; font-size: 12px; }
+.settings-panel .secman input[type=text] { border: 0; background: transparent; }
+.settings-panel .secman .secsw { margin-left: auto; }
+.settings-panel .secman .sw { width: 17px; height: 17px; }
+.settings-panel .secman .lbl { color: #5e5e64; }
+.settings-panel .keybox { background: transparent; border: 0; padding: 0; }
+
+.stage.side-right .dock { padding-left:14px; }
+.stage.side-left .dock { padding-right:14px; }
+.sheet .note-writing .body { font-size:var(--memo-font-size,15px); line-height:1.7; }
+.basic-format .paper-shape { margin-inline-start:auto; max-width:100%; }

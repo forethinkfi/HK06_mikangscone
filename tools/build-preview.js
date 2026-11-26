@@ -19,12 +19,12 @@ stage = stage.slice(0, stage.indexOf('<div class="demo-bg"')) + stage.slice(stag
 // 테마: src/themes/themes.js 다음에 src/themes/<이름>/theme.js·theme.css 를 모두 넣는다
 const THEME_DIR = path.join(ROOT, 'src', 'themes');
 const themeIds = fs.readdirSync(THEME_DIR, { withFileTypes: true }).filter((d) => d.isDirectory()).map((d) => d.name).sort();
-const scripts = ['parse.js', 'characters.js', 'themes/themes.js', ...themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.js'))).map((id) => `themes/${id}/theme.js`), 'cutout.js', 'drop-content.js', 'basic-note.js', 'app.js'];
+const scripts = ['parse.js', 'characters.js', 'themes/themes.js', ...themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.js'))).map((id) => `themes/${id}/theme.js`), 'cutout.js', 'drop-content.js', 'basic-note.js', 'merge-notes.js', 'app.js'];
 // 테마의 로컬 글꼴과 이미지를 한 파일짜리 미리보기에 포함한다.
-const themeAssetTypes = { woff2: 'font/woff2', png: 'image/png', svg: 'image/svg+xml' };
+const themeAssetTypes = { woff2: 'font/woff2', png: 'image/png', webp: 'image/webp', svg: 'image/svg+xml' };
 const themeCss = themeIds.filter((id) => fs.existsSync(path.join(THEME_DIR, id, 'theme.css'))).map((id) =>
   ['fonts.css', 'theme.css'].filter(file => fs.existsSync(path.join(THEME_DIR, id, file)))
-    .map(file => fs.readFileSync(path.join(THEME_DIR, id, file), 'utf8')).join('\n').replace(/url\(['"]((?!data:|https?:)[^'"]+\.(woff2|png|svg))['"]\)/g, (_, relativeFile, extension) => {
+    .map(file => fs.readFileSync(path.join(THEME_DIR, id, file), 'utf8')).join('\n').replace(/url\(['"]((?!data:|https?:)[^'"]+\.(woff2|png|webp|svg))['"]\)/g, (_, relativeFile, extension) => {
     const asset = fs.readFileSync(path.join(THEME_DIR, id, relativeFile)).toString('base64');
     return `url('data:${themeAssetTypes[extension]};base64,${asset}')`;
   })).join('\n');
@@ -277,6 +277,7 @@ ${R('styles.css')}
 ${designSystem}
 ${themeCss}
 ${R("speech.css")}
+${R("settings.css")}
 ${CSS}
 </style>
 ${DESKTOP}

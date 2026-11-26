@@ -1,13 +1,6 @@
 /* 파스텔 테마 (진현주) — html[data-theme-pack="pastel"] 일 때만 적용된다.
  * 메모지는 "마스킹 테이프로 붙인 종이" 느낌. 모양 6가지 × 색 5가지. */
 
-/* 메모먼트 꾹꾹체는 설치된 사본을 사용한다. */
-@font-face {
-  font-family: 'Pastel Memoment';
-  src: local('MemomentKkukkukk'), local('MemomentKkukkukk Regular'), local('메모먼트꾹꾹체'), local('메모먼트 꾹꾹체');
-  font-display: swap;
-}
-
 .character-octopus {
   display: block;
   width: 100%;

@@ -10,6 +10,7 @@
   box-shadow: inset 0 -2px 5px #d9d4ca88, 0 3px 8px #493d351a;
 }
 :is(#bubble, .speech, .pet-briefing)[data-speaker="pastel-octopus"] {
+  font-family: 'Pastel Memoment', 'Dongle', sans-serif;
   background: #f7b0bf;
   color: #562638;
   border: 1px solid #e99eaf;

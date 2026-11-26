@@ -2,7 +2,7 @@
 (function (root) {
   'use strict';
 
-  const defaultId = 'mono-cat';
+  const defaultId = 'basic-memoring';
   const CHARS = {};
   const ORDER = [];
   const character = (id) => Object.hasOwn(CHARS, id) ? CHARS[id] : CHARS[defaultId];

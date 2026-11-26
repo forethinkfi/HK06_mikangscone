@@ -157,3 +157,12 @@
 :root[data-theme-pack="mono-sketch-dark"] .sheet[data-paper="paperclip-stack"] { --mono-paper-art: url('papers/dark/paperclip-stack.svg'); }
 :root[data-theme-pack="mono-sketch"] .sheet[data-paper="stripe-tag"] { --mono-paper-art: url('papers/stripe-tag.svg'); }
 :root[data-theme-pack="mono-sketch-dark"] .sheet[data-paper="stripe-tag"] { --mono-paper-art: url('papers/dark/stripe-tag.svg'); }
+
+.bubble.briefing-art[data-speaker="mono-cat"] .who::before {
+  content:""; display:inline-block; vertical-align:middle; margin-right:6px; width:42px; height:42px;
+  background:url('briefing.webp') center/contain no-repeat;
+}
+
+:root:is([data-theme-pack="mono-sketch"], [data-theme-pack="mono-sketch-dark"]) .stage .tab:is(.sub,.sec) {
+  background:var(--tc); color:var(--ti);
+}
