@@ -1,0 +1,65 @@
+name: Package Windows for 6fc21ef
+on:
+  push:
+    branches: ['codex/mac-package-6fc21ef']
+    paths: ['.github/workflows/package-windows-once.yml']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: windows-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6fc21ef248ab7e68261e4ec1bea13fead95632f7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run build:pet
+      - run: npx --no-install electron-builder --win portable --x64 --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Check portable startup and included pets
+        shell: pwsh
+        run: |
+          $ErrorActionPreference = 'Stop'
+          $env:MIKKANG_USER_DATA = Join-Path $env:RUNNER_TEMP 'mikang-portable-smoke'
+          New-Item -ItemType Directory -Path $env:MIKKANG_USER_DATA | Out-Null
+          $state = Join-Path $env:MIKKANG_USER_DATA 'data.json'
+          '{"notes":[],"settings":{"launchAtLogin":false}}' | Set-Content -LiteralPath $state
+          $exe = (Resolve-Path -LiteralPath 'dist/MikangMemo-Windows.exe').Path
+          $env:Path = "$env:SystemRoot\System32;$env:SystemRoot\System32\WindowsPowerShell\v1.0;$env:SystemRoot"
+          $launcher = Start-Process -FilePath $exe -WorkingDirectory $env:RUNNER_TEMP -WindowStyle Hidden -PassThru
+          try {
+            $started = $false
+            for ($attempt = 0; $attempt -lt 45; $attempt++) {
+              if ($launcher.HasExited) { throw "Portable app exited with code $($launcher.ExitCode)" }
+              $saved = Get-Content -Raw -LiteralPath $state | ConvertFrom-Json
+              if ($saved.settings.themePack -eq 'default') { $started = $true; break }
+              Start-Sleep -Seconds 1
+            }
+            if (!$started) { throw 'Portable app did not finish starting' }
+            $app = Get-CimInstance Win32_Process -Filter "ParentProcessId=$($launcher.Id)" |
+              Where-Object { $_.Name -eq 'Mikang Memo.exe' } | Select-Object -First 1
+            if (!$app.ExecutablePath) { throw 'Cannot locate the running portable app' }
+            $pets = Join-Path (Split-Path -Parent $app.ExecutablePath) 'resources/assets/species'
+            $ids = (Get-ChildItem -LiteralPath $pets -Directory -Name | Sort-Object) -join ','
+            if ($ids -ne 'block-dino,mono-cat,pastel-octopus,vintage-teddy') { throw "Unexpected bundled pets: $ids" }
+            foreach ($id in $ids.Split(',')) {
+              $folder = Join-Path $pets $id
+              $species = Get-Content -Raw -LiteralPath (Join-Path $folder 'species.json') | ConvertFrom-Json
+              if ($species.id -ne $id -or !(Test-Path -LiteralPath (Join-Path $folder $species.animations.idle.sheet))) {
+                throw "Missing pet sprite: $id"
+              }
+            }
+          } finally {
+            if (!$launcher.HasExited) { & taskkill.exe /PID $launcher.Id /T /F | Out-Null }
+          }
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mikang-windows-6fc21ef
+          path: dist/MikangMemo-Windows.exe
+          if-no-files-found: error
