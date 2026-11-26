@@ -88,7 +88,7 @@ function animationFor(species: SpeciesConfig, state: PetState) {
 }
 
 function cueAnimation(species: SpeciesConfig, { key: motion, strength }: MotionCue, facing: number) {
-  if (species.motions?.[motion] && (motion !== 'wallImpact' || strength > 0.5)) return species.motions[motion];
+  if (species.motions?.[motion]) return species.motions[motion];
   if ((facing === 2 || facing === 6) && species.motions?.sideIdle && (motion === 'curious' || motion === 'meet' || motion === 'startle')) {
     return species.motions.sideIdle;
   }
@@ -224,7 +224,7 @@ async function main(): Promise<void> {
     if (reply?.pet === pet) reply = null;
     const lines = pet.species.dialogue?.reactions?.[reaction];
     pet.bubble.textContent = random(lines?.length ? lines : REACTION_LINES[reaction]);
-    pet.reactionUntil = now + (reaction === 'landing' ? 3200 : 1600);
+    pet.reactionUntil = now + (reaction === 'landing' || reaction === 'bump' ? 3200 : 1600);
     pet.until = pet.reactionUntil;
     pet.speakingUntil = reaction === 'landing' ? pet.until : 0;
     pet.bubble.hidden = false;
@@ -809,10 +809,27 @@ async function main(): Promise<void> {
       const before = petPosition(pet);
       const previousState = pet.state.getState();
       if (pet.flight) {
-        if (held?.pet !== pet) {
+        const braced = pet.cue?.key === 'wallCling' ||
+          (pet.species.id === 'mono-cat' && pet.cue?.key === 'wallImpact');
+        if (held?.pet !== pet && !braced) {
           const step = advanceFlight(pet.flight, delta / 1000, Math.max(0, bounds.width - petSize), Math.max(0, bounds.height - petSize));
           pet.flight = step;
-          if (step.wall && !step.landed) cue(pet, 'wallImpact', now, step.wall === 'left' ? -1 : 1, Math.min(1, step.wallSpeed / 650));
+          if (step.wall && !step.landed) {
+            const side = step.wall === 'left' ? -1 : 1;
+            const strength = Math.min(1, step.wallSpeed / 650);
+            if (pet.species.id === 'pastel-octopus' && pet.species.motions?.wallCling) {
+              const contact = motionCue(pet.species, 'wallCling', now, side, strength);
+              contact.end = now + 650;
+              pet.cue = contact;
+              step.velocity = { x: -side * 65, y: 40 };
+            } else {
+              cue(pet, 'wallImpact', now, side, strength);
+              if (pet.species.id === 'mono-cat') {
+                step.velocity = { x: -side * (160 + strength * 130), y: -180 };
+              }
+            }
+            if (pet.species.dialogue?.reactions?.bump?.length) reactWithLine(pet, 'bump', now);
+          }
           if (step.landed) {
             pet.behavior.setPosition({ x: step.position.x, y: 0 });
             pet.flight = undefined;

@@ -115,3 +115,30 @@
 }
 .sheet .content > .note-album { align-self:flex-end; }
 .basic-note-head .basic-note-caption { min-width:0; }
+
+/* Narrow dashboard widgets reflow as whole labels and values. */
+.overview-assistant { container-type:inline-size; }
+.overview-today > div { min-width:0; justify-content:center; align-items:center; }
+.overview-today :is(dt,dd) { max-width:100%; word-break:keep-all; overflow-wrap:anywhere; }
+.overview-today dd { font-variant-numeric:tabular-nums; }
+@container (max-width: 235px) {
+  .overview-today { grid-template-columns:1fr; gap:4px; }
+  .overview-today > div { flex-direction:row; justify-content:space-between; gap:8px; }
+}
+.weather-source { display:block; color:var(--mikkang-muted); font-size:11px; text-align:end; }
+.weather-source[hidden] { display:none; }
+.overview-toolbar { flex-wrap:wrap; }
+.overview-toolbar > input, .overview-quick input, .shelf-result .k { min-width:0; }
+.overview-card :is(p,h2,h3,summary), .shelf-result .k, .shelf-list header strong { overflow-wrap:anywhere; word-break:keep-all; }
+.shelf-result small { white-space:nowrap; }
+#stage.side-right #dock { padding-right:0; }
+#stage.side-left #dock { padding-left:0; }
+#dock .shelf-group + .shelf-group { margin-top:-14px; }
+#dock .shelf-group:focus-within { z-index:1; }
+#dock .shelf-group:has(.shelf-more) + .shelf-group { margin-top:0; }
+#stage.side-right #dock .shelf-group .sec { border-radius:8px 0 0 8px; }
+#stage.side-left #dock .shelf-group .sec { border-radius:0 8px 8px 0; }
+#stage #dock .tab.secadd { writing-mode:vertical-rl; justify-content:center; align-items:center;
+  width:34px; min-width:0; min-height:82px; height:auto; padding:6px 2px; margin:0; transform:none; box-sizing:border-box; }
+#stage #dock .secadd .k { white-space:nowrap; font-size:12px; text-orientation:upright; }
+#stage #bookmark-pet { background-size:var(--bookmark-pet-size) var(--bookmark-pet-size); background-position:center top; }

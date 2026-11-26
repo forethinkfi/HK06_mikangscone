@@ -1,7 +1,7 @@
 {
   "name": "mikang-bookmark-memo",
   "productName": "PeeKit",
-  "version": "0.2.4",
+  "version": "0.2.5",
   "description": "바탕화면 책갈피 메모 + AI 비서 캐릭터 (Electron, Windows/macOS)",
   "main": "electron/main.js",
   "license": "MIT",

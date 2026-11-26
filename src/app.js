@@ -2295,6 +2295,7 @@ function renderBoard() {
     h('option', { value: '' }, '분류 없음'),
     S.sections.map((section) => h('option', { value: section.id, selected: section.id === openSec }, section.name)));
   const weatherValue = h('dd', {}, '—');
+  const weatherSource = h('small', {class:'weather-source', hidden:true});
   const weatherLabel = h('dt', {}, '날씨');
   const now = Date.now(), today = startOfDay(new Date(now));
   const remaining = todayEvents().filter(({ e }) => e.allDay || e.at >= now);
@@ -2319,6 +2320,7 @@ function renderBoard() {
         h('div', {}, weatherLabel, weatherValue),
         h('div', {}, h('dt', {}, '남은 일정'), h('dd', {}, remaining.length)),
         h('div', {}, h('dt', {}, '다음 알람'), h('dd', {}, alarm ? fmtTime(new Date(alarm.at)) : '—'))),
+      weatherSource,
       alarm ? h('p', { class: 'overview-muted' }, `다음 알람 · ${alarm.title}`) : null,
       api.petControls ? h('div', { id: 'overview-pet', class: 'overview-pet', hidden: true }) : null,
       h('form', { class: 'overview-quick', onsubmit: (e) => {
@@ -2388,7 +2390,9 @@ function renderBoard() {
     const city = (S.settings.weatherCity || '서울').trim();
     void api.weather(city).then((result) => {
       if (!weatherValue.isConnected || !result?.ok || !Number.isFinite(result.now?.temp)) return;
-      weatherValue.textContent = `${Math.round(result.now.temp)}° · 기상청`;
+      weatherValue.textContent = `${Math.round(result.now.temp)}°`;
+      weatherSource.textContent = '날씨 제공 · '+(result.source || '기상청');
+      weatherSource.hidden = false;
       weatherLabel.textContent = result.today?.pop == null ? WMO(result.now.code) : `비 ${result.today.pop}%`;
     }).catch(() => {});
   }
@@ -2478,8 +2482,8 @@ function placeBookmarkPet() {
   pet.style.backgroundImage = !['basic-memoring','mono-cat','block-dino','pastel-octopus','vintage-teddy'].includes(species) && S.settings.customChar ? 'url(' + JSON.stringify(S.settings.customChar) + ')' : '';
   const rect = tab.getBoundingClientRect(), stage = $('#stage').getBoundingClientRect();
   pet.style.left = clamp(rect.right - stage.left - size - 4, 0, W() - size) + 'px';
-  const seatLevel = { 'mono-cat': .96, 'block-dino': .76 };
-  const perchHeight = size * (seatLevel[species] ?? .88);
+  const perchHeight = Math.round(size * .64);
+  pet.style.height = perchHeight+'px';
   const topClearance = parseFloat(getComputedStyle(pet).getPropertyValue('--bookmark-top-clearance'));
   pet.style.top = Math.max(topClearance, rect.top - stage.top - perchHeight) + 'px';
   if (perchOrigin && !matchMedia('(prefers-reduced-motion: reduce)').matches) {

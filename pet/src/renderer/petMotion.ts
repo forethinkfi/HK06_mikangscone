@@ -38,7 +38,7 @@ export function personalityOf(species: SpeciesConfig) {
 }
 
 export function motionCue(species: SpeciesConfig, key: PetMotion, now: number, side: -1 | 1 = 1, strength = 0): MotionCue {
-  const clip = key !== 'wallImpact' || strength > 0.5 ? species.motions?.[key] : undefined;
+  const clip = species.motions?.[key];
   const base = key === 'wallImpact' || key === 'petBump' ? durations[key] * (0.52 + strength * 0.62) : durations[key];
   const timed = clip && !clip.loop && Number.isFinite(base) ? 1000 * clip.frameCount / clip.fps : base;
   const personality = personalityOf(species);
@@ -52,7 +52,13 @@ export function poseFor(cue: MotionCue, now: number, species: SpeciesConfig): Sp
   const p = Math.min(1, age / (end - start));
   const pulse = Math.sin(p * Math.PI);
   const personality = personalityOf(species);
-  if (species.motions?.[key] && (key !== 'wallImpact' || strength > 0.5)) {
+  if (key === 'wallImpact') {
+    const pose = { tilt: 0, scaleX: 1, scaleY: 1, lift: 0, wall: side };
+    if (species.id === 'mono-cat') return { ...pose, scaleX: 1 - 0.18 * pulse, scaleY: 1 + 0.09 * pulse, tilt: -side * pulse * 0.09 };
+    if (species.id === 'block-dino') return { ...pose, tilt: -side * pulse * 0.26, scaleY: 1 - 0.14 * pulse };
+    if (species.id === 'vintage-teddy') return { ...pose, tilt: side * pulse * 0.14, scaleY: 1 - 0.05 * pulse };
+  }
+  if (species.motions?.[key]) {
     if (key === 'wallImpact' || key === 'wallCling' || key === 'slip' || key === 'peek') {
       return { tilt: 0, scaleX: 1, scaleY: 1, lift: 0, wall: side };
     }
