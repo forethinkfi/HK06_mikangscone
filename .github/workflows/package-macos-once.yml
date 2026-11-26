@@ -1,0 +1,45 @@
+name: Package Mac for 6fc21ef
+on:
+  push:
+    branches: ['codex/mac-package-6fc21ef']
+    paths: ['.github/workflows/package-macos-once.yml']
+permissions:
+  contents: read
+jobs:
+  package:
+    runs-on: macos-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: 6fc21ef248ab7e68261e4ec1bea13fead95632f7
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - run: npm run dist:mac -- --publish never
+        env:
+          CSC_IDENTITY_AUTO_DISCOVERY: 'false'
+      - name: Verify both Mac packages
+        run: |
+          set -e
+          for app in dist/mac*/*.app; do
+            codesign --verify --deep --strict "$app"
+            pets="$app/Contents/Resources/assets/species"
+            test ! -e "$pets/black-wizard-cat"
+            for id in mono-cat pastel-octopus vintage-teddy block-dino; do
+              test -s "$pets/$id/species.json"
+              test -s "$pets/$id/sprites/idle.png"
+            done
+          done
+          test -s dist/*-mac-arm64.dmg
+          test -s dist/*-mac-x64.dmg
+          mkdir mac-packages
+          cp dist/*-mac-arm64.dmg mac-packages/MikangMemo-macOS-AppleSilicon.dmg
+          cp dist/*-mac-x64.dmg mac-packages/MikangMemo-macOS-Intel.dmg
+      - uses: actions/upload-artifact@v4
+        with:
+          name: mikang-mac-6fc21ef
+          path: mac-packages/*.dmg
+          if-no-files-found: error
