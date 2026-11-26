@@ -33,6 +33,7 @@ contextBridge.exposeInMainWorld('api', {
   organize: (payload) => ipcRenderer.invoke('ai:organize', payload),
   summarize: (payload) => ipcRenderer.invoke('ai:summarize', payload),
   searchNotes: (payload) => ipcRenderer.invoke('ai:search-notes', payload),
+  notion: (action,data) => ipcRenderer.invoke('notion:action', action, data),
   calendar: action => ipcRenderer.invoke('calendar:action', action),
   weather: (city) => ipcRenderer.invoke('weather:get', city),
   convertHeic: (buf) => ipcRenderer.invoke('image:heic', buf),
