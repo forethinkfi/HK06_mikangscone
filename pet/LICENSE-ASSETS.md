@@ -11,3 +11,7 @@ audio, etc.).
   licensed/CC0 work. Do not submit existing copyrighted character art,
   including from other video games, anime, or franchises. See
   `CONTRIBUTING.md`.
+
+## Coral otter sound effects
+
+The five otter WAV assets use the [Mixkit Sound Effects Free License](https://mixkit.co/license/#sfxFree). Gift uses Soap bubble sound (2925), wall and landing use edited Game ball tap (2073), receive uses Paper slide (1530), and bookmark uses Page turn single (1104).

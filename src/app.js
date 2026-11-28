@@ -546,6 +546,7 @@ function newNote(focus = true, sectionId) {
   return n;
 }
 
+let otterBookmarkSlide;
 function togglePetBookmarks(anchor) {
   const closing = !$('#stage').classList.contains('dock-hidden');
   dismissPeek();
@@ -556,6 +557,12 @@ function togglePetBookmarks(anchor) {
     dockFolded = true;
     closeAll();
     return;
+  }
+  if ((anchor?.species ?? activePetId ?? petIdFor(S.settings.character)) === 'coral-otter') {
+    otterBookmarkSlide ??= new Audio('../dist-pet/renderer/sounds/otter-bookmark.wav');
+    otterBookmarkSlide.volume = 0.55;
+    otterBookmarkSlide.currentTime = 0;
+    void otterBookmarkSlide.play().catch(() => {});
   }
   perchOrigin = anchor;
   summoned = true;

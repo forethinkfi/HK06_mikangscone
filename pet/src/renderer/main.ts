@@ -137,7 +137,6 @@ async function main(): Promise<void> {
     void clip.play().catch(() => {});
   }
   window.petAPI.onPerched((id) => {
-    if (id && id !== perchedId) playOtterSound(id, 'bookmark');
     perchedId = id;
   });
   let briefingHold: Companion | undefined;
@@ -850,7 +849,7 @@ async function main(): Promise<void> {
           if (step.wall && !step.landed) {
             const side = step.wall === 'left' ? -1 : 1;
             const strength = Math.min(1, step.wallSpeed / 650);
-            playOtterSound(pet.species.id, 'wall');
+            if (step.wallSpeed >= 240) playOtterSound(pet.species.id, 'wall');
             if (pet.species.motions?.wallCling) {
               const contact = motionCue(pet.species, 'wallCling', now, side, strength);
               contact.end = now + 650;
