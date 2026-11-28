@@ -118,7 +118,6 @@
   gap: 8px 4px;
 }
 
-.pet-action-grid.has-fishing-action { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 
 .pet-quick-menu button {
   padding: 0;

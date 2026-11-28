@@ -10,6 +10,7 @@ import {
 } from '../shared/ipcContract';
 
 const petAPI: PetAPI = {
+  onFeatureTips(callback) { ipcRenderer.on(IPC.FEATURE_TIPS, (_event, tips, enabled) => callback(tips, enabled)); },
   onSizeChanged(callback) { ipcRenderer.on(IPC.SIZE_CHANGED, (_event, size: number) => callback(size)); },
   ready() { ipcRenderer.send(IPC.RENDERER_READY); },
   onSceneCommand(callback) {

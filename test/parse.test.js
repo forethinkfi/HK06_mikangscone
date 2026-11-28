@@ -4,6 +4,17 @@ const P = require('../src/parse.js');
 
 // 2026-11-25(수) 오전 10:00 기준
 const NOW = new Date(2026, 10, 25, 10, 0, 0);
+test('메모 검색은 두벌식 오타, 겹받침, 영문 고유명사와 여러 단어를 지원한다', () => {
+  const match = (q, text) => P.matchesSearch(text, P.searchWords(q));
+  assert.ok(match('ghldml', '다음 회의 자료'));
+  assert.ok(match('draft ghldml', '회의 DRAFT'));
+  assert.ok(match('Rhc', '꽃'));
+  assert.ok(match('rkqt', '값'));
+  assert.ok(match('ghldml', '원문에 적은 ghldml'));
+  assert.ok(!match('ghl', '홀로'));
+  assert.ok(!match('g', '회의'));
+});
+
 const at = (y, m, d, h, mi = 0) => new Date(y, m - 1, d, h, mi).getTime();
 
 test('내일 12시까지 회의자료 제출 → 내일 12:00 마감', () => {
@@ -37,4 +48,14 @@ test('날짜 없는 메모는 일정이 없다', () => {
 
 test('키워드 추측', () => {
   assert.equal(P.guessKeyword('내일 12시까지 회의자료 제출', ''), '회의자료');
+});
+
+test('한글 시각과 날짜만 적은 오늘 일정을 구분한다', () => {
+  const [event] = P.parseEvents('금요일 오후 세 시까지 시안 준비', NOW);
+  assert.equal(event.at, at(2026, 11, 27, 15));
+  assert.equal(event.title, '시안 준비');
+  assert.equal(event.allDay, false);
+  assert.equal(P.parseEvents('내일 오전 열한 시 반 운동', NOW)[0].at, at(2026, 11, 26, 11, 30));
+  assert.equal(P.parseEvents('오늘 자료 준비', NOW)[0].allDay, true);
+  assert.deepEqual(P.parseEvents('네 시간 동안 자료 준비', NOW), []);
 });

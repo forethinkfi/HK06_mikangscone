@@ -14,6 +14,7 @@ export class AnimationController {
   private totalElapsedMs = 0;
 
   get currentFrameIndex(): number { return this.frameIndex; }
+  get playbackElapsedMs(): number { return this.totalElapsedMs; }
 
   /**
    * Always resets to frame 0, even if `def` is the same object reference as

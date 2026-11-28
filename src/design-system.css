@@ -270,8 +270,8 @@
 .basic-note .bar .row { flex-wrap: wrap; }
 .basic-format { border-top: 1px solid #8f79421f; }
 .basic-format { flex-wrap: wrap; }
-.basic-format [data-format] { visibility: hidden; }
-.basic-format:is([data-selection], [data-expanded]) [data-format] { visibility: visible; }
+.basic-format [data-format] { display: none; }
+.basic-format:is([data-selection], [data-expanded]) [data-format] { display: inline-flex; }
 .basic-format-toggle[aria-expanded="false"] { color: var(--mikkang-muted); }
 .basic-format-bold { font-weight: 700; }
 .basic-format-italic { font-style: italic; }
@@ -720,3 +720,14 @@
 .stage .dock .tab:is(.sec, .sub) .k { white-space: normal; overflow-wrap: anywhere; line-height: 1.3; }
 .stage .dock .tab .sname { min-width: 0; }
 .stage .dock .tab .cnt { flex: none; }
+
+.overview-thumb { width: 36px; height: 36px; object-fit: cover; border-radius: 5px; flex: none; }
+#overview-result-count:not(:empty) { display: block; margin-block: 6px; }
+.overview-library-tools { flex-wrap: wrap; }
+.overview-library-tools #overview-search { flex: 1 1 120px; }
+@media (min-width: 800px) {
+  .overview-grid:has(> [data-widget-card="assistant"] + [data-widget-card="schedule"] + [data-widget-card="memos"]) {
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr) minmax(0, 1.55fr);
+  }
+  .overview-slot[data-widget-card="schedule"] > .overview-card { height: auto; }
+}

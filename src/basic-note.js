@@ -45,7 +45,7 @@
       return end;
     }
     function photoElement(src) {
-      return h('img', { src, 'data-photo': '', alt: '첨부 사진', draggable: 'false' });
+      return h('img', { src, 'data-photo': '', alt: '첨부 사진', tabindex: '0', draggable: 'false' });
     }
     const sync = () => {
       note.photos = photos().map((img, i) => {
@@ -71,6 +71,11 @@
       onblur: () => { savedRange = selectionRange() || savedRange; onBlur(); },
       onkeyup: () => { savedRange = selectionRange(); },
       onpointerup: () => { savedRange = selectionRange(); },
+      onkeydown: e => {
+        if (e.target.matches('img[data-photo]') && ['Enter',' '].includes(e.key)) {
+          e.preventDefault(); onView(photos().indexOf(e.target));
+        }
+      },
       onclick: e => { if (e.target.matches('img[data-photo]')) onView(photos().indexOf(e.target)); },
       ondrop: e => {
         if (e.dataTransfer.files.length) return;
@@ -111,18 +116,13 @@
     function insertPhotos(sources, range) {
       if (!el.contains(range.commonAncestorContainer)) range = insertionRange();
       range.collapse(false);
-      const fragment = document.createDocumentFragment();
-      for (const src of sources) fragment.append(photoElement(src));
-      const last = fragment.lastChild;
-      range.insertNode(fragment);
-      range.setStartAfter(last);
-      range.collapse(true);
-      if (!last.nextSibling) last.after(document.createElement('br'));
       el.focus();
       const selection = document.getSelection();
       selection.removeAllRanges();
       selection.addRange(range);
-      savedRange = range.cloneRange();
+      const markup = sources.map(src => photoElement(src).outerHTML).join('');
+      document.execCommand('insertHTML', false, markup);
+      savedRange = selectionRange();
       sync();
     }
     const toolbar = h('div', { class: 'basic-format', role: 'group', 'aria-label': '메모 서식' });
@@ -146,7 +146,11 @@
           sync();
         },
       })));
-    return { el, toolbar, insertionRange, insertPhotos };
+    function appendPhotos(sources) {
+      el.append(...sources.map(photoElement));
+      sync();
+    }
+    return { el, toolbar, insertionRange, insertPhotos, appendPhotos };
   }
 
   window.BasicNote = { editor };

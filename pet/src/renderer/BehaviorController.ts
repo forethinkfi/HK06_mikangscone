@@ -22,6 +22,7 @@ export class BehaviorController {
   private position: Vec2;
   private direction: 1 | -1 = 1;
   private phaseRemainingMs = 0;
+  private walkDurationMs = 0;
 
   constructor(
     private stateMachine: PetStateMachine,
@@ -29,6 +30,7 @@ export class BehaviorController {
     startPosition: Vec2,
     private getUnlockedIdleVariants: (position: Vec2) => PetState[] = () => ['idle'],
     private readonly initialPatrolDirection?: -1 | 1,
+    private readonly walkEaseMs = 0,
   ) {
     this.position = { ...startPosition };
     this.direction = initialPatrolDirection ?? 1;
@@ -53,10 +55,9 @@ export class BehaviorController {
    * there. 'idle' is weighted into the pick pool twice so unlocking sit/
    * sleep doesn't make the pet constantly switch poses.
    */
-  private beginIdlePhase(): void {
+  private beginIdlePhase(variants = this.getUnlockedIdleVariants(this.position)): void {
     this.stateMachine.transition('idle');
 
-    const variants = this.getUnlockedIdleVariants(this.position);
     const pool: PetState[] = ['idle', ...variants];
     const chosen = pool[Math.floor(Math.random() * pool.length)];
     if (chosen === 'sleep') {
@@ -70,7 +71,8 @@ export class BehaviorController {
   }
 
   private beginWalkPhase(): void {
-    this.phaseRemainingMs = randomBetween(this.behavior.walkMinMs, this.behavior.walkMaxMs);
+    this.walkDurationMs = randomBetween(this.behavior.walkMinMs, this.behavior.walkMaxMs);
+    this.phaseRemainingMs = this.walkDurationMs;
     if (this.initialPatrolDirection === undefined) this.direction = Math.random() < 0.5 ? -1 : 1;
     this.stateMachine.transition('idle');
     this.stateMachine.transition('walk');
@@ -85,7 +87,12 @@ export class BehaviorController {
     this.phaseRemainingMs -= deltaMs;
 
     if (state === 'walk') {
-      const deltaPx = this.behavior.walkSpeedPxPerSec * (deltaMs / 1000) * this.direction;
+      const middleOfStep = this.phaseRemainingMs + deltaMs / 2;
+      const t = this.walkEaseMs > 0
+        ? Math.max(0, Math.min(1, (this.walkDurationMs - middleOfStep) / this.walkEaseMs, middleOfStep / this.walkEaseMs))
+        : 1;
+      const pace = t * t * (3 - 2 * t);
+      const deltaPx = this.behavior.walkSpeedPxPerSec * (deltaMs / 1000) * this.direction * pace;
       let nextX = this.position.x + deltaPx;
 
       const minX = bounds.x;
@@ -113,8 +120,7 @@ export class BehaviorController {
 
   /** Called when a drag interaction ends; resumes autonomous behavior. */
   resumeAfterDrag(): void {
-    this.stateMachine.transition('idle');
-    this.beginIdlePhase();
+    this.beginIdlePhase(['idle']);
   }
 
   /** Triggered by a poke; only fires from an idle-like state. */

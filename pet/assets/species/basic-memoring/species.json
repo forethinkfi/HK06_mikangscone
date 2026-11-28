@@ -5,11 +5,18 @@
   "animations": {
     "idle": {
       "sheet": "idle.png",
+      "matchWalkHeight": true,
       "frameWidth": 192,
       "frameHeight": 192,
       "frameCount": 1,
       "fps": 5,
-      "loop": true
+      "loop": true,
+      "mouthCenters": [
+        [99, 99]
+      ],
+      "bodyBounds": [
+        [10, 36, 182, 185]
+      ]
     },
     "sleep": {
       "sheet": "sleep.png",
@@ -17,32 +24,61 @@
       "frameHeight": 192,
       "frameCount": 1,
       "fps": 5,
-      "loop": true
+      "loop": true,
+      "bodyBounds": [
+        [12, 58, 178, 188]
+      ]
     },
     "walk": {
       "sheet": "walk.png",
       "frameWidth": 192,
       "frameHeight": 192,
-      "frameCount": 2,
-      "fps": 5,
+      "frameCount": 4,
+      "fps": 10,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [119, 100],
+        [119, 100],
+        [119, 100],
+        [119, 100]
+      ],
+      "bodyBounds": [
+        [26, 14, 168, 188],
+        [26, 14, 168, 188],
+        [26, 14, 168, 187],
+        [26, 14, 168, 187]
+      ]
     },
     "dragged": {
       "sheet": "dragged.png",
+      "matchWalkHeight": true,
       "frameWidth": 192,
       "frameHeight": 192,
       "frameCount": 1,
       "fps": 5,
-      "loop": true
+      "loop": true,
+      "mouthCenters": [
+        [94, 103]
+      ],
+      "bodyBounds": [
+        [15, 42, 180, 186]
+      ]
     },
     "react": {
       "sheet": "react.png",
+      "matchWalkHeight": true,
       "frameWidth": 192,
       "frameHeight": 192,
       "frameCount": 1,
-      "fps": 5,
-      "loop": true
+      "fps": 2,
+      "loop": false,
+      "mouthCenters": [
+        [88, 85]
+      ],
+      "bodyBounds": [
+        [9, 32, 162, 165]
+      ]
     },
     "sit": {
       "sheet": "sit.png",
@@ -50,11 +86,17 @@
       "frameHeight": 192,
       "frameCount": 1,
       "fps": 5,
-      "loop": true
+      "loop": true,
+      "mouthCenters": [
+        [99, 112]
+      ],
+      "bodyBounds": [
+        [14, 58, 176, 188]
+      ]
     }
   },
   "behavior": {
-    "doubleClick": "hearts",
+    "throwReactions": { "playful": "jot", "hurt": "recover" },
     "sideWalkInsets": {
       "left": 43,
       "right": 43
@@ -66,6 +108,45 @@
     "walkMinMs": 4100,
     "walkMaxMs": 7600,
     "spriteScale": 0.583,
-    "personality": "relaxed"
+    "personality": "relaxed",
+    "greeting": {
+      "motion": "jot",
+      "line": "오늘의 할 일에도 체크 하나!"
+    }
+  },
+  "motions": {
+    "offer": {
+      "sheet": "offer.png",
+      "matchWalkHeight": true,
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [95, 101]
+      ],
+      "bodyBounds": [
+        [22, 35, 169, 188]
+      ]
+    },
+    "receive": {
+      "sheet": "offer.png",
+      "matchWalkHeight": true,
+      "receivePoint": [136, 115],
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [95, 101]
+      ],
+      "bodyBounds": [
+        [22, 35, 169, 188]
+      ]
+    }
   }
 }

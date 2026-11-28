@@ -37,7 +37,7 @@ export function saveImagePet(source: string) {
   return id;
 }
 
-export function runPetMenuAction(action: unknown, select: (id: string) => void, dismiss: (id: string) => void, hide: () => void) {
+export function runPetMenuAction(action: unknown, select: (id: string) => void, dismiss: (id: string) => void, hide: () => void, openRecent: () => void) {
   if (!action || typeof action !== 'object' || !('kind' in action)) return;
   try {
     switch (action.kind) {
@@ -49,6 +49,7 @@ export function runPetMenuAction(action: unknown, select: (id: string) => void, 
       case 'dismiss':
         if ('id' in action && typeof action.id === 'string') dismiss(action.id);
         break;
+      case 'recent-note': openRecent(); break;
       case 'hide': hide(); break;
       case 'quit': app.quit(); break;
     }

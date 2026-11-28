@@ -4,6 +4,8 @@ import type { Vec2, Rect } from './types';
 import type { SpritePose } from './petMotion';
 import type { FishingPose } from './FishingRig';
 
+export interface SpeakingMouth { center: [number, number]; radius: number; opening: number; color: string; tongue?: boolean }
+
 export class PetRenderer {
   private ctx: CanvasRenderingContext2D;
   private imageCache = new Map<string, HTMLImageElement>();
@@ -38,6 +40,11 @@ export class PetRenderer {
     if (!definition) return;
     this.getImage(definition.sheet);
     if (definition.leftSheet) this.getImage(definition.leftSheet);
+  }
+
+  isReady(def: SpeciesAnimationDef): boolean {
+    const image = this.getImage(def.sheet);
+    return image.complete && image.naturalWidth > 0;
   }
 
   /**
@@ -106,16 +113,21 @@ export class PetRenderer {
   private poseGeometry(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number, pose: SpritePose, footprint: number) {
     const box = def.pixelArt ? this.getPaintBounds(def, frame, position, scale) :
       { ...this.getSpriteBounds(def, position, scale), y: position.y + (def.bottomInset ?? 0) * scale };
-    const px = box.width / 2;
-    const py = pose.pivot === 'center' ? box.height / 2 : box.height;
+    const px = pose.anchor ? pose.anchor.x - (box.x - position.x) : box.width / 2;
+    const py = pose.anchor ? pose.anchor.y - (box.y - position.y) : pose.pivot === 'center' ? box.height / 2 : box.height;
     const cos = Math.cos(pose.tilt);
     const sin = Math.sin(pose.tilt);
-    const corners = [[-px, -py], [box.width - px, -py], [-px, box.height - py], [box.width - px, box.height - py]];
-    const xs = corners.map(([x, y]) => x * pose.scaleX * cos - y * pose.scaleY * sin);
-    const ys = corners.map(([x, y]) => x * pose.scaleX * sin + y * pose.scaleY * cos);
-    const left = Math.min(...xs); const right = Math.max(...xs);
-    const top = Math.min(...ys); const bottom = Math.max(...ys);
-    const x = pose.wall === -1 ? position.x - left : pose.wall === 1 ? position.x + footprint - right : box.x + px;
+    const ux = box.width * pose.scaleX * cos;
+    const uy = box.width * pose.scaleX * sin;
+    const vx = -box.height * pose.scaleY * sin;
+    const vy = box.height * pose.scaleY * cos;
+    const originX = -px * pose.scaleX * cos + py * pose.scaleY * sin;
+    const originY = -px * pose.scaleX * sin - py * pose.scaleY * cos;
+    const left = originX + Math.min(0, ux) + Math.min(0, vx);
+    const right = originX + Math.max(0, ux) + Math.max(0, vx);
+    const top = originY + Math.min(0, uy) + Math.min(0, vy);
+    const bottom = originY + Math.max(0, uy) + Math.max(0, vy);
+    const x = pose.wall === -1 ? position.x - left : pose.wall === 1 ? position.x + footprint - right : box.x + px + (pose.shiftX ?? 0);
     const y = box.y + py - pose.lift;
     return { box, px, py, x, y, bounds: { x: x + left, y: y + top, width: right - left, height: bottom - top } };
   }
@@ -124,13 +136,51 @@ export class PetRenderer {
     return this.poseGeometry(def, frame, position, scale, pose, footprint).bounds;
   }
 
-  render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number, grip?: Vec2, pose?: SpritePose, footprint = 0, mirror = false): void {
+  getPosePoint(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number, pose: SpritePose,
+    footprint: number, mirror: boolean, point: [number, number]): Vec2 {
+    const { box, px, py, x, y } = this.poseGeometry(def, frame, position, scale, pose, footprint);
+    const dx = (point[0] * box.width / frame.sw - px) * pose.scaleX;
+    const dy = (point[1] * box.height / frame.sh - py) * pose.scaleY;
+    const screenX = x + dx * Math.cos(pose.tilt) - dy * Math.sin(pose.tilt);
+    return { x: mirror ? 2 * position.x + footprint - screenX : screenX,
+      y: y + dx * Math.sin(pose.tilt) + dy * Math.cos(pose.tilt) };
+  }
+
+  private drawMouth(mouth: SpeakingMouth, x: number, y: number, width: number, height: number, frame: FrameRect) {
+    const sx = width / frame.sw, sy = height / frame.sh;
+    const [cx, cy] = mouth.center;
+    this.ctx.beginPath();
+    const centerX = x + cx * sx, lip = y + cy * sy;
+    const half = mouth.radius * sx, depth = mouth.opening * sy;
+    this.ctx.moveTo(centerX - half, lip);
+    this.ctx.quadraticCurveTo(centerX, lip + depth * .4, centerX + half, lip);
+    this.ctx.bezierCurveTo(centerX + half * .72, lip + depth * 2.8,
+      centerX - half * .72, lip + depth * 2.8, centerX - half, lip);
+    this.ctx.fillStyle = mouth.color;
+    this.ctx.fill();
+    if (mouth.tongue && mouth.opening > 1.6) {
+      this.ctx.beginPath();
+      this.ctx.ellipse(centerX, lip + depth * 1.45, half * .42, depth * .44, 0, 0, Math.PI * 2);
+      this.ctx.fillStyle = '#b77b78';
+      this.ctx.fill();
+    }
+  }
+
+  render(def: SpeciesAnimationDef, frame: FrameRect, position: Vec2, scale: number, grip?: Vec2, pose?: SpritePose, footprint = 0, mirror = false, opacity = 1, mouth?: SpeakingMouth): void {
+    if (opacity <= 0) return;
+    if (opacity < 1) {
+      this.ctx.save();
+      this.ctx.globalAlpha *= opacity;
+      this.render(def, frame, position, scale, grip, pose, footprint, mirror, 1, mouth);
+      this.ctx.restore();
+      return;
+    }
     if (mirror) {
       this.ctx.save();
       this.ctx.translate(position.x * 2 + footprint, 0);
       this.ctx.scale(-1, 1);
       const reflectedPose = pose?.wall ? { ...pose, wall: pose.wall === -1 ? 1 as const : -1 as const } : pose;
-      this.render(def, frame, position, scale, grip, reflectedPose, footprint);
+      this.render(def, frame, position, scale, grip, reflectedPose, footprint, false, 1, mouth);
       this.ctx.restore();
       return;
     }
@@ -175,6 +225,7 @@ export class PetRenderer {
       this.ctx.rotate(pose.tilt);
       this.ctx.scale(pose.scaleX, pose.scaleY);
       this.ctx.drawImage(image, frame.sx, frame.sy, frame.sw, frame.sh, -px, -py, box.width, box.height);
+      if (mouth) this.drawMouth(mouth, -px, -py, box.width, box.height, frame);
       this.ctx.restore();
       return;
     }
@@ -206,6 +257,9 @@ export class PetRenderer {
     if (motion === 'breathe' || motion === 'sleep') {
       this.ctx.scale(1 + wave * 0.008, 1 + wave * 0.015);
     }
+    if (motion === 'quietBreath' && !this.reducedMotion.matches) {
+      this.ctx.scale(1, 1 + Math.sin(time * 1.8) * 0.006);
+    }
     this.ctx.drawImage(
       image,
       frame.sx,
@@ -217,6 +271,7 @@ export class PetRenderer {
       width,
       height,
     );
+    if (mouth) this.drawMouth(mouth, -width / 2, -height, width, height, frame);
     this.ctx.restore();
     const label = def.effect === 'sleep' ? 'Z z z' : def.effect === 'rest' ? '쉬는 중' : def.effect === 'happy' ? '♥' : def.effect === 'held' ? '어디 가?' : '';
     if (label) {

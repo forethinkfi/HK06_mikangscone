@@ -11,7 +11,7 @@ export class PetQuickMenu {
   private empty = false;
   private page = 0;
 
-  constructor(private toggleToy: () => void) {
+  constructor(private toggleToy: () => void, private focusEnabled: () => boolean, private toggleFocus: () => void) {
     this.panel.className = 'pet-quick-menu';
     this.panel.style.setProperty('--paper-grain', paperTexture());
     this.panel.hidden = true;
@@ -80,7 +80,6 @@ export class PetQuickMenu {
     this.page++;
     const grid = document.createElement('div');
     grid.className = 'pet-action-grid';
-    grid.classList.toggle('has-fishing-action', this.hasToy);
     const tile = (icon: keyof typeof menuIcons, label: string, onClick: () => void) => {
       const button = document.createElement('button');
       button.type = 'button';
@@ -92,6 +91,12 @@ export class PetQuickMenu {
       grid.append(button);
       return button;
     };
+    if (!this.empty) {
+      const focused = this.focusEnabled();
+      const button = tile('focus', focused ? '집중 모드 해제' : '집중 모드', () => { this.close(); this.toggleFocus(); });
+      button.setAttribute('aria-pressed', String(focused));
+    }
+    if (!this.empty) tile('note', '최근 메모 열기', () => this.dispatch({ kind: 'recent-note' }));
     if (this.hasToy) tile('fish', this.toyEnabled ? '낚시대 넣기' : '낚시대 꺼내기', () => { this.close(); this.toggleToy(); });
     tile('cat', this.empty ? '캐릭터 추가' : '캐릭터 변경', () => { void this.showSpecies(); });
     tile('hide', '펫 숨기기', () => this.dispatch({ kind: 'hide' }));

@@ -12,6 +12,95 @@ export class PetEffects {
 
   constructor(private ctx: CanvasRenderingContext2D) {}
 
+  interactionProp(key: 'tea' | 'receive', position: Vec2, size: number, side: -1 | 1, phase: number, kind?: 'photo' | 'text', hand?: Vec2) {
+    const ctx = this.ctx;
+    const p = Math.min(1, Math.max(0, phase));
+    const tea = key === 'tea';
+    const travel = this.reducedMotion.matches ? 0 : tea ? Math.sin(Math.PI * p) * .11 : (1 - p) ** 2 * .32;
+    const scale = size * (tea ? .19 : .23 * (1 - .55 * p));
+    ctx.save();
+    ctx.translate((hand?.x ?? position.x + size * (.5 + side * .08)) + size * side * travel,
+      (hand?.y ?? position.y + size * .70) - size * travel * .32);
+    ctx.scale(scale, scale);
+    ctx.globalAlpha = Math.min(1, p * 10, (1 - p) * 6);
+    ctx.strokeStyle = '#785c4c';
+    ctx.fillStyle = '#fff5df';
+    ctx.lineWidth = .09;
+    if (tea) {
+      ctx.beginPath();
+      ctx.arc(.38 * side, -.08, .20, 0, Math.PI * 2);
+      ctx.stroke();
+      ctx.beginPath();
+      ctx.roundRect(-.41, -.35, .82, .58, [.04, .04, .22, .22]);
+      ctx.fill();
+      ctx.stroke();
+      ctx.fillStyle = '#b97b52';
+      ctx.fillRect(-.32, -.30, .64, .09);
+    } else {
+      ctx.rotate(side * (1 - p) * .24);
+      ctx.fillRect(-.52, -.40, 1.04, .80);
+      ctx.strokeRect(-.52, -.40, 1.04, .80);
+      if (kind === 'photo') {
+        ctx.fillStyle = '#87bcc3';
+        ctx.fillRect(-.39, -.28, .78, .47);
+        ctx.fillStyle = '#5e916d';
+        ctx.beginPath();
+        ctx.moveTo(-.39, .19);
+        ctx.lineTo(-.08, -.12);
+        ctx.lineTo(.25, .19);
+        ctx.fill();
+      } else {
+        ctx.fillStyle = '#847770';
+        ctx.fillRect(-.36, -.18, .72, .07);
+        ctx.fillRect(-.36, .03, .49, .07);
+      }
+    }
+    ctx.restore();
+  }
+
+  speedLines(position: Vec2, velocity: Vec2, size: number) {
+    const speed = Math.hypot(velocity.x, velocity.y);
+    if (speed < 750 || this.reducedMotion.matches) return;
+    const ctx = this.ctx;
+    const reach = size * Math.min(0.78, (speed - 750) / 2000);
+    ctx.save();
+    ctx.translate(position.x + size / 2, position.y + size * 0.56);
+    ctx.rotate(Math.atan2(velocity.y, velocity.x));
+    ctx.beginPath();
+    for (const lane of [-1, 0, 1]) {
+      const edge = -size * (lane === 0 ? 0.46 : 0.39);
+      ctx.moveTo(edge, lane * size * 0.12);
+      ctx.lineTo(edge - reach * (lane === 0 ? 1 : 0.64), lane * size * 0.12);
+    }
+    ctx.lineCap = 'round';
+    ctx.strokeStyle = 'rgba(255,250,235,.72)';
+    ctx.lineWidth = size * 0.047;
+    ctx.stroke();
+    ctx.strokeStyle = 'rgba(91,77,69,.56)';
+    ctx.lineWidth = size * 0.019;
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  checkmark(position: Vec2, size: number, phase: number) {
+    const ctx = this.ctx;
+    const ink = this.reducedMotion.matches ? 1 : Math.min(1, Math.max(0, (phase - 0.12) * 2));
+    ctx.save();
+    ctx.translate(position.x + size * 0.65, position.y + size * 0.26);
+    ctx.scale(size, size);
+    ctx.globalAlpha = Math.min(1, (1 - phase) * 5);
+    ctx.strokeStyle = '#aa5e4d';
+    ctx.lineCap = ctx.lineJoin = 'round';
+    ctx.lineWidth = 0.044;
+    ctx.beginPath();
+    ctx.moveTo(0, 0);
+    const down = Math.min(1, ink * 3);
+    ctx.lineTo(0.065 * down, 0.06 * down);
+    if (ink > 1 / 3) ctx.lineTo(0.065 + (ink - 1 / 3) * 0.23, 0.06 - (ink - 1 / 3) * 0.25);
+    ctx.stroke();
+    ctx.restore();
+  }
+
   burst(kind: Burst, origin: Vec2, side: -1 | 1, now: number) {
     if (kind === 'fire') this.jets.push({ origin, side, start: now });
     const count = this.reducedMotion.matches ? 6 : { fire: 29, ink: 22, hearts: 8 }[kind];

@@ -8,25 +8,27 @@ const FLOOR_HOP_SPEED_LIMIT = 620;
 const GENTLE_THROW_SPEED_LIMIT = 1054;
 
 export function landingReaction(throwSpeed: number, landingSpeed: number, wallSpeed = 0): 'hurt' | 'playful' | undefined {
+  if (throwSpeed > GENTLE_THROW_SPEED_LIMIT) return 'hurt';
   if (throwSpeed > 0 && throwSpeed <= GENTLE_THROW_SPEED_LIMIT) {
     return wallSpeed > 460 || landingSpeed > 820 ? 'hurt' : 'playful';
   }
-  const landingLimit = throwSpeed === 0 ? 400 : 660;
-  if (landingSpeed > landingLimit || wallSpeed > 460) return 'hurt';
+  if (landingSpeed > 400 || wallSpeed > 460) return 'hurt';
   return undefined;
 }
 
 export function launchVelocity(velocity: Vec2, heightAboveFloor: number): Vec2 {
   const speed = Math.hypot(velocity.x, velocity.y);
+  const horizontal = Math.abs(velocity.x);
+  // Give a sideways flick an upward component. A downward gesture progressively takes over.
+  const lift = Math.min(560, Math.max(0, (horizontal - 100) * 0.72));
+  const aim = horizontal > 0 ? 1 - Math.min(1, Math.max(0, velocity.y / (horizontal * 0.65))) : 0;
+  const arcY = lift > 0 ? velocity.y - aim * Math.max(0, velocity.y + lift) : velocity.y;
   if (heightAboveFloor <= 20 && speed > 0 && speed < FLOOR_HOP_SPEED_LIMIT) {
     const x = Math.abs(velocity.x) >= Math.abs(velocity.y)
       ? Math.sign(velocity.x) * Math.max(95, Math.abs(velocity.x)) : velocity.x;
-    return { x, y: Math.min(velocity.y, -205) };
+    return { x, y: Math.min(arcY, -205) };
   }
-  if (heightAboveFloor <= 20 && Math.abs(velocity.x) >= FLOOR_HOP_SPEED_LIMIT && Math.abs(velocity.x) >= Math.abs(velocity.y)) {
-    return { x: velocity.x, y: Math.min(velocity.y, -Math.min(340, Math.abs(velocity.x) * 0.32)) };
-  }
-  return velocity;
+  return { x: velocity.x, y: arcY };
 }
 
 export function releaseVelocity(samples: PointerSample[]): Vec2 {
@@ -42,14 +44,17 @@ export function releaseVelocity(samples: PointerSample[]): Vec2 {
 
   const recent = samples.slice(0, end);
   const first = recent.find((sample) => lastMove.time - sample.time <= 60) ?? samples[end - 1];
-  const seconds = (lastMove.time - first.time) / 1000;
+  const elapsed = lastMove.time - first.time;
   const dx = lastMove.x - first.x;
   const dy = lastMove.y - first.y;
-  if (seconds < 0.008 || Math.hypot(dx, dy) < 3) return stationary;
+  if (elapsed <= 0 || Math.hypot(dx, dy) < 3) return stationary;
+  const seconds = Math.max(8, elapsed) / 1000;
   const x = dx / seconds;
   const y = dy / seconds;
   const speed = Math.hypot(x, y);
-  const factor = speed < 48 ? 0 : Math.min(1, 1300 / speed);
+  // Keep a gentle release literal and give a deliberate flick extra carry.
+  const gain = 1 + 0.65 * Math.max(0, Math.min(1, (speed - 240) / 960));
+  const factor = speed < 48 ? 0 : Math.min(gain, 2600 / speed);
   return { x: x * factor, y: y * factor };
 }
 
@@ -66,7 +71,7 @@ export function advanceFlight(flight: Flight, dt: number, maxX: number, maxY: nu
   const hardBump = (wall && Math.abs(flight.velocity.x) > 460) || (ceiling && vy < -460);
   return {
     position: { x: Math.max(0, Math.min(maxX, x)), y: Math.max(0, Math.min(maxY, y)) },
-    velocity: { x: wall ? -flight.velocity.x * 0.38 : flight.velocity.x, y: ceiling ? -vy * 0.32 : vy },
+    velocity: { x: wall ? -flight.velocity.x * (0.38 + 0.22 * Math.min(1, Math.abs(flight.velocity.x) / 1800)) : flight.velocity.x, y: ceiling ? -vy * 0.32 : vy },
     landed,
     wall,
     wallSpeed: wall ? Math.abs(flight.velocity.x) : 0,

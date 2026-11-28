@@ -6,14 +6,59 @@ const { app, safeStorage } = require('electron');
 const dir = () => app.getPath('userData');
 const file = (n) => path.join(dir(), n);
 
-function readJSON(n, fallback) {
-  try { return JSON.parse(fs.readFileSync(file(n), 'utf8')); } catch { return fallback; }
-}
 function writeJSON(n, obj) {
   fs.mkdirSync(dir(), { recursive: true });
   const tmp = file(n + '.tmp');
   fs.writeFileSync(tmp, JSON.stringify(obj));
   fs.renameSync(tmp, file(n));
+}
+
+function readState(name) {
+  try {
+    const state = JSON.parse(fs.readFileSync(file(name), 'utf8'));
+    if (!Array.isArray(state?.notes)) throw new SyntaxError('메모 목록이 없습니다.');
+    return state;
+  } catch (error) {
+    if (error.code === 'ENOENT') return null;
+    throw error;
+  }
+}
+let primaryValid = false;
+let writable = false;
+function loadState() {
+  writable = false;
+  primaryValid = false;
+  let damaged = false;
+  let state;
+  try { state = readState('data.json'); }
+  catch (error) {
+    if (!(error instanceof SyntaxError)) throw error;
+    fs.copyFileSync(file('data.json'), file('data.damaged-' + require('crypto').randomUUID() + '.json'));
+    damaged = true;
+  }
+  primaryValid = !!state;
+  if (!state) {
+    try { state = readState('data.bak.json'); }
+    catch (error) {
+      if (!(error instanceof SyntaxError)) throw error;
+      fs.renameSync(file('data.bak.json'), file('backup.damaged-' + require('crypto').randomUUID() + '.json'));
+      damaged = true;
+    }
+    if (state) state._recoveryNotice = '마지막 정상 백업에서 메모를 복구했어요.';
+    else if (damaged) state = { notes: [], _recoveryNotice: '손상된 파일을 데이터 폴더에 보관했어요. 복구할 백업이 없어 빈 목록으로 열었어요.' };
+  }
+  writable = true;
+  return state;
+}
+function saveState(state) {
+  if (!writable || !Array.isArray(state?.notes)) throw new Error('메모 저장소를 확인해 주세요.');
+  if (primaryValid) {
+    fs.copyFileSync(file('data.json'), file('data.bak.tmp'));
+    fs.renameSync(file('data.bak.tmp'), file('data.bak.json'));
+  }
+  writeJSON('data.json', state);
+  if (!primaryValid && !fs.existsSync(file('data.bak.json'))) fs.copyFileSync(file('data.json'), file('data.bak.json'));
+  primaryValid = true;
 }
 
 let keys = null;
@@ -39,6 +84,6 @@ const getKey = name => loadKeys()[name] || (name === 'anthropic' ? process.env.A
 const keyStatus = () => ({ kma: !!getKey('kma'), openai: !!getKey('openai'), anthropic: !!getKey('anthropic'), hosted: !!getKey('hosted') });
 
 module.exports = {
-  dir, loadState: () => readJSON('data.json', null), saveState: (s) => writeJSON('data.json', s),
+  dir, loadState, saveState,
   getKey, setKey, keyStatus,
 };

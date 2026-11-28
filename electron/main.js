@@ -118,9 +118,22 @@ function trayIcon() {
   if (IS_MAC) img.setTemplateImage(true);
   return img.isEmpty() ? nativeImage.createFromPath(path.join(__dirname, '..', 'build', 'icon.png')).resize({ width: 18, height: 18 }) : img;
 }
+let overviewTips = [];
+let petGuides = true;
+function trayTips(items, path = []) {
+  return items.flatMap(item => {
+    if (!item.label || item.visible === false || item.enabled === false) return [];
+    const labels = [...path, item.label];
+    if (Array.isArray(item.submenu)) return trayTips(item.submenu, labels);
+    if (!item.click || item.checked) return [];
+    const name = labels.join(' → ');
+    const menu = IS_WIN ? '트레이의 PeeKit 아이콘을 우클릭해서' : '메뉴 막대의 PeeKit 아이콘에서';
+    return [{ id: 'tray:' + name, instruction: menu + ' ‘' + name + '’ 항목을 골라' }];
+  });
+}
 function buildTrayMenu() {
   const mode = (v, label) => ({ label, type: 'radio', checked: modeOverride === v, click: () => { modeOverride = v; send('cmd', 'mode:' + v); buildTrayMenu(); } });
-  const menu = Menu.buildFromTemplate([
+  const items = [
     { label: '책갈피 펼치기', accelerator: 'CommandOrControl+Shift+M', click: () => send('cmd', 'summon') },
     { label: '새 메모', click: () => send('cmd', 'new') },
     { label: '일정 보기', click: () => send('cmd', 'agenda') },
@@ -135,8 +148,9 @@ function buildTrayMenu() {
     { label: '데이터 폴더 열기', click: () => shell.openPath(store.dir()) },
     { type: 'separator' },
     { label: '종료', role: 'quit' },
-  ]);
-  tray.setContextMenu(menu);
+  ];
+  tray.setContextMenu(Menu.buildFromTemplate(items));
+  petControls?.setFeatureTips([...overviewTips, ...trayTips(items)], petGuides);
 }
 async function openDroppedMacPhotos(paths) {
   const fs = require('node:fs/promises');
@@ -174,6 +188,10 @@ function registerShortcuts() {
 }
 
 /* ───────── IPC ───────── */
+ipcMain.on('state:flush', (event, state) => {
+  try { store.saveState(state); event.returnValue = true; }
+  catch { event.returnValue = false; }
+});
 ipcMain.handle('state:load', () => store.loadState());
 ipcMain.handle('state:save', (_e, s) => { store.saveState(s); return true; });
 ipcMain.on('win:interactive', (_e, on) => setInteractive(!!on));
@@ -211,6 +229,15 @@ ipcMain.on('pet:perch', (event, id) => {
 ipcMain.on('app:quit', () => app.quit());
 ipcMain.on('settings:apply', (event, s) => {
   if (!s || event.sender !== win?.webContents) return;
+  if (typeof s.petGuides === 'boolean') {
+    petGuides = s.petGuides;
+    if (tray && !Array.isArray(s.overviewCards)) buildTrayMenu();
+  }
+  if (Array.isArray(s.overviewCards)) {
+    overviewTips = s.overviewCards.filter(card => typeof card?.id === 'string' && typeof card.label === 'string')
+      .map(({ id, label }) => ({ id: 'board:' + id, instruction: '전체보기에서 ‘' + label + '’ 카드를 살펴' }));
+    if (tray) buildTrayMenu();
+  }
   if (s.petSize !== undefined) petControls?.setSize(s.petSize);
   if (event.sender === win?.webContents && typeof s.proPreview === 'boolean') {
     proPreview = (!app.isPackaged || DEMO) && s.proPreview;
@@ -342,7 +369,7 @@ app.whenReady().then(() => {
     send('cmd', 'pet-bookmarks', { ...anchor, x: anchor.x - origin.x, y: anchor.y - origin.y });
   }, (id) => send('pet-menu-selected', id),
   (id) => send('pet-briefing-request', id), (photos) => send('pet-photos', photos),
-  (message) => send('pet-photo-error', message), () => send('cmd', 'board'), (content) => send('pet-content', content));
+  (message) => send('pet-photo-error', message), (target) => send('cmd', target || 'board'), (content) => send('pet-content', content));
   createOverlay();
   createTray();
   registerShortcuts();

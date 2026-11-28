@@ -7,9 +7,16 @@
       "sheet": "sprites/idle.png",
       "frameWidth": 192,
       "frameHeight": 192,
-      "frameCount": 8,
+      "frameCount": 1,
       "fps": 5,
-      "loop": true
+      "loop": true,
+      "motion": "quietBreath",
+      "mouthCenters": [
+        [96, 99]
+      ],
+      "bodyBounds": [
+        [47, 33, 144, 192]
+      ]
     },
     "walk": {
       "sheet": "sprites/walk.png",
@@ -18,15 +25,31 @@
       "frameCount": 4,
       "fps": 6,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [124, 95],
+        [127, 96],
+        [127, 97],
+        [126, 96]
+      ],
+      "bodyBounds": [
+        [52, 37, 140, 189],
+        [53, 38, 140, 188],
+        [51, 38, 140, 190],
+        [53, 39, 139, 188]
+      ]
     },
     "sleep": {
       "sheet": "sprites/sleep.png",
       "frameWidth": 192,
       "frameHeight": 192,
-      "frameCount": 8,
+      "frameCount": 1,
       "fps": 4,
-      "loop": true
+      "loop": true,
+      "motion": "quietBreath",
+      "bodyBounds": [
+        [45, 38, 146, 192]
+      ]
     },
     "dragged": {
       "sheet": "sprites/dragged.png",
@@ -35,7 +58,31 @@
       "frameCount": 10,
       "fps": 11,
       "loop": true,
-      "authoredGrip": true
+      "authoredGrip": true,
+      "mouthCenters": [
+        [97, 105],
+        [98, 103],
+        [98, 103],
+        [98, 104],
+        [98, 106],
+        [97, 108],
+        [95, 106],
+        [94, 104],
+        [94, 103],
+        [95, 104]
+      ],
+      "bodyBounds": [
+        [48, 41, 144, 192],
+        [47, 38, 144, 191],
+        [46, 37, 145, 191],
+        [46, 39, 145, 191],
+        [47, 42, 144, 191],
+        [48, 47, 144, 192],
+        [47, 42, 144, 191],
+        [46, 39, 145, 191],
+        [46, 37, 145, 191],
+        [47, 39, 144, 192]
+      ]
     },
     "react": {
       "sheet": "sprites/react.png",
@@ -43,7 +90,19 @@
       "frameHeight": 192,
       "frameCount": 4,
       "fps": 10,
-      "loop": false
+      "loop": false,
+      "mouthCenters": [
+        [96, 100],
+        [95, 102],
+        [97, 103],
+        [96, 100]
+      ],
+      "bodyBounds": [
+        [47, 35, 144, 192],
+        [47, 38, 144, 188],
+        [46, 40, 144, 190],
+        [47, 35, 144, 192]
+      ]
     }
   },
   "motions": {
@@ -54,7 +113,19 @@
       "frameCount": 4,
       "fps": 12,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [96, 106],
+        [98, 100],
+        [99, 96],
+        [97, 102]
+      ],
+      "bodyBounds": [
+        [47, 44, 144, 192],
+        [46, 36, 144, 187],
+        [46, 31, 145, 183],
+        [46, 39, 144, 187]
+      ]
     },
     "fly": {
       "sheet": "sprites/fly.png",
@@ -63,7 +134,17 @@
       "frameCount": 8,
       "fps": 10,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [48, 44, 144, 192],
+        [45, 37, 145, 192],
+        [45, 35, 147, 192],
+        [45, 37, 145, 192],
+        [48, 44, 144, 192],
+        [46, 37, 146, 192],
+        [45, 34, 147, 191],
+        [46, 37, 146, 192]
+      ]
     },
     "land": {
       "sheet": "sprites/land.png",
@@ -71,7 +152,19 @@
       "frameHeight": 192,
       "frameCount": 4,
       "fps": 18,
-      "loop": false
+      "loop": false,
+      "mouthCenters": [
+        null,
+        null,
+        [96, 104],
+        [96, 100]
+      ],
+      "bodyBounds": [
+        [47, 62, 144, 191],
+        [50, 69, 140, 190],
+        [47, 41, 145, 192],
+        [47, 35, 144, 192]
+      ]
     },
     "climb": {
       "sheet": "sprites/climb.png",
@@ -84,7 +177,23 @@
       "wallInsets": {
         "left": 5,
         "right": 5
-      }
+      },
+      "mouthCenters": [
+        [60, 102],
+        [61, 97],
+        [61, 97],
+        [60, 102],
+        [58, 100],
+        [58, 100]
+      ],
+      "bodyBounds": [
+        [12, 39, 108, 192],
+        [11, 32, 108, 188],
+        [11, 32, 108, 188],
+        [12, 39, 108, 192],
+        [11, 35, 108, 188],
+        [11, 35, 108, 188]
+      ]
     },
     "wallIdle": {
       "sheet": "sprites/wall-idle.png",
@@ -97,7 +206,19 @@
       "wallInsets": {
         "left": 5,
         "right": 5
-      }
+      },
+      "mouthCenters": [
+        [60, 99],
+        [60, 100],
+        [60, 102],
+        [60, 100]
+      ],
+      "bodyBounds": [
+        [12, 37, 108, 192],
+        [12, 39, 108, 192],
+        [12, 42, 108, 192],
+        [12, 39, 108, 192]
+      ]
     },
     "wallImpact": {
       "sheet": "sprites/wall-impact.png",
@@ -106,7 +227,13 @@
       "frameCount": 4,
       "fps": 22,
       "loop": false,
-      "mirrorWhen": "right"
+      "mirrorWhen": "right",
+      "bodyBounds": [
+        [26, 47, 111, 191],
+        [25, 49, 111, 192],
+        [23, 50, 113, 191],
+        [21, 54, 116, 192]
+      ]
     },
     "wallFall": {
       "sheet": "sprites/wall-fall.png",
@@ -115,7 +242,17 @@
       "frameCount": 8,
       "fps": 12,
       "loop": true,
-      "mirrorWhen": "right"
+      "mirrorWhen": "right",
+      "bodyBounds": [
+        [48, 44, 144, 192],
+        [45, 35, 146, 191],
+        [44, 33, 147, 191],
+        [45, 35, 146, 191],
+        [48, 44, 144, 192],
+        [45, 35, 146, 191],
+        [45, 33, 148, 191],
+        [45, 35, 146, 191]
+      ]
     },
     "recover": {
       "sheet": "sprites/recover.png",
@@ -123,7 +260,21 @@
       "frameHeight": 192,
       "frameCount": 5,
       "fps": 11,
-      "loop": false
+      "loop": false,
+      "mouthCenters": [
+        [105, 113],
+        [96, 101],
+        [95, 99],
+        [97, 100],
+        [96, 100]
+      ],
+      "bodyBounds": [
+        [51, 58, 141, 192],
+        [46, 36, 143, 192],
+        [47, 34, 145, 192],
+        [47, 35, 144, 192],
+        [47, 35, 144, 192]
+      ]
     },
     "backWalk": {
       "sheet": "sprites/backWalk.png",
@@ -131,7 +282,17 @@
       "frameHeight": 192,
       "frameCount": 8,
       "fps": 10,
-      "loop": true
+      "loop": true,
+      "bodyBounds": [
+        [47, 36, 145, 192],
+        [47, 33, 145, 191],
+        [46, 30, 144, 189],
+        [47, 33, 145, 191],
+        [47, 36, 145, 192],
+        [47, 33, 146, 191],
+        [48, 30, 147, 189],
+        [47, 33, 146, 191]
+      ]
     },
     "frontWalk": {
       "sheet": "sprites/front-walk.png",
@@ -139,7 +300,27 @@
       "frameHeight": 192,
       "frameCount": 8,
       "fps": 10,
-      "loop": true
+      "loop": true,
+      "mouthCenters": [
+        [96, 101],
+        [98, 107],
+        [98, 105],
+        [95, 101],
+        [96, 101],
+        null,
+        [94, 105],
+        [94, 107]
+      ],
+      "bodyBounds": [
+        [48, 36, 145, 192],
+        [46, 44, 149, 191],
+        [46, 40, 149, 188],
+        [48, 37, 145, 191],
+        [48, 36, 145, 192],
+        [46, 37, 143, 191],
+        [43, 40, 146, 188],
+        [43, 44, 146, 191]
+      ]
     },
     "ouch": {
       "sheet": "sprites/ouch.png",
@@ -147,19 +328,94 @@
       "frameHeight": 192,
       "frameCount": 5,
       "fps": 8,
-      "loop": false
+      "loop": false,
+      "mouthCenters": [
+        [95, 127],
+        [98, 126],
+        [95, 124],
+        [97, 124],
+        [96, 122]
+      ],
+      "bodyBounds": [
+        [51, 68, 142, 191],
+        [50, 67, 140, 190],
+        [51, 64, 141, 190],
+        [50, 64, 141, 191],
+        [50, 61, 141, 191]
+      ]
     },
     "wake": {
       "sheet": "sprites/wake.png",
       "frameWidth": 192,
       "frameHeight": 192,
-      "frameCount": 5,
+      "frameCount": 6,
       "fps": 8,
-      "loop": false
+      "loop": false,
+      "mouthCenters": [
+        null,
+        null,
+        null,
+        null,
+        [105, 115],
+        [96, 100]
+      ],
+      "bodyBounds": [
+        [45, 38, 146, 192],
+        [47, 41, 146, 192],
+        [42, 51, 148, 192],
+        [47, 67, 145, 192],
+        [51, 61, 141, 192],
+        [47, 36, 144, 192]
+      ]
+    },
+    "offer": {
+      "sheet": "sprites/offer.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [95, 100]
+      ],
+      "bodyBounds": [
+        [47, 33, 145, 191]
+      ]
+    },
+    "receive": {
+      "sheet": "sprites/offer.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [95, 100]
+      ],
+      "bodyBounds": [
+        [47, 33, 145, 191]
+      ]
+    },
+    "tea": {
+      "sheet": "sprites/offer.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "mouthCenters": [
+        [95, 100]
+      ],
+      "bodyBounds": [
+        [47, 33, 145, 191]
+      ]
     }
   },
   "behavior": {
-    "doubleClick": "hearts",
+    "throwReactions": { "playful": "bow", "hurt": "recover" },
     "sideWalkInsets": {
       "left": 43,
       "right": 43
@@ -171,7 +427,11 @@
     "walkMinMs": 4100,
     "walkMaxMs": 7600,
     "spriteScale": 0.583,
-    "personality": "relaxed"
+    "personality": "relaxed",
+    "greeting": {
+      "motion": "bow",
+      "line": "부르셨습니까, 주인님?"
+    }
   },
   "attribution": {
     "author": "사용자 제공 이미지",

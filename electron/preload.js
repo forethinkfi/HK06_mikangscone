@@ -4,6 +4,7 @@ const { contextBridge, ipcRenderer } = require('electron');
 const on = (ch) => (fn) => { const h = (_e, ...a) => fn(...a); ipcRenderer.on(ch, h); return () => ipcRenderer.removeListener(ch, h); };
 
 contextBridge.exposeInMainWorld('api', {
+  saveStateSync: (s) => ipcRenderer.sendSync('state:flush', s),
   loadState: () => ipcRenderer.invoke('state:load'),
   saveState: (s) => ipcRenderer.invoke('state:save', s),
   setInteractive: (b) => ipcRenderer.send('win:interactive', b),

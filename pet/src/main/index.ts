@@ -78,7 +78,7 @@ function watchActiveSpecies(speciesId: string, publish: (scene: SpeciesConfig) =
 export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anchor: Rect) => void, onMenuSelection: (id: string) => void, requestBriefing: (id: string) => void,
   onPhotos: (photos: DroppedPhoto[]) => void,
   onPhotoError: (message: string) => void,
-  openOverview: () => void, onContent: (content: { imageUrl: string; text: string }) => void) {
+  openOverview: (target?: 'recent-note') => void, onContent: (content: { imageUrl: string; text: string }) => void) {
   onVisibilityChange = notifyVisibilityChange;
   registerAssetProtocolHandler();
   ensureLocalSpeciesRoot();
@@ -92,6 +92,8 @@ export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anc
   let activeSpecies = process.env.PET_SPECIES_ID ?? appSettings.getSelectedSpeciesId();
   const dismissed = new Set(appSettings.getDismissedSpeciesIds());
   let visibleSpecies = new Set<string>();
+  let guidesEnabled = true;
+  let featureTips: import('../shared/ipcContract').FeatureTip[] = [];
   let rendererReady = false;
   let petSize = 72;
   let perchedId: string | null = null;
@@ -134,7 +136,7 @@ export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anc
       runPetMenuAction(action, (id) => {
         selectPet(id);
         onMenuSelection(id);
-      }, dismissPet, () => setPetVisible(false));
+      }, dismissPet, () => setPetVisible(false), () => openOverview('recent-note'));
     }
   });
   ipcMain.on(IPC.DROP_CONTENT, (event, content) => {
@@ -175,6 +177,7 @@ export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anc
       dismissed.delete(scene.id);
     }
     rendererReady = true;
+    window.webContents.send(IPC.FEATURE_TIPS, featureTips, guidesEnabled);
     window.webContents.send(IPC.PERCHED, perchedId);
     window.webContents.send(IPC.SIZE_CHANGED, petSize);
     publish(scene);
@@ -189,6 +192,11 @@ export function startPet(notifyVisibilityChange: () => void, openBookmarks: (anc
     setPetVisible(true);
   };
   return {
+    setFeatureTips(tips: typeof featureTips, enabled = true) {
+      guidesEnabled = enabled;
+      featureTips = tips;
+      if (rendererReady && !window.isDestroyed()) window.webContents.send(IPC.FEATURE_TIPS, tips, guidesEnabled);
+    },
     state: () => ({ present: isPetVisible() && (!rendererReady || visibleSpecies.size > 0), species: speciesOptions() }),
     show,
     perch(id: string | null) {

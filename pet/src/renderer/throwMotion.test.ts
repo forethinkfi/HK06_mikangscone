@@ -2,6 +2,22 @@ import { describe, expect, it } from 'vitest';
 import { advanceFlight, landingReaction, launchVelocity, releaseVelocity } from './throwMotion';
 
 describe('throwing a pet', () => {
+  it('keeps a short high-refresh flick while ignoring duplicate timestamps', () => {
+    const start = { x: 70, y: 100, time: 20 };
+    expect(releaseVelocity([start, { x: 62, y: 100, time: 24 }]).x).toBeLessThan(-900);
+    expect(releaseVelocity([start, { x: 62, y: 100, time: 20 }])).toEqual({ x: 0, y: 0 });
+  });
+  it('amplifies deliberate flicks, caps diagonal speed and preserves a lively rebound', () => {
+    const flick = (x: number, y = 0) => releaseVelocity([{ x: 0, y: 0, time: 0 }, { x, y, time: 50 }]);
+    expect(flick(10).x).toBe(200);
+    expect(flick(60).x).toBeCloseTo(1980);
+    const diagonal = flick(-180, 135);
+    expect(Math.hypot(diagonal.x, diagonal.y)).toBeCloseTo(2600);
+    expect(diagonal.x / diagonal.y).toBeCloseTo(-4 / 3);
+    const rebound = advanceFlight({ position: { x: 490, y: 90 }, velocity: flick(90) }, 1 / 60, 500, 500);
+    expect(rebound.wall).toBe('right');
+    expect(rebound.velocity.x).toBeCloseTo(-1560);
+  });
   it('uses recent pointer motion and drops straight down after a pause', () => {
     const motion = [{ x: 100, y: 300, time: 50 }, { x: 180, y: 260, time: 130 }];
     const velocity = releaseVelocity(motion);
@@ -70,10 +86,28 @@ describe('throwing a pet', () => {
 
   it('extends the playful range to 1.7 times the original input threshold without boosting launch speed', () => {
     expect(landingReaction(1054, 250)).toBe('playful');
-    expect(landingReaction(1055, 250)).toBeUndefined();
+    expect(landingReaction(1055, 250)).toBe('hurt');
     expect(landingReaction(1054, 250, 490)).toBe('hurt');
     expect(launchVelocity({ x: 100, y: 0 }, 0)).toEqual({ x: 100, y: -205 });
     expect(launchVelocity({ x: -100, y: 0 }, 70)).toEqual({ x: -100, y: 0 });
-    expect(launchVelocity({ x: 850, y: 0 }, 0)).toEqual({ x: 850, y: -272 });
+  });
+
+  it('arcs above an elevated horizontal release in either direction and falls past it', () => {
+    for (const x of [-850, 850]) {
+      const origin = { x: 1100, y: 320 };
+      const velocity = launchVelocity({ x, y: 0 }, 280);
+      const apex = advanceFlight({ position: origin, velocity }, .4, 2200, 600);
+      expect(apex.position.y).toBeCloseTo(212);
+      expect(apex.velocity.y).toBeCloseTo(0);
+      const descent = advanceFlight(apex, .45, 2200, 600);
+      expect(descent.position.y).toBeGreaterThan(origin.y);
+      expect(descent.velocity.x).toBe(x);
+    }
+  });
+
+  it('respects steep aim and lets go vertically when stationary', () => {
+    for (const v of [{ x: 400, y: -700 }, { x: -550, y: 500 }, { x: 0, y: 0 }]) {
+      expect(launchVelocity(v, 300)).toEqual(v);
+    }
   });
 });

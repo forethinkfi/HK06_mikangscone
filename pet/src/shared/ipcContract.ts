@@ -1,6 +1,7 @@
 import type { SpeciesConfig } from './speciesSchema';
 
 export const IPC = {
+  FEATURE_TIPS: 'scene:featureTips',
   RENDERER_READY: 'scene:ready',
   SET_CLICK_THROUGH: 'pet:setClickThrough',
   DRAG_START: 'pet:dragStart',
@@ -32,7 +33,7 @@ export const IPC = {
 } as const;
 
 export type SceneCommand = 'demo' | 'quiet' | 'toy';
-export type PetMenuAction = { kind: 'select' | 'dismiss'; id: string } | { kind: 'hide' | 'quit' };
+export type PetMenuAction = { kind: 'select' | 'dismiss'; id: string } | { kind: 'hide' | 'quit' | 'recent-note' };
 export interface PetMenuSpecies { id: string; label: string; selected: boolean; visible: boolean; dismissed: boolean }
 
 export interface DroppedPhoto { name: string; type: string; bytes: ArrayBuffer }
@@ -63,7 +64,10 @@ export interface IncrementStatPayload {
   delta: number;
 }
 
+export interface FeatureTip { id: string; instruction: string }
+
 export interface PetAPI {
+  onFeatureTips(callback: (tips: FeatureTip[], enabled: boolean) => void): void;
   ready(): void;
   onSizeChanged(callback: (size: number) => void): void;
   onSceneCommand(callback: (command: SceneCommand) => void): void;

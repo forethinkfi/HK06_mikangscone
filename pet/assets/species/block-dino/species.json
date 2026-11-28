@@ -10,7 +10,13 @@
       "frameCount": 4,
       "fps": 4,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 38, 169, 190],
+        [23, 40, 169, 190],
+        [23, 40, 169, 190],
+        [23, 40, 169, 190]
+      ]
     },
     "walk": {
       "sheet": "sprites/walk.png",
@@ -19,7 +25,17 @@
       "frameCount": 8,
       "fps": 9,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [23, 36, 168, 190],
+        [24, 34, 168, 189],
+        [23, 35, 168, 189],
+        [23, 40, 169, 190],
+        [21, 39, 169, 187],
+        [21, 38, 170, 186],
+        [21, 38, 169, 186]
+      ]
     },
     "sit": {
       "sheet": "sprites/sit.png",
@@ -28,7 +44,11 @@
       "frameCount": 2,
       "fps": 3,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [30, 64, 164, 192],
+        [30, 62, 164, 192]
+      ]
     },
     "sleep": {
       "sheet": "sprites/sleep.png",
@@ -36,7 +56,13 @@
       "frameHeight": 192,
       "frameCount": 4,
       "fps": 3,
-      "loop": true
+      "loop": true,
+      "bodyBounds": [
+        [33, 52, 162, 189],
+        [33, 56, 162, 189],
+        [33, 58, 162, 189],
+        [33, 56, 162, 189]
+      ]
     },
     "dragged": {
       "sheet": "sprites/dragged.png",
@@ -46,7 +72,17 @@
       "fps": 10,
       "loop": true,
       "mirrorWhen": "left",
-      "authoredGrip": true
+      "authoredGrip": true,
+      "bodyBounds": [
+        [23, 38, 169, 190],
+        [24, 32, 167, 191],
+        [25, 32, 166, 190],
+        [24, 36, 167, 192],
+        [23, 40, 169, 190],
+        [19, 40, 170, 188],
+        [18, 38, 171, 188],
+        [19, 36, 170, 187]
+      ]
     },
     "react": {
       "sheet": "sprites/react.png",
@@ -55,11 +91,17 @@
       "frameCount": 4,
       "fps": 9,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [31, 54, 161, 189],
+        [33, 52, 159, 189],
+        [23, 40, 169, 190]
+      ]
     }
   },
   "behavior": {
-    "doubleClick": "fire",
+    "throwReactions": { "playful": "curious", "hurt": "ouch" },
     "sideWalkInsets": {
       "left": 19,
       "right": 19
@@ -74,7 +116,11 @@
     "idleMaxMs": 3700,
     "walkMinMs": 4500,
     "walkMaxMs": 8500,
-    "spriteScale": 0.55
+    "spriteScale": 0.55,
+    "greeting": {
+      "motion": "fireBreath",
+      "line": "거, 자네. 쥐라기 촛불은 이렇게 켰다네."
+    }
   },
   "attribution": {
     "author": "User-provided character reference",
@@ -88,7 +134,17 @@
       "frameCount": 8,
       "fps": 12,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [23, 39, 169, 190],
+        [23, 38, 169, 190],
+        [23, 39, 169, 190],
+        [23, 40, 169, 190],
+        [23, 40, 169, 190],
+        [23, 40, 169, 190],
+        [23, 40, 169, 190]
+      ]
     },
     "jump": {
       "sheet": "sprites/jump.png",
@@ -97,7 +153,13 @@
       "frameCount": 4,
       "fps": 11,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 46, 169, 190],
+        [30, 58, 147, 188],
+        [29, 51, 146, 182],
+        [23, 36, 169, 186]
+      ]
     },
     "climb": {
       "sheet": "sprites/climb.png",
@@ -110,7 +172,17 @@
       "wallInsets": {
         "left": 3,
         "right": 3
-      }
+      },
+      "bodyBounds": [
+        [1, 40, 147, 190],
+        [0, 39, 148, 186],
+        [0, 35, 150, 183],
+        [0, 39, 148, 186],
+        [1, 40, 147, 190],
+        [1, 35, 145, 189],
+        [3, 31, 146, 187],
+        [1, 35, 145, 189]
+      ]
     },
     "wallIdle": {
       "sheet": "sprites/wallIdle.png",
@@ -123,7 +195,12 @@
       "wallInsets": {
         "left": 3,
         "right": 3
-      }
+      },
+      "bodyBounds": [
+        [1, 37, 147, 190],
+        [1, 40, 147, 190],
+        [1, 40, 147, 190]
+      ]
     },
     "fly": {
       "sheet": "sprites/fly.png",
@@ -132,7 +209,15 @@
       "frameCount": 6,
       "fps": 11,
       "loop": true,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [27, 29, 165, 188],
+        [27, 29, 165, 188],
+        [23, 40, 169, 190],
+        [16, 38, 173, 186],
+        [16, 38, 173, 186]
+      ]
     },
     "wallImpact": {
       "sheet": "sprites/wallImpact.png",
@@ -141,7 +226,12 @@
       "frameCount": 2,
       "fps": 14,
       "loop": false,
-      "mirrorWhen": "right"
+      "mirrorWhen": "right",
+      "splitBlock": true,
+      "bodyBounds": [
+        [7, 45, 140, 188],
+        [6, 42, 140, 190]
+      ]
     },
     "wallFall": {
       "sheet": "sprites/wallFall.png",
@@ -150,7 +240,16 @@
       "frameCount": 6,
       "fps": 10,
       "loop": true,
-      "mirrorWhen": "right"
+      "mirrorWhen": "right",
+      "splitBlock": true,
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [18, 41, 175, 188],
+        [18, 41, 175, 188],
+        [23, 40, 169, 190],
+        [28, 30, 164, 190],
+        [28, 30, 164, 190]
+      ]
     },
     "land": {
       "sheet": "sprites/land.png",
@@ -159,7 +258,13 @@
       "frameCount": 3,
       "fps": 14,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "splitBlock": true,
+      "bodyBounds": [
+        [21, 57, 170, 190],
+        [23, 45, 169, 190],
+        [23, 40, 169, 190]
+      ]
     },
     "ouch": {
       "sheet": "sprites/ouch.png",
@@ -168,7 +273,15 @@
       "frameCount": 6,
       "fps": 10,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 52, 169, 190],
+        [30, 70, 136, 189],
+        [26, 66, 135, 189],
+        [31, 70, 137, 189],
+        [19, 57, 148, 192],
+        [23, 42, 169, 190]
+      ]
     },
     "recover": {
       "sheet": "sprites/recover.png",
@@ -177,7 +290,13 @@
       "frameCount": 4,
       "fps": 9,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [22, 41, 167, 189],
+        [23, 34, 169, 190],
+        [20, 36, 169, 189],
+        [23, 38, 169, 190]
+      ]
     },
     "wake": {
       "sheet": "sprites/wake.png",
@@ -186,7 +305,14 @@
       "frameCount": 5,
       "fps": 7,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [33, 56, 162, 189],
+        [32, 53, 163, 189],
+        [30, 63, 163, 192],
+        [22, 43, 168, 189],
+        [23, 40, 169, 190]
+      ]
     },
     "doze": {
       "sheet": "sprites/doze.png",
@@ -195,7 +321,14 @@
       "frameCount": 5,
       "fps": 5,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [22, 43, 169, 189],
+        [23, 42, 169, 189],
+        [30, 60, 164, 192],
+        [32, 56, 163, 189],
+        [33, 56, 162, 189]
+      ]
     },
     "look": {
       "sheet": "sprites/look.png",
@@ -204,7 +337,13 @@
       "frameCount": 4,
       "fps": 8,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [24, 37, 168, 189],
+        [24, 37, 168, 189],
+        [23, 40, 169, 190]
+      ]
     },
     "curious": {
       "sheet": "sprites/curious.png",
@@ -213,7 +352,13 @@
       "frameCount": 4,
       "fps": 7,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [24, 37, 168, 189],
+        [24, 38, 168, 189],
+        [23, 40, 169, 190]
+      ]
     },
     "peek": {
       "sheet": "sprites/peek.png",
@@ -222,7 +367,13 @@
       "frameCount": 4,
       "fps": 8,
       "loop": false,
-      "mirrorWhen": "right"
+      "mirrorWhen": "right",
+      "bodyBounds": [
+        [1, 40, 147, 190],
+        [0, 42, 149, 190],
+        [0, 43, 150, 189],
+        [1, 40, 149, 189]
+      ]
     },
     "slip": {
       "sheet": "sprites/slip.png",
@@ -231,7 +382,13 @@
       "frameCount": 4,
       "fps": 10,
       "loop": false,
-      "mirrorWhen": "right"
+      "mirrorWhen": "right",
+      "bodyBounds": [
+        [3, 38, 151, 187],
+        [1, 40, 152, 186],
+        [0, 43, 154, 187],
+        [1, 42, 151, 189]
+      ]
     },
     "startle": {
       "sheet": "sprites/startle.png",
@@ -240,7 +397,12 @@
       "frameCount": 3,
       "fps": 12,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [34, 63, 157, 189],
+        [37, 60, 156, 189],
+        [23, 40, 169, 190]
+      ]
     },
     "meet": {
       "sheet": "sprites/meet.png",
@@ -249,7 +411,13 @@
       "frameCount": 4,
       "fps": 7,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [30, 63, 145, 192],
+        [34, 60, 144, 192],
+        [23, 40, 169, 190]
+      ]
     },
     "petBump": {
       "sheet": "sprites/petBump.png",
@@ -258,7 +426,11 @@
       "frameCount": 2,
       "fps": 14,
       "loop": false,
-      "mirrorWhen": "left"
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [34, 71, 158, 190],
+        [37, 65, 155, 191]
+      ]
     },
     "frontWalk": {
       "sheet": "sprites/frontWalk.png",
@@ -266,7 +438,17 @@
       "frameHeight": 192,
       "frameCount": 8,
       "fps": 9,
-      "loop": true
+      "loop": true,
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [23, 36, 169, 190],
+        [24, 34, 168, 188],
+        [23, 35, 169, 189],
+        [23, 40, 169, 190],
+        [21, 39, 169, 187],
+        [21, 38, 169, 185],
+        [21, 38, 169, 186]
+      ]
     },
     "backWalk": {
       "sheet": "sprites/backWalk.png",
@@ -274,7 +456,41 @@
       "frameHeight": 192,
       "frameCount": 8,
       "fps": 9,
-      "loop": true
+      "loop": true,
+      "bodyBounds": [
+        [23, 40, 169, 190],
+        [22, 39, 170, 187],
+        [22, 38, 170, 185],
+        [22, 38, 170, 186],
+        [23, 40, 169, 190],
+        [22, 36, 168, 190],
+        [23, 34, 167, 188],
+        [22, 35, 168, 189]
+      ]
+    },
+    "offer": {
+      "sheet": "sprites/offer.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [29, 37, 163, 191]
+      ]
+    },
+    "receive": {
+      "sheet": "sprites/offer.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 2,
+      "loop": true,
+      "mirrorWhen": "left",
+      "bodyBounds": [
+        [29, 37, 163, 191]
+      ]
     }
   }
 }

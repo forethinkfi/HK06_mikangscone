@@ -56,6 +56,9 @@
 
   /** 한 줄(문장)에서 일정 하나를 찾는다. 없으면 null. */
   function parseLine(line, now) {
+    const hours = ['한','두','세','네','다섯','여섯','일곱','여덟','아홉','열','열한','열두'];
+    line = line.replace(/(^|\s|오전|오후|아침|점심|저녁|밤|새벽)(열\s*[한두]|다섯|여섯|일곱|여덟|아홉|한|두|세|네|열)\s*시(?!간)/g,
+      (_, prefix, hour) => prefix + (hours.indexOf(hour.replace(/\s/g, '')) + 1) + '시');
     const today = startOfDay(now);
     let d = null, rolling = false, mm, relMs = null;
     if ((mm = line.match(/(\d+)\s*(시간|분)\s*(뒤|후)/))) relMs = +mm[1] * (mm[2] === '시간' ? 3600000 : 60000);
@@ -96,9 +99,9 @@
       at = d ? new Date(d) : new Date(today);
       at.setHours(hr == null ? 9 : hr, mi, 0, 0);
       if (!d && at < now) at = addDays(at, 1);
-      else if (rolling && at < now) at = addDays(at, 7);
+      else if (rolling && hr != null && at < now) at = addDays(at, 7);
     }
-    if (at.getTime() < now.getTime() - 60000) return null;
+    if (at.getTime() < now.getTime() - 60000 && !(hr == null && relMs == null && +startOfDay(at) === +today)) return null;
 
     const deadline = /까지|마감|제출|전까지|이내/.test(line);
     const title = line.replace(DATE_RE, ' ')
@@ -122,5 +125,40 @@
     return { keyword: guessKeyword(text, title), summary: summarize(text), events: parseEvents((title ? title + '\n' : '') + text, now), src: 'local' };
   }
 
-  return { DAYMS, WD, pad, startOfDay, addDays, fmtTime, fmtWhen, fmtIn, fmtDate, isoLocal, guessKeyword, summarize, parseLine, parseEvents, localAnalyze, stripBullet };
+  // Compare complete Hangul syllables against the physical keys on a Korean keyboard.
+  const initials = 'r R s e E f a q Q t T d w W c z x v g'.split(' ');
+  const vowels = 'k o i O j p u P h hk ho hl y n nj np nl b m ml l'.split(' ');
+  const finals = ' r R rt s sw sg e f fr fa fq ft fx fv fg a q qt t T d w c z x v g'.split(' ');
+  function searchWords(query) {
+    return query.normalize('NFC').trim().split(/\s+/).filter(Boolean).map(word => ({
+      literal: word.toLowerCase(),
+      keys: /^[a-z]+$/i.test(word) ? word.replace(/[A-Z]/g, c => 'REQTWOP'.includes(c) ? c : c.toLowerCase()) : null,
+    }));
+  }
+  function matchesSearch(text, words) {
+    text = text.normalize('NFC').toLowerCase();
+    let runs;
+    return words.every(({literal, keys}) => {
+      if (text.includes(literal)) return true;
+      if (!keys) return false;
+      runs ??= (text.match(/[가-힣]+/g) || []).map(run => {
+        let typed = '';
+        const boundaries = new Set([0]);
+        for (const ch of run) {
+          const code = ch.charCodeAt(0) - 0xac00;
+          typed += initials[Math.floor(code / 588)] + vowels[Math.floor(code / 28) % 21] + finals[code % 28];
+          boundaries.add(typed.length);
+        }
+        return {typed, boundaries};
+      });
+      return runs.some(({typed, boundaries}) => {
+        for (let i = typed.indexOf(keys); i >= 0; i = typed.indexOf(keys, i + 1)) {
+          if (boundaries.has(i) && boundaries.has(i + keys.length)) return true;
+        }
+        return false;
+      });
+    });
+  }
+
+  return { searchWords, matchesSearch, DAYMS, WD, pad, startOfDay, addDays, fmtTime, fmtWhen, fmtIn, fmtDate, isoLocal, guessKeyword, summarize, parseLine, parseEvents, localAnalyze, stripBullet };
 });

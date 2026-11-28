@@ -5,7 +5,8 @@ export type PetMotion = 'fly' | 'wallImpact' | 'wallFall' | 'petBump' | 'land' |
   'toyWatch' | 'toyPounce' | 'toyLand' | 'toyAfter' | 'toyRod' | 'toyRodHit' | 'sideIdle' | 'wallIdle' | 'wallFront' |
   'frontWalk' | 'backWalk' | 'fireBreath' |
   'pokeLeft' | 'pokeRight' | 'pokeForehead' | 'grabLeft' | 'grabRight' | 'scratch' |
-  'wallCling' | 'landPrepare';
+  'wallCling' | 'landPrepare' | 'jot' | 'stretch' | 'bow' | 'stalk' | 'groom' |
+  'highFive' | 'highFiveTap' | 'tea' | 'offer' | 'receive';
 export type PetPersonality = 'relaxed' | 'cautious' | 'curious';
 
 /**
@@ -22,7 +23,7 @@ export interface SpeciesAnimationDef {
   fps: number;
   loop: boolean;
   /** Optional motion applied to a single illustration without changing the asset. */
-  motion?: 'breathe' | 'waddle' | 'sway' | 'sleep' | 'bounce' | 'wriggle';
+  motion?: 'breathe' | 'quietBreath' | 'waddle' | 'sway' | 'sleep' | 'bounce' | 'wriggle';
   effect?: 'rest' | 'sleep' | 'happy' | 'held';
   bottomInset?: number;
   pixelArt?: boolean;
@@ -31,12 +32,24 @@ export interface SpeciesAnimationDef {
   /** Transparent horizontal margins of a static wall pose, in source pixels. */
   wallInsets?: { left: number; right: number };
   authoredGrip?: boolean;
+  /** Extra sheet rows hold the dinosaur without its top block, then the block alone. */
+  splitBlock?: boolean;
+  /** Center of the visible mouth in each source frame. Omitted on rear views. */
+  mouthCenters?: ([number, number] | null)[];
+  /** Visible body edges per frame, excluding detached expression marks. A single entry is shared. */
+  bodyBounds?: [number, number, number, number][];
+  /** Stand at the height and foot line of the first walking frame. */
+  matchWalkHeight?: boolean;
+  /** Hand position on the unmirrored receiving frame, in source pixels. */
+  receivePoint?: [number, number];
   sourceFrames?: { sx: number; sy: number; sw: number; sh: number }[][];
 }
 
 export interface SpeciesBehaviorDef {
   personality?: PetPersonality;
+  throwReactions?: { playful: PetMotion; hurt: PetMotion };
   doubleClick?: 'fire' | 'chase' | 'ink' | 'hearts';
+  greeting?: { motion: 'jot' | 'scratch' | 'fireBreath' | 'stretch' | 'bow'; line: string };
   /** Use the normal landing sequence even after a hard fall. */
   alwaysLandOnFeet?: boolean;
   /** Mouth position in the right-facing frame, with the first open frame index. */
@@ -86,7 +99,7 @@ export interface SpeciesConfig {
   chatter?: ChatterConfig;
   dialogue?: Pick<ChatterConfig, 'solo' | 'dialogues'> & {
     reply?: string;
-    reactions?: Partial<Record<'grab' | 'bump' | 'landing' | 'playful', string[]>>;
+    reactions?: Partial<Record<'grab' | 'bump' | 'landing' | 'playful' | 'photo' | 'text', string[]>>;
   };
   id: string;
   displayName: string;
@@ -130,6 +143,11 @@ export function isSpeciesConfig(value: unknown): value is SpeciesConfig {
   }
   if (typeof v.behavior !== 'object' || v.behavior === null) return false;
   const b = v.behavior as Record<string, unknown>;
+  if (b.greeting !== undefined) {
+    const greeting = b.greeting as Partial<NonNullable<SpeciesBehaviorDef['greeting']>> | null;
+    if (!greeting || !['jot', 'scratch', 'fireBreath', 'stretch', 'bow'].includes(String(greeting.motion)) ||
+        typeof greeting.line !== 'string') return false;
+  }
   if (b.personality !== undefined && !['relaxed', 'cautious', 'curious'].includes(String(b.personality))) return false;
   if (b.alwaysLandOnFeet !== undefined && typeof b.alwaysLandOnFeet !== 'boolean') return false;
   const requiredBehaviorKeys: (keyof SpeciesBehaviorDef)[] = [
