@@ -124,7 +124,22 @@ async function main(): Promise<void> {
   let rightPress: { pet: Companion; pointerId: number; timer: number; briefed: boolean } | null = null;
   let activeBriefing: { pet: Companion; until: number } | undefined;
   let perchedId: string | null = null;
-  window.petAPI.onPerched((id) => { perchedId = id; });
+  const otterSounds = new Map<string, HTMLAudioElement>();
+  function playOtterSound(species: string, event: 'gift' | 'wall' | 'land' | 'bookmark' | 'receive') {
+    if (species !== 'coral-otter') return;
+    let clip = otterSounds.get(event);
+    if (!clip) {
+      clip = new Audio(new URL('sounds/otter-' + event + '.wav', document.baseURI).href);
+      clip.volume = 0.55;
+      otterSounds.set(event, clip);
+    }
+    clip.currentTime = 0;
+    void clip.play().catch(() => {});
+  }
+  window.petAPI.onPerched((id) => {
+    if (id && id !== perchedId) playOtterSound(id, 'bookmark');
+    perchedId = id;
+  });
   let briefingHold: Companion | undefined;
 
   let briefingBounds: DOMRect | undefined;
@@ -207,6 +222,7 @@ async function main(): Promise<void> {
     pet.cue = motionCue(pet.species, key, now, side, strength);
     if (pet.playbackKey === key) pet.playbackKey = undefined;
     if (key === 'doze') hush(pet);
+    return pet.cue;
   }
   const random = <T,>(items: T[]) => items[Math.floor(Math.random() * items.length)];
   const schedule = () => {
@@ -369,7 +385,10 @@ async function main(): Promise<void> {
       file.type.startsWith('image/') || /\.(jpe?g|jfif|pjpeg|pjp|png|apng|gif|webp|bmp|dib|svg|avif|heic|heif|ico|cur|tiff?)$/i.test(file.name));
     if (!images.length) {
       const content = window.MemoDrop.content(event.dataTransfer);
-      if (content.imageUrl || content.text) window.petAPI.sendContent(content);
+      if (content.imageUrl || content.text) {
+        receiveMemo(target);
+        window.petAPI.sendContent(content);
+      }
       else window.petAPI.photoError('사진이나 글을 놓아 주세요.');
       return;
     }
@@ -385,8 +404,15 @@ async function main(): Promise<void> {
         totalBytes += bytes.byteLength;
       } catch { window.petAPI.photoError('사진을 읽을 수 없어요.'); }
     }
-    if (photos.length) window.petAPI.sendPhotos(photos);
+    if (photos.length) {
+      receiveMemo(target);
+      window.petAPI.sendPhotos(photos);
+    }
   });
+  function receiveMemo(pet: Companion) {
+    if (pet.species.motions?.receive) cue(pet, 'receive', performance.now());
+    playOtterSound(pet.species.id, 'receive');
+  }
   function beginDrag(grab: NonNullable<typeof held>) {
     const { pet } = grab;
     const now = performance.now();
@@ -508,7 +534,7 @@ async function main(): Promise<void> {
     pointer = { x: event.clientX, y: event.clientY };
     const pet = hit();
     const action = pet?.species.behavior.doubleClick;
-    if (!pet || !action) return;
+    if (!pet || !action || (action === 'shellGift' && pet.flight)) return;
     event.preventDefault();
     if (action === 'chase') {
       if (pet.chasing) {
@@ -530,6 +556,13 @@ async function main(): Promise<void> {
     const side = pos.x < size * .6 ? 1 : pos.x + size * 1.65 > bounds.width || pet.facing >= 5 ? -1 : 1;
     pet.nextBurstAt = now + 1000;
     pet.cue = undefined;
+    if (action === 'shellGift') {
+      pet.state.transition('idle');
+      if (chatter?.enabled) say(pet, '내 주머니에 간직한 조개예요. 받아요!', now, false);
+      pet.nextBurstAt = cue(pet, 'shellGift', now, side).end;
+      playOtterSound(pet.species.id, 'gift');
+      return;
+    }
     const breath = action === 'fire' ? pet.species.motions?.fireBreath : undefined;
     pet.state.transition('idle');
     if (!breath) pet.behavior.react();
@@ -817,7 +850,8 @@ async function main(): Promise<void> {
           if (step.wall && !step.landed) {
             const side = step.wall === 'left' ? -1 : 1;
             const strength = Math.min(1, step.wallSpeed / 650);
-            if (pet.species.id === 'pastel-octopus' && pet.species.motions?.wallCling) {
+            playOtterSound(pet.species.id, 'wall');
+            if (pet.species.motions?.wallCling) {
               const contact = motionCue(pet.species, 'wallCling', now, side, strength);
               contact.end = now + 650;
               pet.cue = contact;
@@ -831,6 +865,7 @@ async function main(): Promise<void> {
             if (pet.species.dialogue?.reactions?.bump?.length) reactWithLine(pet, 'bump', now);
           }
           if (step.landed) {
+            playOtterSound(pet.species.id, 'land');
             pet.behavior.setPosition({ x: step.position.x, y: 0 });
             pet.flight = undefined;
             pet.behavior.resumeAfterDrag();

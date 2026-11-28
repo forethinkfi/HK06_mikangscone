@@ -5,7 +5,7 @@ export type PetMotion = 'fly' | 'wallImpact' | 'wallFall' | 'petBump' | 'land' |
   'toyWatch' | 'toyPounce' | 'toyLand' | 'toyAfter' | 'toyRod' | 'toyRodHit' | 'sideIdle' | 'wallIdle' | 'wallFront' |
   'frontWalk' | 'backWalk' | 'fireBreath' |
   'pokeLeft' | 'pokeRight' | 'pokeForehead' | 'grabLeft' | 'grabRight' | 'scratch' |
-  'wallCling' | 'landPrepare';
+  'wallCling' | 'landPrepare' | 'shellGift' | 'receive';
 export type PetPersonality = 'relaxed' | 'cautious' | 'curious';
 
 /**
@@ -36,7 +36,7 @@ export interface SpeciesAnimationDef {
 
 export interface SpeciesBehaviorDef {
   personality?: PetPersonality;
-  doubleClick?: 'fire' | 'chase' | 'ink' | 'hearts';
+  doubleClick?: 'fire' | 'chase' | 'ink' | 'hearts' | 'shellGift';
   /** Use the normal landing sequence even after a hard fall. */
   alwaysLandOnFeet?: boolean;
   /** Mouth position in the right-facing frame, with the first open frame index. */

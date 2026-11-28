@@ -1,7 +1,7 @@
 import type { SpeciesBehaviorDef } from '../shared/speciesSchema';
 import type { Vec2 } from './types';
 
-type Burst = Exclude<NonNullable<SpeciesBehaviorDef['doubleClick']>, 'chase'>;
+type Burst = Exclude<NonNullable<SpeciesBehaviorDef['doubleClick']>, 'chase' | 'shellGift'>;
 type Particle = { kind: Burst; origin: Vec2; velocity: Vec2; start: number; life: number; size: number; color: string };
 const FIRE_JET_MS = 300;
 

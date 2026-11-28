@@ -1,0 +1,29 @@
+.coral-otter-avatar { display:block; width:100%; height:100%; background:url('otter.png') center / contain no-repeat; }
+#bookmark-pet[data-species="coral-otter"] { --wall-portrait:url('peek.png'); background-image:var(--wall-portrait); }
+:root[data-theme-pack="coral"] {
+  --mikkang-ink:#294855; --mikkang-muted:#526e7c; --mikkang-paper:#edf7fb;
+  --mikkang-surface:#f8fcff; --mikkang-line:#c3dce7; --mikkang-action:#386983;
+  --mikkang-sage:#9dc9da; --mikkang-sage-light:#deeff6; --glass:#f5fbfffa;
+  --cherry:#a34f47;
+}
+[data-theme-pack="coral"] .overview-assistant {
+  background: url('shell.png') right 12px bottom 10px / 34px auto no-repeat, linear-gradient(120deg,#e0f0f8,#f5fbff);
+}
+[data-theme-pack="coral"] .basic-note .card {
+  background:var(--pc,#edf7fc); color:var(--pi,#294b60); border-color:#bdd8e4; border-radius:20px 20px 14px 14px;
+}
+[data-theme-pack="coral"] .basic-note .card::after {
+  content:''; position:absolute; right:10px; bottom:5px; width:22px; height:19px;
+  background:url('shell.png') center / contain no-repeat; pointer-events:none;
+}
+[data-theme-pack="coral"] #stage #dock .shelf-group .tab.sec {
+  background:var(--tc); color:var(--ti); border:1px solid #c7958c;
+  border-radius:17px 17px 11px 11px; height:92px; padding:21px 2px 4px;
+}
+[data-theme-pack="coral"] #stage #dock .shelf-group .tab.sec::before {
+  content:''; position:absolute; left:50%; right:auto; top:2px; margin:0 0 0 -9px; width:18px; height:21px;
+  background:url('peek.png') center / contain no-repeat; box-shadow:none; border-radius:0;
+}
+[data-theme-pack="coral"] #stage #dock .shelf-group .tab.sub {
+  border-radius:14px 14px 8px 8px; border-bottom:3px solid #d89387;
+}

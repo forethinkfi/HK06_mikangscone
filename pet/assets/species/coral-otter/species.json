@@ -1,0 +1,728 @@
+{
+  "id": "coral-otter",
+  "displayName": "해달",
+  "version": "1.0.0",
+  "animations": {
+    "idle": {
+      "sheet": "sprites/idle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 5,
+      "loop": true,
+      "bodyBounds": [
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "motion": "breathe"
+    },
+    "walk": {
+      "sheet": "sprites/walk.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 7,
+      "loop": true,
+      "bodyBounds": [
+        [
+          35,
+          40,
+          156,
+          192
+        ],
+        [
+          32,
+          32,
+          159,
+          190
+        ],
+        [
+          39,
+          42,
+          153,
+          192
+        ],
+        [
+          36,
+          36,
+          156,
+          190
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "sleep": {
+      "sheet": "sprites/sleep.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 4,
+      "loop": true,
+      "bodyBounds": [
+        [
+          22,
+          75,
+          170,
+          192
+        ]
+      ],
+      "motion": "breathe"
+    },
+    "dragged": {
+      "sheet": "sprites/dragged.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 6,
+      "loop": true,
+      "bodyBounds": [
+        [
+          42,
+          29,
+          150,
+          192
+        ],
+        [
+          48,
+          37,
+          144,
+          192
+        ],
+        [
+          42,
+          29,
+          150,
+          192
+        ],
+        [
+          48,
+          37,
+          144,
+          192
+        ]
+      ],
+      "authoredGrip": true
+    },
+    "react": {
+      "sheet": "sprites/react.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 7,
+      "loop": false,
+      "bodyBounds": [
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          34,
+          42,
+          158,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ]
+    }
+  },
+  "motions": {
+    "climb": {
+      "sheet": "sprites/climb.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 5,
+      "loop": true,
+      "bodyBounds": [
+        [
+          48,
+          36,
+          144,
+          192
+        ],
+        [
+          44,
+          38,
+          148,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "wallIdle": {
+      "sheet": "sprites/wallIdle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 4,
+      "loop": true,
+      "bodyBounds": [
+        [
+          48,
+          36,
+          144,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "jump": {
+      "sheet": "sprites/jump.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 9,
+      "loop": false,
+      "bodyBounds": [
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          40,
+          53,
+          152,
+          192
+        ],
+        [
+          43,
+          48,
+          149,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "fly": {
+      "sheet": "sprites/fly.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 6,
+      "loop": true,
+      "bodyBounds": [
+        [
+          40,
+          53,
+          152,
+          192
+        ],
+        [
+          43,
+          48,
+          149,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "wallImpact": {
+      "sheet": "sprites/wallImpact.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 12,
+      "loop": false,
+      "bodyBounds": [
+        [
+          29,
+          80,
+          163,
+          192
+        ],
+        [
+          24,
+          75,
+          168,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "wallFall": {
+      "sheet": "sprites/wallFall.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 5,
+      "loop": true,
+      "bodyBounds": [
+        [
+          24,
+          75,
+          168,
+          192
+        ],
+        [
+          16,
+          55,
+          176,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "land": {
+      "sheet": "sprites/land.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 10,
+      "loop": false,
+      "bodyBounds": [
+        [
+          29,
+          80,
+          163,
+          192
+        ],
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "ouch": {
+      "sheet": "sprites/ouch.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 4,
+      "loop": false,
+      "bodyBounds": [
+        [
+          24,
+          75,
+          168,
+          192
+        ],
+        [
+          29,
+          80,
+          163,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "recover": {
+      "sheet": "sprites/recover.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 4,
+      "fps": 7,
+      "loop": false,
+      "bodyBounds": [
+        [
+          29,
+          80,
+          163,
+          192
+        ],
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          34,
+          42,
+          158,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "wake": {
+      "sheet": "sprites/wake.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 5,
+      "loop": false,
+      "bodyBounds": [
+        [
+          22,
+          75,
+          170,
+          192
+        ],
+        [
+          34,
+          42,
+          158,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "doze": {
+      "sheet": "sprites/doze.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 4,
+      "loop": false,
+      "bodyBounds": [
+        [
+          37,
+          34,
+          154,
+          192
+        ],
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          22,
+          75,
+          170,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "look": {
+      "sheet": "sprites/look.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 5,
+      "loop": false,
+      "bodyBounds": [
+        [
+          37,
+          34,
+          154,
+          192
+        ],
+        [
+          32,
+          28,
+          159,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "startle": {
+      "sheet": "sprites/startle.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 8,
+      "loop": false,
+      "bodyBounds": [
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          34,
+          42,
+          158,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "offer": {
+      "sheet": "sprites/offer.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 1,
+      "fps": 6,
+      "loop": true,
+      "bodyBounds": [
+        [
+          39,
+          42,
+          153,
+          192
+        ]
+      ],
+      "receivePoint": [
+        96,
+        132
+      ]
+    },
+    "receive": {
+      "sheet": "sprites/receive.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 5,
+      "loop": false,
+      "bodyBounds": [
+        [
+          39,
+          42,
+          153,
+          192
+        ],
+        [
+          39,
+          42,
+          153,
+          192
+        ],
+        [
+          37,
+          34,
+          154,
+          192
+        ]
+      ],
+      "receivePoint": [
+        96,
+        132
+      ]
+    },
+    "slip": {
+      "sheet": "sprites/slip.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 8,
+      "loop": false,
+      "bodyBounds": [
+        [
+          44,
+          38,
+          148,
+          192
+        ],
+        [
+          48,
+          37,
+          144,
+          192
+        ],
+        [
+          48,
+          36,
+          144,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "meet": {
+      "sheet": "sprites/meet.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 6,
+      "loop": false,
+      "bodyBounds": [
+        [
+          35,
+          40,
+          156,
+          192
+        ],
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          35,
+          40,
+          156,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "peek": {
+      "sheet": "sprites/peek.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 3,
+      "fps": 6,
+      "loop": false,
+      "bodyBounds": [
+        [
+          27,
+          79,
+          165,
+          192
+        ],
+        [
+          22,
+          67,
+          170,
+          192
+        ],
+        [
+          27,
+          79,
+          165,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "wallCling": {
+      "sheet": "sprites/climb.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 2,
+      "fps": 10,
+      "loop": true,
+      "bodyBounds": [
+        [
+          48,
+          36,
+          144,
+          192
+        ],
+        [
+          44,
+          38,
+          148,
+          192
+        ]
+      ],
+      "mirrorWhen": "left"
+    },
+    "shellGift": {
+      "sheet": "sprites/shellGift.png",
+      "frameWidth": 192,
+      "frameHeight": 192,
+      "frameCount": 10,
+      "fps": 7,
+      "loop": false,
+      "bodyBounds": [
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ],
+        [
+          38,
+          34,
+          154,
+          192
+        ]
+      ]
+    }
+  },
+  "behavior": {
+    "personality": "curious",
+    "throwReactions": {
+      "playful": "wake",
+      "hurt": "ouch"
+    },
+    "walkSpeedPxPerSec": 45,
+    "idleMinMs": 1900,
+    "idleMaxMs": 4000,
+    "walkMinMs": 3500,
+    "walkMaxMs": 7200,
+    "spriteScale": 0.62,
+    "doubleClick": "shellGift"
+  }
+}

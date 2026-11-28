@@ -192,7 +192,7 @@ const secIdOf = (n) => (n.sectionId && secById(n.sectionId) ? n.sectionId : '');
 const secOf = (n) => secById(secIdOf(n)) || INBOX;
 const monoSectionColors = ['#ffffff', '#ededed', '#dadada', '#bdbdbd', '#999999', '#707070', '#484848', '#202020']
   .map((bg, i) => ({ bg, ink: i >= 5 ? '#ffffff' : '#181818' }));
-const sectionPalette = () => themePack()?.id.startsWith('mono-sketch') ? monoSectionColors : SEC_COLORS;
+const sectionPalette = () => themePack()?.id.startsWith('mono-sketch') ? monoSectionColors : (themePack()?.sectionColors ?? SEC_COLORS);
 const secColor = (x) => sectionPalette()[(x.color || 0) % SEC_COLORS.length];
 const notesIn = (id) => S.notes.filter((n) => secIdOf(n) === id);
 const SEC_HINTS = [
@@ -2467,6 +2467,7 @@ const wallPetFaces = {
   'pastel-octopus': [[136,301,26,19],[309,254,28,18]],
   'vintage-teddy': [[139,293,25,31],[290,259,25,31]],
   'basic-memoring': [[143,238,28,32],[288,206,28,31]],
+  'coral-otter': [],
   'block-dino': []
 };
 const wallPetImages = new Map();
@@ -2537,7 +2538,7 @@ function placeBookmarkPet() {
   if (next !== perchedSpecies) { api.perchPet?.(next || null); perchedSpecies = next; }
   if (!show) { perchOrigin = null; return; }
   pet.dataset.species = species || 'custom';
-  pet.style.backgroundImage = !['basic-memoring','mono-cat','block-dino','pastel-octopus','vintage-teddy'].includes(species) && S.settings.customChar ? 'url(' + JSON.stringify(S.settings.customChar) + ')' : '';
+  pet.style.backgroundImage = !['basic-memoring','mono-cat','block-dino','pastel-octopus','vintage-teddy','coral-otter'].includes(species) && S.settings.customChar ? 'url(' + JSON.stringify(S.settings.customChar) + ')' : '';
   const rect = tab.getBoundingClientRect(), stage = $('#stage').getBoundingClientRect();
   pet.style.left = S.settings.side === 'left' ? '0px' : Math.max(0, stage.width - size) + 'px';
   const perchHeight = size;

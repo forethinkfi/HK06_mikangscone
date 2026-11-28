@@ -29,7 +29,7 @@ const durations: Record<PetMotion, number> = {
   grabLeft: Infinity, grabRight: Infinity,
   scratch: 440,
   wallCling: Infinity, landPrepare: Infinity,
-  toyWatch: 430, toyPounce: 460, toyLand: 330, toyAfter: 620, toyRod: Infinity, toyRodHit: 420,
+  shellGift: 1000, receive: 600, toyWatch: 430, toyPounce: 460, toyLand: 330, toyAfter: 620, toyRod: Infinity, toyRodHit: 420,
 };
 
 export function personalityOf(species: SpeciesConfig) {
